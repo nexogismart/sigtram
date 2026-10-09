@@ -1,0 +1,1 @@
+c:/laragon/www/pagos/doc/propuesta/sincronizacion_base_datos.md

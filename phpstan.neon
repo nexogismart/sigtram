@@ -1,0 +1,10 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+
+    paths:
+        - app/
+
+    # Level 5 is mandated by rules (ARCH-15)
+    level: 5

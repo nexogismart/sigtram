@@ -1,0 +1,26 @@
+# Reglas del Proyecto (SIGTRAM3)
+
+## 1. Nomenclatura e Idioma (Idiomatic Standards)
+* **Dominio y Lógica de Negocio (Español):** Se debe utilizar obligatoriamente el idioma español para todos los nombres de clases, controladores, servicios, modelos, interfaces, métodos, variables, comentarios y rutas.
+  * *Abreviaturas:* Se prefieren abreviaciones estándar y cortas (ej: `doc` para documento, `usr` o `usrio` para usuario, `reg` para registro, `notif` para notificación, `config` para configuración) en lugar de nombres excesivamente largos.
+* **Estructura Técnica del Framework (Inglés):** Las carpetas físicas del framework, los directorios PSR y los namespaces de infraestructura técnica se mantendrán en inglés.
+  * *Ejemplos:* `app/Services/`, `app/Repositories/`, `app/Http/Controllers/`.
+
+## 2. Base de Datos y Mapeo de Nombres (Legacy Database Mapping)
+* **Prohibición Absoluta de Migraciones:** Queda estrictamente prohibido crear, modificar o ejecutar archivos de migración nativos de Laravel (`database/migrations/`). No se permite alterar la base de datos mediante comandos DDL automáticos o IA.
+* **Sin Renombrar la Base de Datos:** Debido a que la base de datos PostgreSQL es preexistente y compartida con el sistema monolítico legacy, **no se deben renombrar las tablas ni las columnas físicas en la base de datos**.
+* **Mapeo en Modelos Eloquent:** Los modelos de Laravel deben declarar de forma explícita las tablas y claves foráneas heredadas:
+  * *Tabla de Usuarios:* `sistema.p_lgin` (Clave primaria: `cdgo_lgin`). Modelo correspondiente: `Login` o `Usuario`.
+  * *Tabla de Compañías/Tenants:* `sistema.a_cmpnias` (Clave primaria: `cdgo_cmpnia`).
+  * *Tabla de Áreas:* `sistema.a_areas` (Clave primaria: `cdgo_area`).
+  * *Tabla de Personal:* `sistema.p_usrios` (Clave primaria: `cdgo_usrios`).
+  * *Ejemplo de Declaración:*
+    ```php
+    protected $table = 'sistema.p_lgin';
+    protected $primaryKey = 'cdgo_lgin';
+    ```
+
+## 3. Estándares de Código y Seguridad
+* **PHP 8.4+ & Strict Types:** Todos los archivos PHP nuevos o modificados deben comenzar obligatoriamente con `declare(strict_types=1);`.
+* **Arquitectura de Servicios:** Toda lógica de negocio debe residir exclusivamente en la capa de servicios (`app/Services/`). Los controladores deben ser delgados y delegar la ejecución a los servicios.
+* **Prevención de Doble Envío:** Implementar bloqueos en frontend (`disabled = true`) y candados atómicos de caché (`Cache::lock`) en el backend para operaciones transaccionales críticas.

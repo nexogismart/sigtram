@@ -1,0 +1,6 @@
+*
+!.gitignore
+!mod_gene/
+!mod_gene/mod_tram_inter/
+!mod_gene/mod_tram_inter/adjunto/
+!mod_gene/mod_tram_inter/adjunto/**

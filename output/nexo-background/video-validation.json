@@ -1,0 +1,12 @@
+{
+  "frames_checked": [
+    0,
+    1,
+    719
+  ],
+  "seam_mean_pixel_difference": 0.3610185185185185,
+  "ordinary_step_mean_pixel_difference": 0.024519675925925927,
+  "loop_seconds": 24,
+  "fps": 30,
+  "file_bytes": 3383073
+}

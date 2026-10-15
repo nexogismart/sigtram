@@ -2,11 +2,12 @@
 
 namespace App\Services\mod_a\sgl;
 
-use App\Services\mod_gene\IngresarTramiteService;
+use App\Services\mod_gene\mod_tram_inter\IngresarTramiteService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 use Throwable;
 use ZipArchive;
 
@@ -40,7 +41,7 @@ class VerRequerimientoLogisticaService
 
     public function areaUsuario(): int
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return 0;
         }
@@ -62,7 +63,7 @@ class VerRequerimientoLogisticaService
 
     public function listar(array $filtros): array
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return $this->fail('No se pudo determinar el cargo.');
         }
@@ -292,7 +293,7 @@ class VerRequerimientoLogisticaService
     public function semilla(int $tipoId): array
     {
         $areaId = $this->areaUsuario();
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $company = $this->compania();
         if ($tipoId <= 0 || $areaId <= 0) {
             return $this->fail('Tipo de documento no válido.');
@@ -758,7 +759,7 @@ class VerRequerimientoLogisticaService
         }
 
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         try {
             return DB::transaction(function () use ($id, $tramiteId, $dest, $userId, $cargoId) {
@@ -812,7 +813,7 @@ class VerRequerimientoLogisticaService
         }
 
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $areaDest = (int) ($cab->cdgo_area ?? 0);
         $dest = $this->cargoJefeArea($areaDest);
         $tramiteId = (int) ($cab->cdgo_dtos_ntrnos ?? 0);
@@ -941,7 +942,7 @@ class VerRequerimientoLogisticaService
         $company = $this->compania();
         $areaId = $this->areaUsuario();
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         $anio = DB::table($this->schemaSistema . 'a_anios')
             ->where('de_anio', $anioDe)
@@ -1547,7 +1548,7 @@ class VerRequerimientoLogisticaService
 
     private function cargoRequiereFirma(): bool
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         return $cargoId > 0 && (int) DB::table($this->schemaSistema . 'p_crgos')
             ->where('cdgo_crgo', $cargoId)
@@ -1647,7 +1648,7 @@ class VerRequerimientoLogisticaService
 
     private function compania(): int
     {
-        return (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
+        return (int) session(SessionKeys::USER_COMPANY, 0);
     }
 
     private function ok(mixed $data, string $message = ''): array

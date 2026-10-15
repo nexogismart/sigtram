@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'pdfinfo' => [
+        'binary' => env('PDFINFO_BINARY', 'pdfinfo'),
+        'timeout' => (float) env('PDFINFO_TIMEOUT', 10.0),
+    ],
+
+    'qr' => [
+        'key' => env('QR_KEY'),
+    ],
+
 ];

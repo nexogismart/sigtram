@@ -1,0 +1,93 @@
+/* Estilos del módulo Trámite Interno encapsulados en su contenedor raíz */
+#tramite-interno-app {
+    font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
+    color: #1f2937;
+}
+
+#tramite-interno-app .custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+#tramite-interno-app .custom-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+#tramite-interno-app :focus-visible {
+    outline: 2px solid #334155;
+    outline-offset: 2px;
+}
+
+#tramite-interno-app .bg-gray-955\/70,
+.bg-gray-955\/70 {
+    background-color: rgb(226 232 240 / 0.78);
+}
+
+/* Colores y dimensiones de referencia / trámite (FASE 5) */
+#tramite-interno-app .celda-ref {
+    background-color: #fef08a;
+    min-width: 220px;
+    max-width: 280px;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+#tramite-interno-app .celda-tram {
+    background-color: #f5f5dc;
+    min-width: 200px;
+    max-width: 260px;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+#tramite-interno-app .celda-tram-texto {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+}
+
+#tramite-interno-app .celda-ref-texto {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+}
+
+#tramite-interno-app .celda-fecha {
+    white-space: nowrap;
+    min-width: 130px;
+}
+
+#tramite-interno-app .fila-alt {
+    background-color: #f8fafc;
+}
+
+#tramite-interno-app .fila-hover:hover {
+    background-color: #f8fafc !important;
+}
+
+/* Columna de observaciones con ancho controlado y truncamiento en una sola línea */
+#tramite-interno-app .celda-observaciones {
+    min-width: 200px;
+    max-width: 320px;
+    width: auto;
+}
+
+#tramite-interno-app .celda-observaciones-texto {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 320px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+

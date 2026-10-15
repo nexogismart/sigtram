@@ -3,10 +3,17 @@
 .env
 .env.backup
 .env.production
+.env.*
+env
+.env.docker
 .phpactor.json
 .phpunit.result.cache
 /.codex
 /.cursor/
+/.gemini/
+/.gentle-ai/
+/.gga
+/.agents
 /.idea
 /.nova
 /.phpunit.cache
@@ -19,11 +26,20 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
 vendor/_laravel_ide/
 _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
 /vendor
-# Configuración local de Docker (contiene credenciales)
-.env.docker
+
+# Scripts y auditorías locales temporales
+/scratch/
+
+# Repositorios y herramientas anidadas
+/docs/gentle-ai/
+

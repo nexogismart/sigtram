@@ -1,0 +1,103 @@
+/* Estilos del módulo Trámite Externo encapsulados en su contenedor raíz */
+#tramite-externo-app {
+    font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
+    color: #1f2937;
+}
+
+#tramite-externo-app [x-cloak] {
+    display: none !important;
+}
+
+#tramite-externo-app .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+#tramite-externo-app .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+#tramite-externo-app :focus-visible {
+    outline: 2px solid #334155;
+    outline-offset: 2px;
+}
+
+#tramite-externo-app .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(241 245 249 / 0.88);
+    backdrop-filter: blur(8px);
+}
+
+#tramite-externo-app .bg-gray-955\/70,
+.bg-gray-955\/70 {
+    background-color: rgb(226 232 240 / 0.78);
+}
+
+#tramite-externo-app .nav-active {
+    background-color: #1e293b;
+    color: #fff;
+}
+
+#tramite-externo-app .nav-idle {
+    color: #4b5563;
+}
+
+#tramite-externo-app .nav-idle:hover {
+    background-color: #f8fafc;
+}
+
+/* Ajustes visuales de tabla externa (FASE 7) */
+#tramite-externo-app .celda-expediente-ext {
+    min-width: 140px;
+    max-width: 180px;
+    white-space: nowrap;
+}
+
+#tramite-externo-app .celda-razon-social-ext {
+    min-width: 300px;
+    max-width: 420px;
+}
+
+#tramite-externo-app .celda-razon-social-texto {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+}
+
+#tramite-externo-app .celda-fecha-ext {
+    white-space: nowrap;
+    min-width: 150px;
+}
+
+#tramite-externo-app .celda-observaciones-ext {
+    min-width: 220px;
+    max-width: 340px;
+}
+
+#tramite-externo-app .celda-observaciones-texto-ext {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+}
+
+#tramite-externo-app .field-error {
+    border-color: #f87171 !important;
+    background-color: #fef2f2 !important;
+}
+

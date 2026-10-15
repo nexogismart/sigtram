@@ -20,7 +20,7 @@ return [
     'proveedor' => env('WHATSAPP_PROVEEDOR', 'whapi'),
 
     // Credenciales de acceso a la API externa
-    'token' => env('WHATSAPP_TOKEN', 'bheB4JTJVawX1ajhOTqDugZwTuW1TGTQ'),
+    'token' => env('WHATSAPP_TOKEN', ''),
     'endpoint' => env('WHATSAPP_ENDPOINT', 'https://gate.whapi.cloud'),
 
     // Difusión automática (Broadcasting) para supervisores

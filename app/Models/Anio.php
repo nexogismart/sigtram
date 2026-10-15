@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $cdgo_anio
+ * @property int|string $de_anio
+ * @property string $dc_anio
+ * @property int $cdgo_cmpnia
+ */
 class Anio extends Model
 {
     public $incrementing = true;

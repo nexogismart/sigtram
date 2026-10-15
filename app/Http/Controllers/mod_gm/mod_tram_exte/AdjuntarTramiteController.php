@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\mod_gm\mod_tram_exte\AdjuntarTramiteUploadRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Support\SessionKeys;
 
 /**
  * Equivalente a segi_adjuntar.php
@@ -15,11 +18,11 @@ use Illuminate\Support\Facades\Storage;
  */
 class AdjuntarTramiteController extends Controller
 {
-    private string $schema;
+    private TramiteExternoRepositoryInterface $tramiteRepo;
 
-    public function __construct()
+    public function __construct(TramiteExternoRepositoryInterface $tramiteRepo)
     {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+        $this->tramiteRepo = $tramiteRepo;
     }
 
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
@@ -39,50 +42,19 @@ class AdjuntarTramiteController extends Controller
         $fecha = trim((string) $request->input('fecha', ''));
         $pagina = max(1, (int) $request->input('pagina', 1));
         $tamPag = 15;
+        $cmpnia = (int) session(SessionKeys::USER_COMPANY, 0);
 
-        $query = $this->baseQuery();
-
-        $allowed = [
-            'p_dto_trmtes.nu_expe_todo',
-            'a_areas.de_area',
-            'p_usrios.no_crto',
-            'a_tpo_trmtes.dc_tpo_trmte',
-            'p_dto_trmtes.de_obse_todo',
-            'p_usrios_1.no_crto',
+        $filtros = [
+            'criterio' => $criterio,
+            'd1' => $d1,
+            'fecha' => $fecha,
         ];
 
-        if ($criterio !== '' && in_array($d1, $allowed, true)) {
-            $map = [
-                'p_dto_trmtes.nu_expe_todo' => 'p_dto_trmtes.nu_expe_todo',
-                'a_areas.de_area' => 'a_areas.de_area',
-                'p_usrios.no_crto' => 'p_usrios.no_crto',
-                'a_tpo_trmtes.dc_tpo_trmte' => 'a_tpo_trmtes.dc_tpo_trmte',
-                'p_dto_trmtes.de_obse_todo' => 'p_dto_trmtes.de_obse_todo',
-                'p_usrios_1.no_crto' => 'p_usrios_1.no_crto',
-            ];
-            $col = $map[$d1];
-            $query->where($col, 'ILIKE', '%' . $criterio . '%');
-        }
-
-        if ($fecha !== '') {
-            try {
-                $f = Carbon::createFromFormat('d/m/Y', $fecha)->format('Y-m-d');
-                $query->whereBetween('p_dto_trmtes.fe_ingr_trmte', [$f . ' 00:00:00', $f . ' 23:59:59']);
-            } catch (\Exception $e) {
-                // ignore invalid date
-            }
-        }
-
-        $total = (clone $query)->count();
-        $numPags = max(1, (int) ceil($total / $tamPag));
-        $pagina = min($pagina, $numPags);
-        $offset = ($pagina - 1) * $tamPag;
-
-        $rows = $query
-            ->orderByDesc('p_dto_trmtes.cdgo_dto_trmte')
-            ->offset($offset)
-            ->limit($tamPag)
-            ->get();
+        $resultado = $this->tramiteRepo->obtenerMovimientosParaAdjuntar($filtros, $pagina, $tamPag, $cmpnia);
+        $rows = $resultado['rows'];
+        $total = $resultado['total'];
+        $pagina = $resultado['pagina'];
+        $numPags = $resultado['numPags'];
 
         foreach ($rows as $row) {
             // Antiguo: F. Entrada = fe_rcbdo_trmte (no fe_ingr_trmte)
@@ -108,12 +80,8 @@ class AdjuntarTramiteController extends Controller
         ]);
     }
 
-    public function upload(Request $request, $movimientoId)
+    public function upload(AdjuntarTramiteUploadRequest $request, $movimientoId)
     {
-        $request->validate([
-            'documento' => 'required|file|mimes:pdf,jpg,jpeg,png,zip|max:10240',
-        ]);
-
         try {
             if (! $request->hasFile('documento')) {
                 return response()->json(['success' => false, 'message' => 'No se recibió ningún archivo.'], 400);
@@ -128,9 +96,10 @@ class AdjuntarTramiteController extends Controller
                 'file' => $filename,
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al subir el archivo adjunto', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al subir el archivo: ' . $e->getMessage(),
+                'message' => 'Error al subir el archivo.',
             ], 500);
         }
     }
@@ -138,58 +107,15 @@ class AdjuntarTramiteController extends Controller
     public function detalle(Request $request)
     {
         $id = (int) $request->id;
-        $s = $this->schema;
+        $detalle = $this->tramiteRepo->obtenerDetalleMovimientoAdjuntar($id);
 
-        $movimientoBase = DB::table($s . 'r_trmtes_dcmntos')
-            ->where('cdgo_trmte_dcmnto', $id)
-            ->first();
-
-        if (! $movimientoBase) {
+        if ($detalle === null) {
             return response()->json(['success' => false, 'message' => 'Movimiento no encontrado.']);
         }
 
-        $cdgoDto = $movimientoBase->cdgo_dto_trmte;
-
-        $expediente = DB::table($s . 'p_dto_trmtes as p_dto_trmtes')
-            ->leftJoin($s . 'p_usrios as p_usrios', 'p_dto_trmtes.cdgo_usrios', '=', 'p_usrios.cdgo_usrios')
-            ->leftJoin($s . 'a_tpo_trmtes as a_tpo_trmtes', 'p_dto_trmtes.cdgo_tpo_trmte', '=', 'a_tpo_trmtes.cdgo_tpo_trmte')
-            ->select(
-                'p_dto_trmtes.nu_expe_todo',
-                'p_dto_trmtes.fe_ingr_trmte',
-                'p_dto_trmtes.de_obse_todo',
-                'p_dto_trmtes.de_obse_trmte',
-                'p_usrios.no_crto',
-                'p_usrios.nu_docu',
-                'a_tpo_trmtes.de_tpo_trmte'
-            )
-            ->where('p_dto_trmtes.cdgo_dto_trmte', $cdgoDto)
-            ->first();
-
-        $historial = DB::table($s . 'r_trmtes_dcmntos as r')
-            ->leftJoin($s . 'p_crgos as p_crgos_en', 'r.cdgo_crgo_en', '=', 'p_crgos_en.cdgo_crgo')
-            ->leftJoin($s . 'a_areas as a_areas_en', 'p_crgos_en.cdgo_area', '=', 'a_areas_en.cdgo_area')
-            ->leftJoin($s . 'p_crgos as p_crgos_sa', 'r.cdgo_crgo_sa', '=', 'p_crgos_sa.cdgo_crgo')
-            ->leftJoin($s . 'a_areas as a_areas_sa', 'p_crgos_sa.cdgo_area', '=', 'a_areas_sa.cdgo_area')
-            ->leftJoin($s . 'a_estdos_trmtes as a_estdos_trmtes', 'r.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->select(
-                'r.cdgo_trmte_dcmnto',
-                'r.fe_rcbdo_trmte as fe_trmte_dcmnto',
-                'a_areas_sa.de_area as area_origen',
-                'a_areas_en.de_area as area_destino',
-                'a_estdos_trmtes.dc_estdo_trmte as estado',
-                'r.de_obse as observacion',
-                'r.de_urls_imag'
-            )
-            ->where('r.cdgo_dto_trmte', $cdgoDto)
-            ->orderByDesc('r.cdgo_trmte_dcmnto')
-            ->get();
-
         return response()->json([
             'success' => true,
-            'data' => [
-                'expediente' => $expediente,
-                'historial' => $historial,
-            ],
+            'data' => $detalle,
         ]);
     }
 
@@ -230,44 +156,6 @@ class AdjuntarTramiteController extends Controller
                 : 'No se seleccionó ningún archivo.');
     }
 
-    private function baseQuery()
-    {
-        $s = $this->schema;
-        $cmpnia = (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
-
-        // Misma estructura que segi_adjuntar.php (INNER JOINs del SELECT principal)
-        $query = DB::table($s . 'p_dto_trmtes as p_dto_trmtes')
-            ->join($s . 'p_lgin as p_lgin', 'p_dto_trmtes.co_usua_ingr', '=', 'p_lgin.cdgo_lgin')
-            ->join($s . 'r_trmtes_dcmntos as r_trmtes_dcmntos', 'r_trmtes_dcmntos.cdgo_dto_trmte', '=', 'p_dto_trmtes.cdgo_dto_trmte')
-            ->join($s . 'p_crgos as p_crgos', 'r_trmtes_dcmntos.cdgo_crgo_en', '=', 'p_crgos.cdgo_crgo')
-            ->join($s . 'a_areas as a_areas', 'p_crgos.cdgo_area', '=', 'a_areas.cdgo_area')
-            ->join($s . 'a_estdos_trmtes as a_estdos_trmtes', 'r_trmtes_dcmntos.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->join($s . 'p_usrios as p_usrios', 'p_dto_trmtes.cdgo_usrios', '=', 'p_usrios.cdgo_usrios')
-            ->join($s . 'p_usrios as p_usrios_1', 'p_lgin.cdgo_usrios', '=', 'p_usrios_1.cdgo_usrios')
-            ->leftJoin($s . 'a_tpo_trmtes as a_tpo_trmtes', 'p_dto_trmtes.cdgo_tpo_trmte', '=', 'a_tpo_trmtes.cdgo_tpo_trmte')
-            ->select(
-                'p_dto_trmtes.cdgo_dto_trmte',
-                'p_dto_trmtes.nu_expe_todo',
-                'p_usrios.no_crto',
-                'r_trmtes_dcmntos.fe_rcbdo_trmte',
-                'a_areas.dc_area',
-                'a_areas.de_area',
-                'p_dto_trmtes.de_obse_trmte',
-                'r_trmtes_dcmntos.cdgo_trmte_dcmnto',
-                'r_trmtes_dcmntos.de_urls_imag',
-                'a_estdos_trmtes.de_estdo_trmte'
-            )
-            ->where('r_trmtes_dcmntos.cdgo_crgo_sa', '0')
-            ->whereIn('r_trmtes_dcmntos.cdgo_estdo_trmte', ['25', '5', '1'])
-            ->where('r_trmtes_dcmntos.in_esta', '1');
-
-        if ($cmpnia > 0) {
-            $query->where('p_dto_trmtes.cdgo_cmpnia', $cmpnia);
-        }
-
-        return $query;
-    }
-
     private function guardarArchivo($file, int $movimientoId): string
     {
         $extension = strtolower((string) $file->getClientOriginalExtension());
@@ -279,26 +167,12 @@ class AdjuntarTramiteController extends Controller
 
     private function actualizarMovimiento(int $movimientoId, string $filename, Request $request): void
     {
-        $s = $this->schema;
-
-        DB::table($s . 'r_trmtes_dcmntos')
-            ->where('cdgo_trmte_dcmnto', $movimientoId)
-            ->update(['de_urls_imag' => $filename]);
-
-        $idTram = (int) DB::table($s . 'r_trmtes_dcmntos')
-            ->where('cdgo_trmte_dcmnto', $movimientoId)
-            ->value('cdgo_dto_trmte');
-
-        try {
-            DB::table($s . 'p_sgmto_log')->insert([
-                'cdgo_lgin' => Auth::user()->cdgo_lgin ?? 0,
-                'de_sgto_log' => "Se asigno el expediente {$idTram}",
-                'fe_sgto_log' => now(),
-                'de_ip' => $request->ip(),
-            ]);
-        } catch (\Throwable $e) {
-            // log opcional; no bloquear adjunto
-        }
+        $this->tramiteRepo->actualizarAdjuntoMovimiento(
+            $movimientoId,
+            $filename,
+            Auth::user()->cdgo_lgin ?? 0,
+            $request->ip()
+        );
     }
 
     public function verArchivo(string $nombre)
@@ -324,3 +198,4 @@ class AdjuntarTramiteController extends Controller
         return ($parts[0] ?? '') . '-' . str_pad($mid, 8, '0', STR_PAD_LEFT);
     }
 }
+

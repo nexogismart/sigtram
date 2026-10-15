@@ -1,0 +1,15 @@
+/* Estilos para Buscar Trámite Interno */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.fila-alt {
+    background-color: #f8fafc;
+}
+.fila-hover:hover {
+    background-color: #f8fafc !important;
+}

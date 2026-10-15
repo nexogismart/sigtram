@@ -2,28 +2,19 @@
 
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Support\SessionKeys;
 
 class ListaReporAreaController extends Controller
 {
-    private string $schema;
+    private TramiteExternoRepositoryInterface $tramiteRepo;
 
-    private const CAMPOS = [
-        'p_dto_trmtes.nu_expe_todo',
-        'p_usrios.nu_docu',
-        'p_usrios.no_crto',
-        'a_docmntos_trmtes.de_docmnto_trmte',
-        'h_usrios_ntral.no_usrio',
-        'p_dto_trmtes.de_obse_todo',
-    ];
-
-    public function __construct()
+    public function __construct(TramiteExternoRepositoryInterface $tramiteRepo)
     {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+        $this->tramiteRepo = $tramiteRepo;
     }
 
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
@@ -34,7 +25,7 @@ class ListaReporAreaController extends Controller
             $tituloOpcion = 'Reporte de Expedientes';
         }
 
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         return view($pathVista, [
             'tituloOpcion' => $tituloOpcion,
@@ -45,7 +36,7 @@ class ListaReporAreaController extends Controller
 
     public function buscar(Request $request)
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return response()->json([
                 'status' => 'error',
@@ -66,106 +57,17 @@ class ListaReporAreaController extends Controller
 
         $perPage = 37;
         $page = max(1, (int) $request->input('page', 1));
-        $query = $this->queryBase($request, $cargoId, $bandeja);
-        $total = (clone $query)->count();
-        $lastPage = max(1, (int) ceil($total / $perPage));
-        $page = min($page, $lastPage);
+        $company = (int) session(SessionKeys::USER_COMPANY, 0);
 
-        $rows = $query
-            ->orderByDesc('r.fe_rcbdo_trmte')
-            ->offset(($page - 1) * $perPage)
-            ->limit($perPage)
-            ->get();
+        $res = $this->tramiteRepo->buscarReporteArea($request->all(), $cargoId, $bandeja, $page, $perPage, $company);
 
         return response()->json([
             'status' => 'success',
-            'data' => $rows->map(fn ($row) => $this->mapRow($row))->values(),
-            'current_page' => $page,
-            'last_page' => $lastPage,
-            'total' => $total,
+            'data' => collect($res['rows'])->map(fn ($row) => $this->mapRow((object) $row))->values(),
+            'current_page' => $res['current_page'],
+            'last_page' => $res['last_page'],
+            'total' => $res['total'],
         ]);
-    }
-
-    private function queryBase(Request $request, int $cargoId, string $bandeja)
-    {
-        $s = $this->schema;
-        $company = (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
-
-        $query = DB::table($s . 'r_trmtes_dcmntos as r')
-            ->leftJoin($s . 'p_lgin as l', 'r.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->leftJoin($s . 'h_usrios_ntral as h_usrios_ntral', 'l.cdgo_usrios', '=', 'h_usrios_ntral.cdgo_usrios')
-            ->join($s . 'p_dto_trmtes as p', 'r.cdgo_dto_trmte', '=', 'p.cdgo_dto_trmte')
-            ->join($s . 'p_usrios as p_usrios', 'p.cdgo_usrios', '=', 'p_usrios.cdgo_usrios')
-            ->leftJoin($s . 'a_docmntos_trmtes as a_docmntos_trmtes', 'p.cdgo_docmnto_trmte', '=', 'a_docmntos_trmtes.cdgo_docmnto_trmte')
-            ->join($s . 'a_estdos_trmtes as a_estdos_trmtes', 'r.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->select([
-                'p.cdgo_dto_trmte',
-                'p.nu_expe_todo',
-                'p.nu_foli_trmte',
-                'r.fe_rcbdo_trmte',
-                'p.in_sile_admi',
-                'p_usrios.no_crto',
-                'p.de_obse_trmte',
-                DB::raw('COALESCE(h_usrios_ntral.no_usrio, l.de_lgin) as usuario'),
-                'a_docmntos_trmtes.de_docmnto_trmte',
-            ]);
-
-        if ($company > 0) {
-            $query->where('p.cdgo_cmpnia', $company);
-        }
-
-        if ($bandeja === '2') {
-            $query->where('r.cdgo_crgo_sa', $cargoId)
-                ->where('r.cdgo_crgo_en', '<>', $cargoId);
-        } elseif ($bandeja === '3') {
-            $query->where('r.cdgo_crgo_sa', $cargoId)
-                ->where('r.cdgo_crgo_en', $cargoId)
-                ->where('a_estdos_trmtes.cdgo_estdo_trmte', '3');
-        } else {
-            $query->where('r.cdgo_crgo_sa', $cargoId)
-                ->where('r.cdgo_crgo_en', $cargoId)
-                ->where('a_estdos_trmtes.cdgo_estdo_trmte', '2');
-        }
-
-        $modo = (string) $request->input('modo', 'generico');
-        if ($modo === 'fechas') {
-            $this->aplicarRango($query, $request->input('desde'), $request->input('hasta'));
-        } else {
-            $palabra = trim((string) $request->input('palabra', ''));
-            $campo = (string) $request->input('campo', 'p_dto_trmtes.nu_expe_todo');
-            if ($palabra !== '') {
-                if (! in_array($campo, self::CAMPOS, true)) {
-                    $campo = 'p_dto_trmtes.nu_expe_todo';
-                }
-                $col = $this->aliasCampo($campo);
-                $query->whereRaw("UPPER({$col}) LIKE UPPER(?)", ['%' . $palabra . '%']);
-            }
-            $this->aplicarRango($query, $request->input('fecha'), $request->input('fecha'));
-        }
-
-        return $query;
-    }
-
-    private function aplicarRango($query, $desde, $hasta): void
-    {
-        $d = $this->normalizarFecha($desde);
-        $h = $this->normalizarFecha($hasta);
-        if ($d && $h) {
-            $query->whereRaw('r.fe_rcbdo_trmte >= ? AND r.fe_rcbdo_trmte <= (CAST(? AS date) + 1)', [$d, $h]);
-        }
-    }
-
-    private function aliasCampo(string $campo): string
-    {
-        return match ($campo) {
-            'p_dto_trmtes.nu_expe_todo' => 'p.nu_expe_todo',
-            'p_usrios.nu_docu' => 'p_usrios.nu_docu',
-            'p_usrios.no_crto' => 'p_usrios.no_crto',
-            'a_docmntos_trmtes.de_docmnto_trmte' => 'a_docmntos_trmtes.de_docmnto_trmte',
-            'h_usrios_ntral.no_usrio' => 'h_usrios_ntral.no_usrio',
-            'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-            default => 'p.nu_expe_todo',
-        };
     }
 
     private function mapRow(object $row): array
@@ -199,22 +101,5 @@ class ListaReporAreaController extends Controller
         }
 
         return $numero;
-    }
-
-    private function normalizarFecha($valor): ?string
-    {
-        $valor = trim((string) $valor);
-        if ($valor === '') {
-            return null;
-        }
-        try {
-            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $valor)) {
-                return Carbon::createFromFormat('d/m/Y', $valor)->format('Y-m-d');
-            }
-
-            return Carbon::parse($valor)->format('Y-m-d');
-        } catch (\Throwable $e) {
-            return null;
-        }
     }
 }

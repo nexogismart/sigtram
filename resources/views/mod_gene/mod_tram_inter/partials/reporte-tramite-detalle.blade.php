@@ -1,25 +1,4 @@
-﻿{{-- Detalle AJAX — equivalente a ajax_reporte_area.php --}}
-<style>
-    .det-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
-    .det-tbl thead th {
-        padding: .45rem .55rem; background: #f8fafc; color: #0f172a;
-        font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
-        border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap;
-    }
-    .det-tbl thead th.c { text-align: center; }
-    .det-tbl tbody td {
-        padding: .45rem .55rem; border-bottom: 1px solid #e6ecf2; vertical-align: middle;
-        color: #334155;
-    }
-    .det-tbl tbody tr:hover { background: #f8fafc; }
-    .det-tbl .c { text-align: center; }
-    .det-tbl .tipo { font-weight: 800; color: #0f172a; }
-    .det-tbl .tram { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: #0f172a; }
-    .det-tbl .muted { color: #64748b; font-weight: 600; }
-    .det-tbl a { color: #334155; text-decoration: none; }
-    .det-tbl a:hover { color: #0f172a; }
-    .det-empty { padding: 1.25rem; text-align: center; color: #94a3b8; font-weight: 700; }
-</style>
+{{-- Detalle AJAX — equivalente a ajax_reporte_area.php --}}
 <div class="overflow-x-auto" style="overflow-x:auto">
     <table class="det-tbl">
         <thead>
@@ -47,13 +26,13 @@
                 <td title="{{ $t->de_obser }}">{{ $t->de_obser_corto }}</td>
                 <td class="c">
                     @if (!empty($t->de_urls_adjnto))
-                        <a href="/mod_gene/mod_tram_inter/descargar?{{ str_contains((string) $t->de_urls_adjnto, '/') ? 'path' : 'nom_archivo' }}={{ urlencode($t->de_urls_adjnto) }}"
+                        <a href="{{ route('mod_tram_inter.descargar', ['id' => $t->cdgo_dtos_ntrnos]) }}"
                            target="_blank" title="Adjunto"><i class="fas fa-paperclip"></i></a>
                     @endif
                 </td>
                 <td class="c">
                     <a href="/Presentacion/busca_vauche.php?id_tram={{ $t->cdgo_dtos_ntrnos }}"
-                       onclick="window.open(this.href, this.target, 'scrollbars=auto,width=470,height=310'); return false;"
+                       data-action="popup" data-width="470" data-height="310"
                        target="_blank" title="Ver"><i class="fas fa-eye"></i></a>
                 </td>
             </tr>

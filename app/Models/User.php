@@ -20,6 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $in_esta
  * @property int $cdgo_prfle
  * @property int $cdgo_usrios
+ * @property int|null $cdgo_cmpnia
  * @property-read \App\Models\PUsrrio|null $usrio
  */
 #[Fillable([
@@ -78,7 +79,8 @@ class User extends Authenticatable
     {
         $this->loadMissing('usrio');
 
-        $n = $this->usrio?->no_crto ?? null;
+        $usrio = $this->usrio;
+        $n = $usrio instanceof PUsrrio ? $usrio->no_crto : null;
         if (is_string($n) && $n !== '') {
             return $n;
         }

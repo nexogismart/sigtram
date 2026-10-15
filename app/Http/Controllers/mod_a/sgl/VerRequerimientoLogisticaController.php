@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Core\DocumentGeneratorService;
 use App\Services\mod_a\sgl\VerRequerimientoLogisticaService;
-use App\Services\mod_gene\IngresarTramiteService;
+use App\Services\mod_gene\mod_tram_inter\IngresarTramiteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

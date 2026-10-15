@@ -2,27 +2,21 @@
 
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 
 class SegiVerExpediController extends Controller
 {
-    private string $schema;
+    private TramiteExternoRepositoryInterface $tramiteRepo;
 
-    private const CAMPOS = [
-        'p_dto_trmtes.nu_expe_todo',
-        'p_usrios.no_crto',
-        'a_tpo_trmtes.dc_tpo_trmte',
-        'p_dto_trmtes.de_obse_todo',
-    ];
-
-    public function __construct()
+    public function __construct(TramiteExternoRepositoryInterface $tramiteRepo)
     {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+        $this->tramiteRepo = $tramiteRepo;
     }
 
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
@@ -33,16 +27,18 @@ class SegiVerExpediController extends Controller
             $tituloOpcion = 'Seguimiento del expediente';
         }
 
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
+
         return view($pathVista, [
             'tituloOpcion' => $tituloOpcion,
             'pathVista' => $pathVista,
-            'estados' => $this->estadosDelArea(),
+            'estados' => $this->tramiteRepo->obtenerEstadosDelAreaSeguimiento($cargoId),
         ]);
     }
 
     public function buscar(Request $request)
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return response()->json([
                 'status' => 'error',
@@ -52,24 +48,17 @@ class SegiVerExpediController extends Controller
 
         $perPage = 6;
         $page = max(1, (int) $request->input('page', 1));
-        $query = $this->queryBase($request, $cargoId);
-        $total = (clone $query)->count();
-        $lastPage = max(1, (int) ceil($total / $perPage));
-        $page = min($page, $lastPage);
+        $company = (int) session(SessionKeys::USER_COMPANY, 0);
 
-        $festivos = $this->festivos();
-        $rows = $query
-            ->orderByDesc('p.cdgo_dto_trmte')
-            ->offset(($page - 1) * $perPage)
-            ->limit($perPage)
-            ->get();
+        $res = $this->tramiteRepo->buscarSeguimientoExpedientes($request->all(), $cargoId, $page, $perPage, $company);
+        $festivos = $this->tramiteRepo->obtenerDiasFestivos();
 
         return response()->json([
             'status' => 'success',
-            'data' => $rows->map(fn ($row) => $this->mapRow($row, $festivos))->values(),
-            'current_page' => $page,
-            'last_page' => $lastPage,
-            'total' => $total,
+            'data' => collect($res['rows'])->map(fn ($row) => $this->mapRow((object) $row, $festivos))->values(),
+            'current_page' => $res['current_page'],
+            'last_page' => $res['last_page'],
+            'total' => $res['total'],
         ]);
     }
 
@@ -84,46 +73,13 @@ class SegiVerExpediController extends Controller
             ]);
         }
 
-        $s = $this->schema;
-        $company = (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
+        $company = (int) session(SessionKeys::USER_COMPANY, 0);
+        $res = $this->tramiteRepo->obtenerHistoricoSeguimiento($id, $company);
+
         $ahora = Carbon::now('America/Lima')->format('Y-m-d H:i:s');
-
-        $expediente = (string) DB::table($s . 'p_dto_trmtes')
-            ->where('cdgo_dto_trmte', $id)
-            ->value('nu_expe_todo');
-
-        $query = DB::table($s . 'r_trmtes_dcmntos as r')
-            ->join($s . 'a_estdos_trmtes as e', 'r.cdgo_estdo_trmte', '=', 'e.cdgo_estdo_trmte')
-            ->join($s . 'p_dto_trmtes as p', 'r.cdgo_dto_trmte', '=', 'p.cdgo_dto_trmte')
-            ->join($s . 'p_crgos as c', 'r.cdgo_crgo_en', '=', 'c.cdgo_crgo')
-            ->join($s . 'a_areas as a', 'c.cdgo_area', '=', 'a.cdgo_area')
-            ->leftJoin($s . 'p_lgin as l', 'r.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->leftJoin($s . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select([
-                'r.cdgo_trmte_dcmnto',
-                'r.fe_rcbdo_trmte',
-                'e.dc_estdo_trmte',
-                'e.de_estdo_trmte',
-                'e.cdgo_estdo_trmte',
-                'r.de_obse',
-                'a.de_area',
-                'r.de_urls_imag',
-                'p.fe_ingr_trmte',
-                'r.in_esta',
-                'r.cdgo_crgo_sa',
-                'r.cdgo_crgo_en',
-                'p.in_docu_trmte',
-                DB::raw('COALESCE(u.no_crto, l.de_lgin) as usuario'),
-            ])
-            ->where('p.cdgo_dto_trmte', $id)
-            ->orderByDesc('r.cdgo_trmte_dcmnto');
-
-        if ($company > 0) {
-            $query->where('p.cdgo_cmpnia', $company);
-        }
-
-        $rows = $query->get();
+        $rows = $res['rows'];
         $out = [];
+
         foreach ($rows as $i => $row) {
             $prev = $i > 0 ? $rows[$i - 1] : null;
             $estadoNom = (string) ($row->de_estdo_trmte ?: $row->dc_estdo_trmte);
@@ -160,7 +116,7 @@ class SegiVerExpediController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'expediente' => $expediente,
+            'expediente' => $res['expediente'],
             'data' => $out,
         ]);
     }
@@ -175,7 +131,7 @@ class SegiVerExpediController extends Controller
             'observacion' => 'nullable|string',
         ]);
 
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         if ($cargoId <= 0 || $userId <= 0) {
             return response()->json([
@@ -206,132 +162,33 @@ class SegiVerExpediController extends Controller
             ], 422);
         }
 
-        $s = $this->schema;
-        $estadoActual = (string) DB::table($s . 'r_trmtes_dcmntos')
-            ->where('cdgo_trmte_dcmnto', $doc)
-            ->value('cdgo_estdo_trmte');
+        $company = (int) session(SessionKeys::USER_COMPANY, 0);
 
-        if ($estadoActual === '' || $estadoActual === $esta) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'El estado ya no coincide con el movimiento actual.',
-            ], 422);
-        }
-
-        DB::beginTransaction();
         try {
-            if (in_array($esta, ['5', '17'], true)) {
-                $this->iniciarLapsoSilencio($idTram);
-            }
-            if ($esta === '7') {
-                $this->cerrarLapsoSilencio($idTram);
-            }
-            if (in_array($estAct, ['5', '17'], true)) {
-                $this->cerrarLapsoSilencio($idTram);
-            }
-
-            DB::table($s . 'r_trmtes_dcmntos')
-                ->where('cdgo_dto_trmte', $idTram)
-                ->update(['in_esta' => '0']);
-
-            $inEsta = $esta === '3' ? '0' : '1';
-            DB::table($s . 'r_trmtes_dcmntos')->insert([
-                'cdgo_crgo_sa' => $cargoId,
-                'cdgo_crgo_en' => $cargoId,
-                'cdgo_dto_trmte' => $idTram,
-                'cdgo_estdo_trmte' => $esta,
-                'fe_rcbdo_trmte' => now(),
-                'de_obse' => mb_strtoupper($observacion, 'UTF-8'),
-                'in_esta' => $inEsta,
-                'de_urls_imag' => '',
-                'cdgo_lgin' => $userId,
-                'nu_foli_anex' => null,
-            ]);
-
-            try {
-                DB::table($s . 'p_sgmto_log')->insert([
-                    'cdgo_lgin' => $userId,
-                    'de_sgto_log' => mb_strtoupper($observacion, 'UTF-8'),
-                    'fe_sgto_log' => now(),
-                    'de_ip' => $request->ip(),
-                ]);
-            } catch (\Throwable $e) {
-                Log::warning('No se pudo registrar p_sgmto_log al cambiar estado', ['error' => $e->getMessage()]);
-            }
-
-            DB::commit();
+            $this->tramiteRepo->cambiarEstadoSeguimiento(
+                $idTram,
+                $doc,
+                $esta,
+                $estAct,
+                $observacion,
+                $cargoId,
+                $userId,
+                $request->ip() ?: '',
+                $company
+            );
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'El estado se actualizó correctamente.',
             ]);
         } catch (\Throwable $e) {
-            DB::rollBack();
             Log::error('Error al cambiar estado en segi_verexpedi', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'No se pudo cambiar el estado.',
+                'message' => $e->getMessage() ?: 'No se pudo cambiar el estado.',
             ], 500);
         }
-    }
-
-    private function queryBase(Request $request, int $cargoId)
-    {
-        $s = $this->schema;
-        $company = (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
-
-        $query = DB::table($s . 'p_dto_trmtes as p')
-            ->join($s . 'p_usrios as p_usrios', 'p.cdgo_usrios', '=', 'p_usrios.cdgo_usrios')
-            ->join($s . 'r_trmtes_dcmntos as r', 'r.cdgo_dto_trmte', '=', 'p.cdgo_dto_trmte')
-            ->join($s . 'a_estdos_trmtes as a_estdos_trmtes', 'r.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->leftJoin($s . 'a_tpo_trmtes as a_tpo_trmtes', 'p.cdgo_tpo_trmte', '=', 'a_tpo_trmtes.cdgo_tpo_trmte')
-            ->leftJoin($s . 'a_docmntos_trmtes as a_docmntos_trmtes', 'p.cdgo_docmnto_trmte', '=', 'a_docmntos_trmtes.cdgo_docmnto_trmte')
-            ->select([
-                'p.cdgo_dto_trmte',
-                'p.nu_expe_todo',
-                'p_usrios.no_crto',
-                'r.fe_rcbdo_trmte',
-                'a_estdos_trmtes.dc_estdo_trmte',
-                'p.de_obse_trmte',
-                'p.in_encu_tram',
-                'p.fe_ingr_trmte',
-                'p.cdgo_docmnto_trmte',
-                'r.cdgo_trmte_dcmnto',
-                'a_estdos_trmtes.cdgo_estdo_trmte',
-                'a_docmntos_trmtes.nu_tiem_sile',
-            ])
-            ->where('r.cdgo_crgo_en', $cargoId)
-            ->where('r.cdgo_crgo_sa', $cargoId)
-            ->where('r.in_esta', '1')
-            ->where('r.cdgo_estdo_trmte', '<>', '3');
-
-        if ($company > 0) {
-            $query->where('p.cdgo_cmpnia', $company);
-        }
-
-        $palabra = trim((string) $request->input('palabra', ''));
-        if ($palabra !== '') {
-            $campo = (string) $request->input('campo', 'p_dto_trmtes.nu_expe_todo');
-            if (! in_array($campo, self::CAMPOS, true)) {
-                $campo = 'p_dto_trmtes.nu_expe_todo';
-            }
-            $col = $this->aliasCampo($campo);
-            $query->whereRaw("UPPER({$col}) LIKE UPPER(?)", ['%' . $palabra . '%']);
-        }
-
-        return $query;
-    }
-
-    private function aliasCampo(string $campo): string
-    {
-        return match ($campo) {
-            'p_dto_trmtes.nu_expe_todo' => 'p.nu_expe_todo',
-            'p_usrios.no_crto' => 'p_usrios.no_crto',
-            'a_tpo_trmtes.dc_tpo_trmte' => 'a_tpo_trmtes.dc_tpo_trmte',
-            'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-            default => 'p.nu_expe_todo',
-        };
     }
 
     private function mapRow(object $row, array $festivos): array
@@ -358,82 +215,6 @@ class SegiVerExpediController extends Controller
         ];
     }
 
-    private function estadosDelArea(): array
-    {
-        try {
-            $cargoId = (int) session('sigtram_cargo_id', 0);
-            if ($cargoId <= 0) {
-                return [];
-            }
-
-            $areaId = (int) DB::table($this->schema . 'p_crgos')
-                ->where('cdgo_crgo', $cargoId)
-                ->value('cdgo_area');
-
-            if ($areaId <= 0) {
-                return [];
-            }
-
-            return DB::table($this->schema . 'r_stad_aras as r')
-                ->join($this->schema . 'a_estdos_trmtes as e', 'r.cdgo_estdo_trmte', '=', 'e.cdgo_estdo_trmte')
-                ->where('r.cdgo_area', $areaId)
-                ->orderBy('e.dc_estdo_trmte')
-                ->get(['e.cdgo_estdo_trmte', 'e.dc_estdo_trmte'])
-                ->map(fn ($row) => [
-                    'id' => (string) $row->cdgo_estdo_trmte,
-                    'nombre' => (string) $row->dc_estdo_trmte,
-                ])
-                ->values()
-                ->all();
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }
-
-    private function iniciarLapsoSilencio(int $idTram): void
-    {
-        try {
-            $s = $this->schema;
-            $row = DB::table($s . 'h_slncio')->where('cdgo_dto_trmte', $idTram)->first();
-            if ($row) {
-                DB::table($s . 'h_slncio')
-                    ->where('cdgo_dto_trmte', $idTram)
-                    ->update(['fe_inic' => now(), 'in_esta' => '1']);
-            } else {
-                DB::table($s . 'h_slncio')->insert([
-                    'cdgo_dto_trmte' => $idTram,
-                    'nu_dias' => null,
-                    'fe_inic' => now(),
-                    'in_esta' => '1',
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('No se pudo actualizar h_slncio (inicio)', ['error' => $e->getMessage()]);
-        }
-    }
-
-    private function cerrarLapsoSilencio(int $idTram): void
-    {
-        try {
-            $s = $this->schema;
-            $row = DB::table($s . 'h_slncio')->where('cdgo_dto_trmte', $idTram)->first();
-            if (! $row || (string) $row->in_esta !== '1' || ! $row->fe_inic) {
-                return;
-            }
-
-            $dias = (int) round((Carbon::today()->getTimestamp() - Carbon::parse($row->fe_inic)->startOfDay()->getTimestamp()) / 86400);
-            if ($dias < 0) {
-                $dias = 0;
-            }
-            $total = $dias + (int) ($row->nu_dias ?? 0);
-            DB::table($s . 'h_slncio')
-                ->where('cdgo_dto_trmte', $idTram)
-                ->update(['nu_dias' => $total, 'in_esta' => '2']);
-        } catch (\Throwable $e) {
-            Log::warning('No se pudo actualizar h_slncio (cierre)', ['error' => $e->getMessage()]);
-        }
-    }
-
     private function diasRestantesSilencio($fechaIngreso, int $silen, array $festivos): ?int
     {
         if ($silen <= 0 || ! $fechaIngreso) {
@@ -454,30 +235,6 @@ class SegiVerExpediController extends Controller
         $hoyTs = Carbon::today()->getTimestamp();
 
         return (int) round(($limiteTs - $hoyTs) / 86400);
-    }
-
-    /** @return array<string, bool> */
-    private function festivos(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-        $cache = [];
-        try {
-            $rows = DB::table($this->schema . 'a_dias_fstvos')
-                ->where('in_esta', '1')
-                ->get(['fe_dias_fstvos']);
-            foreach ($rows as $row) {
-                if ($row->fe_dias_fstvos) {
-                    $cache[Carbon::parse($row->fe_dias_fstvos)->toDateString()] = true;
-                }
-            }
-        } catch (\Throwable $e) {
-            $cache = [];
-        }
-
-        return $cache;
     }
 
     private function tiempoEstimado(string $comien, string $hoy): string

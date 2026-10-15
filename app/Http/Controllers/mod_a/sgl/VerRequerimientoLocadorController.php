@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Services\Core\DocumentGeneratorService;
 use App\Services\mod_a\sgl\PagoProveedoresIndexService;
 use App\Services\mod_a\sgl\VerRequerimientoLocadorService;
-use App\Services\mod_gene\IngresarTramiteService;
+use App\Services\mod_gene\mod_tram_inter\IngresarTramiteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

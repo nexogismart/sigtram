@@ -160,6 +160,7 @@ class SecurityCore implements SecurityCoreInterface
             if ($hijos->has($padreId)) {
                 foreach ($hijos->get($padreId) as $hijo) {
                     $children[] = [
+                        'id' => (int) $hijo->cdgo_rle,
                         'label' => $hijo->dc_rle,
                         'url' => $this->normalizarDireccion($hijo->de_dreccon),
                         'popup' => (string) $hijo->in_popup === '1',
@@ -168,6 +169,7 @@ class SecurityCore implements SecurityCoreInterface
             }
 
             $menuItems[] = [
+                'id' => $padreId,
                 'label' => $padre->dc_rle,
                 'url' => $this->normalizarDireccion($padre->de_dreccon),
                 'popup' => (string) $padre->in_popup === '1',

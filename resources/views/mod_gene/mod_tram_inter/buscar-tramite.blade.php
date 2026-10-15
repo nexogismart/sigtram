@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -16,8 +16,10 @@
         .fila-alt { background-color: #f8fafc; }
         .fila-hover:hover { background-color: #f8fafc !important; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.buscar-tramite'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen">
+<body data-sigtram-screen="mod_gene.mod_tram_inter.buscar-tramite" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.buscar-tramite'])
 
 @php
     $f = $filtros ?? [];

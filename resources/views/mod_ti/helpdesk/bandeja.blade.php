@@ -17,8 +17,10 @@
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .ck-content { color: #374151 !important; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.helpdesk.bandeja'])
 </head>
-<body class="bg-gray-50">
+<body data-sigtram-screen="mod_ti.helpdesk.bandeja" class="sigtram-module bg-gray-50">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.helpdesk.bandeja'])
 <div class="p-4 sm:p-6 w-full max-w-7xl mx-auto">
 
     <div class="mb-4 flex justify-between items-end">

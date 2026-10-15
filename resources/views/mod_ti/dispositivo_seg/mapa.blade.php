@@ -12,8 +12,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.dispositivo_seg.mapa'])
 </head>
-<body class="pagina-mapa">
+<body data-sigtram-screen="mod_ti.dispositivo_seg.mapa" class="sigtram-module pagina-mapa">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.dispositivo_seg.mapa'])
     <header class="mapa-header">
         <div class="mapa-header__titulo">
             <p class="mapa-header__eyebrow">Tecnologías de la Información</p>

@@ -35,8 +35,10 @@
             }
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gdu.band_consulta_gdu'])
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen">
+<body data-sigtram-screen="mod_gdu.band_consulta_gdu" class="sigtram-module bg-slate-50 text-slate-800 antialiased font-sans min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gdu.band_consulta_gdu'])
 
     <main
         class="p-4 sm:p-6 w-full max-w-[1600px] mx-auto min-h-screen flex flex-col"

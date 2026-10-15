@@ -115,8 +115,10 @@
         .sin-req { color: var(--muted); padding: 4px 8px; }
         input[type="checkbox"] { cursor: pointer; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.busca_expedi'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.busca_expedi" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.busca_expedi'])
 @php
     $idTram = (int) $tramite->cdgo_dto_trmte;
     $tieneSilencio = (string) ($tramite->in_sile_admi ?? '') === '1';

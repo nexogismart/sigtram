@@ -12,8 +12,10 @@
     <style>
         .error-message { font-size: 12px; color: red; margin-top: 5px; display: block; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.reporte_publicidad.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.reporte_publicidad.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.reporte_publicidad.index'])
 <div class="container mt-4">
     <div class="card shadow-sm border-0">
         <div class="card-header">

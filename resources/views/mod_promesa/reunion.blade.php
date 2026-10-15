@@ -7,8 +7,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_promesa/css/app.css') }}?v=3">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_promesa.reunion'])
 </head>
-<body>
+<body data-sigtram-screen="mod_promesa.reunion" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_promesa.reunion'])
 <div class="popup-wrap">
     <form id="frmReunion" onsubmit="return false;" enctype="multipart/form-data">
         <table class="tablebordecero">

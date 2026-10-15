@@ -16,8 +16,10 @@
         .empty { text-align: center; color: #94a3b8; padding: 2rem; }
         a { color: #334155; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.partials.v2_lista_reporte_area_cargo_historico'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.partials.v2_lista_reporte_area_cargo_historico" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.partials.v2_lista_reporte_area_cargo_historico'])
     <h1>Histórico del Expediente N° {{ $expediente }}</h1>
     <table>
         <thead>

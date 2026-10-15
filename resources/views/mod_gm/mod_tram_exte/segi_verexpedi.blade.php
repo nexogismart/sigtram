@@ -23,8 +23,10 @@
         .fila-1 { background: #fff; }
         .fila-2 { background: #f3f4f6; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="segiVerExpedi()" x-init="init()">
+<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_verexpedi" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="segiVerExpedi()" x-init="init()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi'])
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"

@@ -27,8 +27,10 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_seguridad.cambiar-contraseña'])
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" x-data="passwordManager()">
+<body data-sigtram-screen="mod_seguridad.cambiar-contraseña" class="sigtram-module bg-gray-50 text-gray-900 antialiased" x-data="passwordManager()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_seguridad.cambiar-contraseña'])
 
     <main class="p-4 sm:p-6 w-full max-w-lg mx-auto min-h-screen flex flex-col justify-center">
         

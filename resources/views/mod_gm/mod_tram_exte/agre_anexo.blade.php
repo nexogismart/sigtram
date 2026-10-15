@@ -66,8 +66,10 @@
         .Button.secondary:hover { color: var(--ink); }
         .error { color: #dc2626; font-size: 11px; margin-top: 2px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.agre_anexo'])
 </head>
-<body onload="document.form1.TA1.focus();">
+<body data-sigtram-screen="mod_gm.mod_tram_exte.agre_anexo" onload="document.form1.TA1.focus();" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.agre_anexo'])
 <div class="wrap">
 <form name="form1" id="form1" action="{{ $storeUrl }}" method="post" enctype="multipart/form-data">
     @csrf

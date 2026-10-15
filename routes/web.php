@@ -93,6 +93,8 @@ Route::get('/mod_gp/omaped/archivo-privado', [OmapedController::class, 'archivoP
 Route::get('/mod_gp/omaped/qr-imagen/{token}', [OmapedController::class, 'qrImagen'])->name('omaped.qr_imagen');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/perfil/foto', \App\Http\Controllers\ProfilePhotoController::class)
+        ->middleware('throttle:30,1')->name('perfil.foto');
     Route::get('/seleccionar-cargo', [AuthController::class, 'seleccionarCargo'])->name('seleccionar.cargo');
     Route::post('/seleccionar-cargo', [AuthController::class, 'guardarCargo'])->name('seleccionar.cargo.guardar');
     Route::get('/inicio', [AuthController::class, 'inicio'])->name('inicio');

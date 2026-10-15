@@ -11,7 +11,7 @@
             font-family: Verdana, Arial, Helvetica, sans-serif;
             font-size: 12px;
             color: #1e293b;
-            background: #fff url("{{ asset('images/logomdppcorto.jpg') }}") center / contain no-repeat;
+            background: #fff url("{{ asset('images/nexosigtram-documental-logo.png') }}") center / contain no-repeat;
             background-blend-mode: soft-light;
             min-height: 100vh;
         }
@@ -42,6 +42,7 @@
     </style>
 </head>
 <body>
+@include('components.sigtram.print-brand')
 @if (! $ok)
     <p class="msg">{{ $error ?: 'No se pudo cargar el detalle.' }}</p>
 @else

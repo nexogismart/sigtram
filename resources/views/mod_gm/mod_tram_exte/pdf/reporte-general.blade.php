@@ -15,6 +15,7 @@
     </style>
 </head>
 <body>
+@include('components.sigtram.print-brand', ['sigtramPdf' => true])
     <h1>Reporte de Expedientes Externos</h1>
     
     <div class="header-info">

@@ -341,8 +341,10 @@
         .loading { text-align: center; padding: 1rem; color: var(--faint); font-weight: 600; font-size: .78rem; }
         footer { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.25rem; text-align: center; color: var(--faint); font-size: .74rem; font-weight: 600; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_a.sgl.pago_proveedores.v2_lista_reporte_requerimientos_general'])
 </head>
-<body>
+<body data-sigtram-screen="mod_a.sgl.pago_proveedores.v2_lista_reporte_requerimientos_general" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_a.sgl.pago_proveedores.v2_lista_reporte_requerimientos_general'])
 <div class="wrap">
 
     <header class="top">
@@ -762,7 +764,7 @@
         </div>
     </div>
 
-    <footer>Sigtram · Municipalidad Distrital de Puente Piedra — {{ now()->format('Y') }}</footer>
+    <footer>SIGTRAM · Sistema de Gestión de Trámites — {{ now()->format('Y') }}</footer>
 </div>
 
 <script>

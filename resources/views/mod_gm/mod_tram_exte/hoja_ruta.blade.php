@@ -30,6 +30,7 @@
     </style>
 </head>
 <body class="text-gray-800 antialiased py-8">
+@include('components.sigtram.print-brand')
 
     
     <div class="max-w-4xl mx-auto mb-6 flex justify-end no-print">

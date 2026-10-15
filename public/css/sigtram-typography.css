@@ -1,0 +1,66 @@
+/* Shared institutional typography. Screen-only: preserve official print layouts. */
+@media screen {
+ body.sigtram-login, body.area-workspace, body.sigtram-module {
+  font-family:'Segoe UI',Arial,sans-serif;
+  font-size:14px;
+  font-weight:400;
+  line-height:1.55;
+ }
+ .area-workspace { --muted:#506479; }
+ :root[data-theme=dark] .area-workspace { --muted:#b0c1d2; }
+ .sigtram-module { --st-muted:#486176; }
+ .sigtram-module[data-theme=dark] { --st-muted:#b0c1d2; }
+ .area-workspace :is(button,input,select,textarea),
+ .sigtram-login :is(button,input,select,textarea),
+ .sigtram-module :is(button,input,select,textarea,label,h1,h2,h3,h4,table:not([role=presentation]),.sigtram-density,.title-section h1,.num) { font-family:inherit; }
+ .area-workspace :is(h1,h2,h3),.sigtram-module :is(h1,h2,h3) { font-weight:700; letter-spacing:-.025em; }
+ .area-workspace .dock-item { font-size:14px; font-weight:600; }
+ .area-workspace .header-purpose { font-size:12px; font-weight:500; }
+ .area-workspace .profile-summary { width:175px; }
+ .area-workspace .profile-summary strong { font-size:12px; font-weight:600; }
+ .area-workspace .profile-summary > span { font-size:11px; font-weight:500; }
+ .area-workspace .workspace-intro .intro-label { font-size:13px; font-weight:500; }
+ .area-workspace .workspace-intro > div > p:last-child { font-size:14px; }
+ .area-workspace .desk-search input { font-size:14px; }
+ .area-workspace .desk-search input::placeholder { color:var(--muted); opacity:1; }
+ .area-workspace :is(.scope-label,.scope-role) { font-size:12px; font-weight:600; }
+ .area-workspace .scope-description { font-size:13px; line-height:1.6; }
+ .area-workspace .scope-action-copy strong { font-size:15px; font-weight:600; }
+ .area-workspace .scope-action-copy small { font-size:12px; }
+ .area-workspace .scope-more > span { font-size:13px; font-weight:600; }
+ .area-workspace .scope-more > small { font-size:11px; }
+ .area-workspace :is(.assigned-access > summary,.helpdesk-caption,.helpdesk-empty,.scope-empty) { font-size:13px; }
+ .area-workspace :is(.assigned-access > p,.helpdesk-link-copy small,.explorer-header p,.explorer-footer,.action-qualifier,.board-heading p,#boardCount) { font-size:12px; }
+ .area-workspace :is(.helpdesk-link-copy strong,.profile-panel > strong,.profile-panel a,.profile-panel button,.module-copy h3) { font-size:14px; font-weight:600; }
+ .area-workspace :is(.profile-panel > span,.workspace-footer) { font-size:11px; }
+ .area-workspace .module-copy p { font-size:12px; }
+ .sigtram-module :is(label,.lbl,.field-label,.field > label,legend) { font-size:13px; font-weight:600; }
+ body.sigtram-module :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) { font-size:14px; font-weight:400; }
+ .sigtram-module input::placeholder,.sigtram-module textarea::placeholder { color:var(--st-muted); opacity:1; }
+ .sigtram-module table:not([role=presentation]) { font-size:13px; }
+ .sigtram-module table:not([role=presentation]) td { font-size:13px; }
+ .sigtram-module table:not([role=presentation]) th { font-size:12px; font-weight:700; }
+ .sigtram-module :is(.btn,.Button,.btn-primary,.btn-secondary,.btn-outline-primary,.btn--primary,.btn--ghost,.sigtram-density,.sigtram-inbox-nav nav button) { font-size:13px; font-weight:600; }
+ .sigtram-module :is(p,span,small,div).text-xs { font-size:13px; }
+ .sigtram-module :is(p,span,small,div):is(.text-\[9px\],.text-\[10px\],.text-\[11px\]) { font-size:12px; }
+ .sigtram-login .field-label { font-size:14px; font-weight:600; }
+ .sigtram-login #loginForm .login-field input { font-size:15px; font-weight:400; }
+ .sigtram-login #loginForm input::placeholder { color:#52667b; opacity:1; }
+ .sigtram-login .login-product-name { font-size:13px; color:#465d73; }
+ .sigtram-login .welcome-description { font-size:14px; color:#d0dfed; }
+ .sigtram-login .document-stages { font-size:12px; font-weight:600; }
+ .sigtram-login .document-stages span { font-size:11px; color:#b9d1e5; }
+ .sigtram-login .orbital-caption { font-size:13px; color:#d0dfed; }
+ .sigtram-login .orbital-caption strong { font-size:14px; }
+ .sigtram-login .company-credit { font-size:11px; color:#b9d1e5; }
+ .sigtram-login #loginForm label:has(input[type=checkbox]) span { font-size:13px; color:#465d73; }
+ .sigtram-login .login-submit .btn-text { font-size:16px; font-weight:600; }
+ .sigtram-login .login-welcome h1 { font-weight:700; }
+ @media(max-width:1400px) { .area-workspace .dock-item { padding-inline:10px; } }
+ @media(max-width:750px) {
+  .area-workspace .dock-item { font-size:13px; }
+  .area-workspace .scope-action-copy strong { font-size:14px; }
+  .area-workspace .scope-more > span { font-size:12px; }
+  .area-workspace .desk-search input { font-size:16px; }
+ }
+}

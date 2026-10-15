@@ -9,8 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('mod_ti/reporte_publicidad_2026/css/app.css') }}?v=2">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.reporte_publicidad_2026.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.reporte_publicidad_2026.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.reporte_publicidad_2026.index'])
 <div class="container mt-4">
     <div class="card shadow-sm border-0">
         <div class="card-header d-flex justify-content-between align-items-center">

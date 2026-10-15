@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
@@ -98,8 +98,10 @@
             font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.ver_secuencial_area'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gene.mod_tram_inter.ver_secuencial_area" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.ver_secuencial_area'])
 <div class="wrap">
     <div class="top">
         <h1>Secuencial del <span>Área</span></h1>

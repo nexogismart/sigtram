@@ -14,6 +14,7 @@
     </style>
 </head>
 <body>
+@include('components.sigtram.print-brand')
     <div style="text-align: center;">
         <h2>Reporte de Bandeja: {{ strtoupper($bandeja) }}</h2>
         <p>Fecha de Impresión: {{ $fechaImpresion }}</p>

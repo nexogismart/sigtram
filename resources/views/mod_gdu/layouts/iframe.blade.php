@@ -12,8 +12,10 @@
         body { font-family: Inter, system-ui, sans-serif; }
     </style>
     @stack('styles')
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gdu.layouts.iframe'])
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased p-4">
+<body data-sigtram-screen="mod_gdu.layouts.iframe" class="sigtram-module bg-slate-50 text-slate-800 antialiased p-4">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gdu.layouts.iframe'])
     @yield('content')
     @stack('scripts')
 </body>

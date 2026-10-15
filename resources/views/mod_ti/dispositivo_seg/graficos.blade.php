@@ -11,8 +11,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.dispositivo_seg.graficos'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.dispositivo_seg.graficos" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.dispositivo_seg.graficos'])
     <main class="app">
         <header class="app__header">
             <div>

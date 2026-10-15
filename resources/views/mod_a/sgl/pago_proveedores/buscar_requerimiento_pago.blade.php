@@ -6,8 +6,10 @@
     <title>Buscar requerimiento de pago</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_a/sgl/pago_proveedores/css/app.css') }}?v=2">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_a.sgl.pago_proveedores.buscar_requerimiento_pago'])
 </head>
-<body>
+<body data-sigtram-screen="mod_a.sgl.pago_proveedores.buscar_requerimiento_pago" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_a.sgl.pago_proveedores.buscar_requerimiento_pago'])
     <main class="app">
         <div class="app__title-row">
             <h1>Buscar requerimiento de pago</h1>

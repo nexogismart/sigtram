@@ -37,8 +37,10 @@
         .wa--serenazgo { background: #128c7e; margin-top: 10px; }
         .nota { font-size: 11px; color: #777; text-align: center; margin-top: 14px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gp.omaped.ver_datos'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gp.omaped.ver_datos" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gp.omaped.ver_datos'])
 @php
     $nombre = $datos['nombre_completo'] ?? '';
     $palabras = preg_split('/\s+/u', trim($nombre), -1, PREG_SPLIT_NO_EMPTY) ?: [];
@@ -53,7 +55,7 @@
     $waSerenazgo = 'https://wa.me/51979643921';
 @endphp
     <div class="card">
-        <img class="logo" src="{{ $routes['logo'] }}" alt="Municipalidad">
+        <img class="logo" src="{{ asset('images/nexosigtram-documental-logo.png') }}" alt="Nexo SIGTRAM">
         <h1>Perfil de emergencia OMAPED</h1>
         <div class="foto-wrap">
             @if ($fotoUrl)

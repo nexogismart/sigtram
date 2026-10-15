@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sigtram Intelligence | Advanced Report</title>
+    <title>Reporte de gestión por área y cargo · SIGTRAM</title>
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -1032,8 +1032,10 @@
 
 
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.v2_lista_reporte_area_cargo'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gene.mod_tram_inter.v2_lista_reporte_area_cargo" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.v2_lista_reporte_area_cargo'])
 
 <div class="wrapper">
     <header class="page-header">
@@ -1455,7 +1457,7 @@
     </section>
 
     <footer style="margin-top: 5rem; border-top: 1px solid #eef2f6; padding-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; font-weight: 600;">
-        Sigtram Intelligence Engine © {{ date('Y') }} • Municipalidad Distrital de Puente Piedra
+        SIGTRAM · Gestión de trámites © {{ date('Y') }} · Desarrollado por Nexo
     </footer>
 </div>
 

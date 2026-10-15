@@ -114,8 +114,10 @@
         .Button.secondary:hover { background: #f1f5f9; }
         .sin-req { color: var(--muted); padding: 4px 8px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.busca_expedi_deta'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.busca_expedi_deta" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.busca_expedi_deta'])
 @php
     $diasSile = $tramite->nu_tiem_sile ?? '';
     $tieneSilencio = is_numeric($diasSile) && (int) $diasSile >= 1;

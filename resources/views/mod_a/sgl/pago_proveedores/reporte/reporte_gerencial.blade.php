@@ -6,8 +6,10 @@
     <title>Reporte general de pago a proveedores</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_a/sgl/pago_proveedores/css/app.css') }}?v=3">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_a.sgl.pago_proveedores.reporte.reporte_gerencial'])
 </head>
-<body>
+<body data-sigtram-screen="mod_a.sgl.pago_proveedores.reporte.reporte_gerencial" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_a.sgl.pago_proveedores.reporte.reporte_gerencial'])
     <main class="app">
         <div class="app__title-row">
             <h1>REPORTE GENERAL DE PAGO A PROVEEDORES</h1>

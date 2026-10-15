@@ -28,8 +28,10 @@
         .inp[readonly], .inp:disabled { background: #f1f5f9; color: #64748b; }
         .lbl { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9ca3af; margin-bottom: 0.25rem; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_a.sgl.pago_proveedores.ver_requerimiento_locador'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="locadorPago()" x-init="init()">
+<body data-sigtram-screen="mod_a.sgl.pago_proveedores.ver_requerimiento_locador" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="locadorPago()" x-init="init()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_a.sgl.pago_proveedores.ver_requerimiento_locador'])
 
     <div x-show="busy" x-cloak class="fixed inset-0 z-[180] bg-slate-900/40 flex items-center justify-center">
         <div class="bg-white rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest shadow-xl">Procesando…</div>

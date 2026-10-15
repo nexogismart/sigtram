@@ -27,8 +27,10 @@
         .Button.secondary { background:#fff; color:var(--ink); }
         .error { color:#dc2626; font-size:11px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.gene_expedi_cita" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita'])
 <div class="wrap">
 <form action="{{ $storeUrl }}" method="post" name="form1">
     @csrf

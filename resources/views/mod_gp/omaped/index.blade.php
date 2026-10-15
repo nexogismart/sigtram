@@ -7,8 +7,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="puede-eliminar" content="{{ $puedeEliminar ? '1' : '0' }}">
     <link rel="stylesheet" href="{{ asset('mod_gp/omaped/css/app.css') }}?v=1">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gp.omaped.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gp.omaped.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gp.omaped.index'])
     <main class="app">
         <header class="hdr">
             <div class="hdr__banner">
@@ -16,7 +18,7 @@
             </div>
             <div class="hdr__top">
                 <div class="hdr__logo-wrap">
-                    <img class="hdr__logo" src="{{ $routes['logo'] }}" width="280" height="72" alt="Puente Piedra">
+                    <img class="hdr__logo" src="{{ asset('images/nexosigtram-documental-logo.png') }}" width="280" height="72" alt="Nexo SIGTRAM">
                 </div>
                 <div class="hdr__right">
                     <table class="hdr__meta" role="presentation">

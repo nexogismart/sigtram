@@ -35,8 +35,10 @@
         tr.fila_2 { background: #f8fafc; }
         .center { text-align: center; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.lista_vaucher'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.lista_vaucher" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.lista_vaucher'])
 <table>
     <tr>
         <th width="55%">Descripción</th>

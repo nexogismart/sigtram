@@ -31,6 +31,7 @@
     </style>
 </head>
 <body onload="window.print();">
+@include('components.sigtram.print-brand')
 @php
     $tieneSilencio = (string) ($tramite->in_sile_admi ?? '') === '1';
     $cdgoTpo = (string) ($tramite->cdgo_tpo_trmte ?? '');

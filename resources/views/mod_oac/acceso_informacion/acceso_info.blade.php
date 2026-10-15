@@ -72,8 +72,10 @@
             }
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_oac.acceso_informacion.acceso_info'])
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+<body data-sigtram-screen="mod_oac.acceso_informacion.acceso_info" class="sigtram-module bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_oac.acceso_informacion.acceso_info'])
 
     <main class="p-4 sm:p-6 w-full max-w-[1600px] mx-auto min-h-screen flex flex-col print-container">
         

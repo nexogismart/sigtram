@@ -37,8 +37,10 @@
             cursor: pointer;
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.stub_pendiente" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente'])
 <div class="box">
     <h1>{{ $titulo }}</h1>
     <p>{{ $mensaje }}</p>

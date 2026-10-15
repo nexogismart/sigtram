@@ -23,8 +23,10 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .sticky-head th { position: sticky; top: 0; z-index: 10; background: #f9fafb; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_archivo'])
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" x-data="archivoExpedientes()" x-init="init()">
+<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_archivo" class="sigtram-module bg-gray-50 text-gray-900 antialiased" x-data="archivoExpedientes()" x-init="init()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_archivo'])
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-white" :class="toast.type === 'error' ? 'bg-red-600/95' : 'bg-gray-900/95'">
             <i class="text-xs" :class="toast.type === 'error' ? 'fas fa-circle-exclamation' : 'fas fa-circle-info text-blue-300'"></i>

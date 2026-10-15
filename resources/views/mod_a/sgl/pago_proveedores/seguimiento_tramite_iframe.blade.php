@@ -116,8 +116,10 @@
         }
         .empty { text-align: center; color: var(--muted); font-weight: 600; padding: 1.2rem; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_a.sgl.pago_proveedores.seguimiento_tramite_iframe'])
 </head>
-<body>
+<body data-sigtram-screen="mod_a.sgl.pago_proveedores.seguimiento_tramite_iframe" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_a.sgl.pago_proveedores.seguimiento_tramite_iframe'])
 @if (! $ok)
     <p class="msg">{{ $error ?: 'No se pudo cargar el seguimiento.' }}</p>
 @else

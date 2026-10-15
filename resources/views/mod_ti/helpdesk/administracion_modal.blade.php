@@ -96,8 +96,10 @@ body{
 }
 
 </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.helpdesk.administracion_modal'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.helpdesk.administracion_modal" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.helpdesk.administracion_modal'])
 
 <div class="wrap">
     <div class="header">

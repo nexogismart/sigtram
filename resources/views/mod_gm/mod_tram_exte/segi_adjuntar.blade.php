@@ -174,8 +174,10 @@
         .col-file { width: 18%; }
         .col-ok { width: 2%; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_adjuntar" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar'])
 <div class="wrap">
 
     @if (!empty($ok))

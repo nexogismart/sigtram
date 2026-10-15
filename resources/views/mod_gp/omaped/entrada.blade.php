@@ -32,10 +32,12 @@
         button:hover { background: #a93226; }
         .error { color: #c0392b; font-size: 13px; text-align: center; margin-bottom: 10px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gp.omaped.entrada'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gp.omaped.entrada" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gp.omaped.entrada'])
     <div class="card">
-        <img class="logo" src="{{ $routes['logo'] }}" alt="Municipalidad">
+        <img class="logo" src="{{ asset('images/nexosigtram-documental-logo.png') }}" alt="Nexo SIGTRAM">
         <h1>OMAPED – Acceso de emergencia</h1>
         <p>Ingrese el DNI del usuario para ver sus datos de contacto.</p>
         @if ($errors->any())

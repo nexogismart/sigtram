@@ -6,8 +6,10 @@
     <title>Eliminar Reunión</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_promesa/css/app.css') }}?v=3">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_promesa.eliminar_reunion'])
 </head>
-<body>
+<body data-sigtram-screen="mod_promesa.eliminar_reunion" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_promesa.eliminar_reunion'])
 <div class="popup-wrap">
     <table class="tablebordecero" style="width: 100%">
         <tr>

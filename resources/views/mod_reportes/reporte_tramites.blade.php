@@ -17,10 +17,12 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_reportes.reporte_tramites'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen"
+<body data-sigtram-screen="mod_reportes.reporte_tramites" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen"
       x-data="reporteTramitesApp()"
       x-init="init()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_reportes.reporte_tramites'])
 
 <div class="p-3 sm:p-5 w-full max-w-[1600px] mx-auto space-y-4">
 

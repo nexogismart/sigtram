@@ -6,12 +6,14 @@
     <title>Sistema de Gestión de Tickets</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_ti/helpdesk/tickets/css/app.css') }}?v=1">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.helpdesk.pantalla'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.helpdesk.pantalla" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.helpdesk.pantalla'])
     <div id="closingScreen">
         <div class="stars" id="starsContainer"></div>
         <div class="closing-header">
-            <div class="closing-title">🏆 RESULTADOS DEL DÍA</div>
+            <div class="closing-title">Resultados del día</div>
             <div class="closing-subtitle">OFICINA DE TECNOLOGÍAS DE INFORMACIÓN</div>
             <div class="closing-date" id="closingDate"></div>
         </div>
@@ -20,7 +22,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>🎫 SISTEMA DE GESTIÓN DE TICKETS</h1>
+            <h1>Gestión de tickets</h1>
             <div class="current-time" id="currentTime"></div>
         </div>
 
@@ -29,7 +31,7 @@
                 <div class="requerimiento-section">
                     <div class="status-column status-requerimiento">
                         <div class="status-header">
-                            📝 REQUERIMIENTO
+                            Requerimientos
                             <span class="count-badge" id="count-1">0</span>
                         </div>
                         <div class="tickets-container" id="tickets-1"></div>

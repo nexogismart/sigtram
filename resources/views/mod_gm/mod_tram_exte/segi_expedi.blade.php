@@ -26,8 +26,10 @@
         .nav-idle { color: #4b5563; }
         .nav-idle:hover { background-color: #f8fafc; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_expedi'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="correoExternoApp()">
+<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_expedi" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="correoExternoApp()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_expedi'])
 
     <div x-show="showToast" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="bg-gray-900/90 backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3">
@@ -37,9 +39,9 @@
     </div>
 
     <div class="p-3 sm:p-5 w-full max-w-[1600px] mx-auto">
-    <div class="grid grid-cols-1 xl:grid-cols-[220px_1fr] gap-4 min-h-[85vh]">
+    <div class="sigtram-inbox-layout">
 
-        <aside class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden xl:sticky xl:top-4 self-start">
+        <aside class="sigtram-inbox-nav bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden xl:sticky xl:top-4 self-start">
             <div class="bg-slate-800 text-white px-4 py-3">
                 <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Trámite Externo</p>
                 <h1 class="text-sm font-bold mt-0.5">Bandejas</h1>

@@ -31,8 +31,10 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_seguridad.seguridad-usuario'])
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" x-data="userManager()">
+<body data-sigtram-screen="mod_seguridad.seguridad-usuario" class="sigtram-module bg-gray-50 text-gray-900 antialiased" x-data="userManager()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_seguridad.seguridad-usuario'])
 
     <main class="p-4 sm:p-6 w-full max-w-7xl mx-auto min-h-screen flex flex-col">
         

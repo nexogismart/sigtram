@@ -11,7 +11,8 @@
     </script>
     <meta name="description" content="Nexosigtram - Sistema de Gestión de Trámites">
     <meta name="theme-color" content="#071a30">
-    <title>Iniciar Sesión — Nexosigtram</title>
+    <title>Iniciar sesión · SIGTRAM | Sistema de Gestión de Trámites</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/nexosigtram-documental-emblema.png') }}">
 
     <!-- Fuentes e Iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -118,22 +119,27 @@
             outline: 2px solid #f87171;
             outline-offset: 2px;
         }
-        .nexo-page-background { position: fixed; inset: -3vmax; background: #071a30 url('{{ asset('images/nexo-login-background-generated.png') }}') center / cover no-repeat; transform-origin: 28% 48%; animation: nexo-background-float 12s ease-in-out infinite; }
-        @keyframes nexo-background-float { 0%, 100% { transform: translate3d(-.3%, .35%, 0) scale(1.01) rotate(-.3deg); } 50% { transform: translate3d(.3%, -.35%, 0) scale(1.025) rotate(.3deg); } }
-        .nexo-page-background::after { content: ''; position: absolute; inset: 0; background: #071a3026; }
+        .nexo-page-background { position: fixed; inset: -3vmax; background: #071a30 url('{{ asset('images/sigtram-login-office.png') }}') center / cover no-repeat; transform-origin: 28% 48%; animation: nexo-background-float 24s ease-in-out infinite; }
+        @keyframes nexo-background-float { 0%, 100% { transform: scale(1.01); } 50% { transform: scale(1.035); } }
+        .nexo-page-background::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #071a3010 15%, #071a301f 45%, #071a3059 100%); }
         .login-card { width: 100%; max-width: 500px; min-height: 640px; margin-left: auto; margin-right: clamp(24px, 4vw, 80px); border-radius: 28px; box-shadow: 0 24px 80px #0005; }
         .login-form-panel { width: 100%; min-width: 0; flex: 1; }
         .login-welcome { display: none; }
         .welcome-eyebrow { color: #89bdf0; font-size: 10px; font-weight: 650; }
-        .login-welcome h1 { margin-top: 18px; color: #fff; font-size: 32px; line-height: 1.15; font-weight: 750; text-wrap: balance; }
+        .login-welcome h1 { margin-top: 18px; color: #fff; font-size: 30px; line-height: 1.17; font-weight: 750; text-wrap: balance; }
         .welcome-description { margin-top: 12px; color: #b5c9dd; font-size: 12px; line-height: 1.8; }
-        .nexo-orbital-art { display: block; width: calc(100% + 40px); margin: 0 -20px; overflow: visible; }
-        .orbital-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; padding-top: 18px; border-top: 1px solid #ffffff18; }
+        .nexo-orbital-art { display: block; width: calc(100% + 24px); margin: 18px -12px 0; overflow: visible; }
+        .document-stages { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 12px; list-style: none; padding: 0; margin: 0 0 26px; color: #e3f1fc; font-size: 10px; line-height: 1.5; }
+        .document-stages span { display: block; margin-bottom: 4px; color: #91b9d6; font-size: 9px; }
+        .banner-brand-emblem { flex: 0 0 44px; width: 44px; height: 44px; object-fit: contain; padding: 4px; background: #fff; border-radius: 10px; }
+        .orbital-footer { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 6px; padding-top: 18px; border-top: 1px solid #ffffff18; }
         .orbital-caption { color: #a8c4dd; font-size: 11px; line-height: 1.7; }
         .orbital-caption strong { display: block; color: #fff; font-size: 12px; }
-        @media(min-width: 1280px) { main.login-card { max-width: 820px; width: 54vw; flex-direction: row; } .login-welcome { display: flex; flex-direction: column; justify-content: center; flex: 0 0 40%; min-width: 0; padding: 28px 24px; border-radius: 20px; background: #082139; overflow: hidden; } .login-card .login-form-panel { flex: 1; width: 60%; padding-left: 32px; padding-right: 32px; } }
+        @media(min-width: 1100px) { main.login-card { max-width: 820px; width: clamp(700px, 54vw, 820px); flex-direction: row; } .login-welcome { display: flex; flex-direction: column; justify-content: center; flex: 0 0 40%; min-width: 0; padding: 28px 24px; border-radius: 20px; background: linear-gradient(160deg, #103650, #082139 65%); overflow: hidden; } .login-card .login-form-panel { flex: 1; width: 60%; padding-left: 32px; padding-right: 32px; } }
 
-        .nexo-form-logo { display: block; width: 260px; max-width: 100%; height: 118px; object-fit: contain; object-position: center; }
+        .nexo-form-logo { display: block; width: 300px; max-width: 100%; height: 118px; object-fit: contain; object-position: center; }
+        .login-product-name { color: #52667b; font-size: 11px; text-align: center; margin-top: 4px; line-height: 1.6; }
+        .company-credit { display: inline-block; color: #91a9bf; font-size: 9px; margin-top: 10px; }
         .login-card .login-form-panel { justify-content: center; gap: 44px; }
         #loginForm { gap: 22px; }
         #loginForm .login-field input { min-height: 54px; padding-left: 44px; padding-right: 16px; border-radius: 14px; background: #f8fafc; box-shadow: none; font-size: 14px; font-weight: 500; }
@@ -161,44 +167,50 @@
         @media(max-width: 1023px) { .login-card { max-width: 460px; min-height: auto; margin: 0 auto; border-radius: 24px; } .nexo-form-logo { width: 220px; height: 100px; } .nexo-page-background { background-position: 30% center; } .nexo-page-background::after { background: #071a3066; } }
         @media(prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/sigtram-typography.css') }}?v={{ filemtime(public_path('css/sigtram-typography.css')) }}">
 </head>
 
-<body class="min-h-screen relative flex items-center justify-center p-4 lg:p-8 bg-[#071a30] overflow-x-hidden">
+<body class="sigtram-login min-h-screen relative flex items-center justify-center p-4 lg:p-8 bg-[#071a30] overflow-x-hidden">
 
     <div class="nexo-page-background" aria-hidden="true"></div>
     <main class="login-card relative z-10 w-full bg-white flex flex-col p-3 animate-fade-in">
         <aside class="login-welcome" aria-labelledby="welcome-title">
-            <h1 id="welcome-title">Tu gestión.<br>Otra dimensión.</h1>
-            <p class="welcome-description">Todo conectado. Todo más cerca.</p>
-            <svg id="nexo-orbital-scene" class="nexo-orbital-art" viewBox="0 0 360 410" role="img" aria-labelledby="orbital-title">
-                <title id="orbital-title">Escudo tridimensional de Nexosigtram con documentos flotantes y conexiones en órbita</title>
+            <h1 id="welcome-title">Tu trámite,<br>de principio a fin.</h1>
+            <p class="welcome-description">Registra documentos, deriva solicitudes y da seguimiento a cada etapa.</p>
+            <svg id="nexo-orbital-scene" class="nexo-orbital-art" viewBox="0 0 320 330" role="img" aria-labelledby="orbital-title orbital-description">
+                <title id="orbital-title">Un expediente, de su registro al seguimiento</title>
+                <desc id="orbital-description">Documento digital con revisión y una ruta de tres etapas: registra, deriva y da seguimiento.</desc>
                 <defs>
-                    <radialGradient id="orbital-blue"><stop stop-color="#1687d9" stop-opacity=".26"/><stop offset="1" stop-color="#1687d9" stop-opacity="0"/></radialGradient>
-                    <radialGradient id="orbital-red"><stop stop-color="#ff3848" stop-opacity=".25"/><stop offset="1" stop-color="#ff3848" stop-opacity="0"/></radialGradient>
-                    <filter id="orbital-glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    <path id="orbital-route" d="M27 205a153 103 0 1 0 306 0a153 103 0 1 0-306 0"/>
-                    <path id="orbital-document-route" d="M51 201a129 149 0 1 0 258 0a129 149 0 1 0-258 0"/>
+                    <linearGradient id="paper-edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef8ff"/><stop offset="1" stop-color="#c6deef"/></linearGradient>
+                    <linearGradient id="folder-front" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#187bbd"/><stop offset="1" stop-color="#105386"/></linearGradient>
+                    <filter id="paper-shadow" x="-30%" y="-20%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#020f1b" flood-opacity=".32"/></filter>
+                    <clipPath id="sheet-clip"><rect x="74" y="25" width="192" height="224" rx="8"/></clipPath>
                 </defs>
-                <ellipse cx="180" cy="215" rx="170" ry="170" fill="url(#orbital-blue)"/>
-                <ellipse cx="180" cy="355" rx="78" ry="10" fill="#021323" opacity=".5"><animate attributeName="rx" values="78;62;78" dur="6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;.25;.5" dur="6s" repeatCount="indefinite"/></ellipse>
-                <g transform="rotate(-22 180 205)">
-                    <use href="#orbital-route" fill="none" stroke="#468ac1" stroke-opacity=".3"/>
-                    <use href="#orbital-route" fill="none" stroke="#4dc5ff" stroke-width="1.5" stroke-dasharray="42 771" stroke-linecap="round"><animate attributeName="stroke-dashoffset" values="0;-813" dur="12s" repeatCount="indefinite"/></use>
-                    <circle r="4" fill="#9ae6ff" filter="url(#orbital-glow)"><animateMotion dur="12s" repeatCount="indefinite" calcMode="linear"><mpath href="#orbital-route"/></animateMotion></circle>
-                    <circle r="3" fill="#ff6472" filter="url(#orbital-glow)"><animateMotion dur="12s" begin="-6s" repeatCount="indefinite" calcMode="linear"><mpath href="#orbital-route"/></animateMotion></circle>
+                <path d="M31 97H289M31 157H289M31 217H289" stroke="#4f87ae" stroke-opacity=".1"/>
+                <rect x="59" y="40" width="192" height="224" rx="8" fill="#83b5d7" transform="rotate(-7 155 152)" opacity=".4"/>
+                <g filter="url(#paper-shadow)">
+                    <rect x="74" y="25" width="192" height="224" rx="8" fill="url(#paper-edge)"/>
+                    <path d="M234 25v30h32" fill="#a8cce4"/>
+                    <rect x="92" y="46" width="28" height="30" rx="4" fill="#d3e7f5"/>
+                    <path d="M100 55h12m-12 6h12m-12 6h7" stroke="#1376b9" stroke-width="2" stroke-linecap="round"/>
+                    <text x="132" y="57" fill="#0b3556" font-family="Inter, sans-serif" font-size="10" font-weight="700">Expediente digital</text>
+                    <text x="132" y="72" fill="#48738d" font-family="Inter, sans-serif" font-size="8">Gestión de trámites</text>
+                    <path d="M94 94h151" stroke="#bed8e8"/>
+                    <g fill="#aecbdc"><rect x="94" y="110" width="130" height="5" rx="2"/><rect x="94" y="124" width="151" height="5" rx="2"/><rect x="94" y="138" width="109" height="5" rx="2"/></g>
+                    <g stroke="#1680bc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m95 166 3 3 6-7m-9 24 3 3 6-7m-9 24 3 3 6-7"/></g>
+                    <g fill="#aecbdc"><rect x="113" y="163" width="115" height="4" rx="2"/><rect x="113" y="183" width="100" height="4" rx="2"/><rect x="113" y="203" width="120" height="4" rx="2"/></g>
+                    <g clip-path="url(#sheet-clip)"><rect x="74" y="100" width="192" height="2" fill="#298fcd" opacity=".3"><animate attributeName="y" values="100;219;100" dur="9s" repeatCount="indefinite"/></rect></g>
                 </g>
-                <use href="#orbital-document-route" fill="none" stroke="#3e729d" stroke-opacity=".22" stroke-dasharray="2 7"/>
-                <g><animateMotion dur="24s" repeatCount="indefinite" calcMode="linear"><mpath href="#orbital-document-route"/></animateMotion><g transform="rotate(-12)"><rect x="-13" y="-17" width="26" height="34" rx="5" fill="#eaf6ff"/><path d="M-6-7H6M-6 0H6M-6 7H2" stroke="#2388cd" stroke-width="2" stroke-linecap="round"/></g></g>
-                <g><animateMotion dur="24s" begin="-12s" repeatCount="indefinite" calcMode="linear"><mpath href="#orbital-document-route"/></animateMotion><rect x="-14" y="-14" width="28" height="28" rx="8" fill="#153f62" stroke="#468ac1"/><path d="m-6 0 4 4 8-9" fill="none" stroke="#82d5ff" stroke-width="2.5" stroke-linecap="round"/></g>
-                <g><animateTransform attributeName="transform" type="translate" values="0 5;0 -7;0 5" dur="6s" calcMode="spline" keyTimes="0;.5;1" keySplines=".42 0 .58 1;.42 0 .58 1" repeatCount="indefinite"/>
-                    <g><animateTransform attributeName="transform" type="rotate" values="-2 180 205;2 180 205;-2 180 205" dur="12s" calcMode="spline" keyTimes="0;.5;1" keySplines=".42 0 .58 1;.42 0 .58 1" repeatCount="indefinite"/>
-                        <image href="{{ asset('images/nexo-login-core-3d.png') }}" x="25" y="40" width="310" height="310"/>
-                        <ellipse cx="183" cy="231" rx="70" ry="75" fill="url(#orbital-red)"><animate attributeName="opacity" values=".05;.6;.05" dur="3s" repeatCount="indefinite"/></ellipse>
-                    </g>
-                </g>
-                <g fill="#8bd6ff"><circle cx="46" cy="93" r="2.5"><animate attributeName="opacity" values=".2;1;.2" dur="4s" repeatCount="indefinite"/></circle><circle cx="315" cy="305" r="2"><animate attributeName="opacity" values="1;.2;1" dur="6s" repeatCount="indefinite"/></circle><circle cx="276" cy="64" r="2"/></g>
+                <path d="M45 211v-27q0-7 7-7h65l19 22h128q10 0 8 11l-12 56q-2 9-12 9H61q-9 0-11-9Z" fill="url(#folder-front)" stroke="#4da0cf" stroke-width="1"/>
+                <path d="M51 211h214" stroke="#8bc7e6" stroke-opacity=".4"/>
+                <text x="68" y="244" fill="#fff" font-family="Inter, sans-serif" font-size="11" font-weight="600">Cada etapa, bajo control.</text>
+                <g transform="translate(242 263)"><circle r="22" fill="#edf8ff" stroke="#acd4ed"/><path d="m-9 0 6 6 12-13" fill="none" stroke="#1079bd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+                <path d="M51 308H268" stroke="#477593" stroke-width="1.5"/>
+                <path d="M51 308H268" stroke="#76c9ff" stroke-width="2" stroke-dasharray="35 182"><animate attributeName="stroke-dashoffset" values="217;0" dur="6s" repeatCount="indefinite"/></path>
+                <circle cx="51" cy="308" r="5" fill="#ff4b56"/><circle cx="160" cy="308" r="5" fill="#82c8f3"/><circle cx="268" cy="308" r="5" fill="#82c8f3"/>
             </svg>
-            <div class="orbital-footer"><p class="orbital-caption"><strong>Cada conexión cuenta.</strong>La tuya empieza aquí.</p></div>
+            <ol class="document-stages" aria-label="Etapas de gestión"><li><span>01</span>Registra</li><li><span>02</span>Deriva</li><li><span>03</span>Da seguimiento</li></ol>
+            <div class="orbital-footer"><img class="banner-brand-emblem" src="{{ asset('images/nexosigtram-documental-emblema.png') }}" alt="" width="44" height="44"><p class="orbital-caption"><strong>SIGTRAM</strong>Sistema de Gestión de Trámites<br><span class="company-credit">Desarrollado por Nexo</span></p></div>
         </aside>
 
 
@@ -207,9 +219,9 @@
         <div class="login-form-panel w-full flex flex-col p-6 sm:p-10 lg:px-14 lg:py-10 relative">
 
             <!-- Header Right: Logo -->
-            <div class="login-brand flex items-center justify-center w-full max-w-[360px] mx-auto">
+            <div class="login-brand flex flex-col items-center justify-center w-full max-w-[360px] mx-auto">
                 <!-- Identidad Nexosigtram -->
-                <img src="{{ asset('images/nexosigtram-logo.png') }}" class="nexo-form-logo" alt="Nexosigtram">
+                <img src="{{ asset('images/nexosigtram-documental-logo.png') }}" class="nexo-form-logo" alt="Nexo SIGTRAM"><p class="login-product-name">Sistema de Gestión de Trámites</p>
             </div>
 
             <!-- Form Container -->
@@ -290,7 +302,7 @@
                 <div id="form-register" class="form-container form-hidden">
                     <div class="text-left mb-8">
                         <h2 class="text-[32px] font-black text-slate-900 tracking-tight leading-none mb-2">Registro</h2>
-                        <p class="text-[13px] font-medium text-slate-500">Solicitud de acceso a Nexosigtram</p>
+                        <p class="text-[13px] font-medium text-slate-500">Solicitud de acceso a SIGTRAM</p>
                     </div>
 
                     <form class="space-y-4" onsubmit="event.preventDefault(); alert('Solicitud enviada. Contacte con TI.');">

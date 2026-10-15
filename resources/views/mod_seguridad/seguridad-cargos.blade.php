@@ -31,8 +31,10 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_seguridad.seguridad-cargos'])
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased" x-data="cargoManager()">
+<body data-sigtram-screen="mod_seguridad.seguridad-cargos" class="sigtram-module bg-gray-50 text-gray-900 antialiased" x-data="cargoManager()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_seguridad.seguridad-cargos'])
 
     <main class="p-4 sm:p-6 w-full max-w-5xl mx-auto min-h-screen flex flex-col">
         

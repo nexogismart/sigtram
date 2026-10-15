@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -34,8 +34,10 @@
             margin-top: .25rem;
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno'])
 </head>
-<body class="bg-[#f8fafc] text-gray-900 min-h-screen">
+<body data-sigtram-screen="mod_gene.mod_tram_inter.reporte-cargo-interno" class="sigtram-module bg-[#f8fafc] text-gray-900 min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno'])
 
 <main class="p-4 lg:p-6 max-w-[1400px] mx-auto w-full">
 

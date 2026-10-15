@@ -26,8 +26,10 @@
             #printArea { position: absolute; inset: 0; background: #fff; padding: 12px; }
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="redirigirExpedientes()" x-init="init()">
+<body data-sigtram-screen="mod_gm.mod_tram_exte.redirigir" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="redirigirExpedientes()" x-init="init()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir'])
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"

@@ -103,6 +103,7 @@
     </style>
 </head>
 <body>
+@include('components.sigtram.print-brand')
     <div class="print-actions">
         <button type="button" class="btn-print" onclick="window.print()">Imprimir</button>
     </div>

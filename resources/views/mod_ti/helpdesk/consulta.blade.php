@@ -36,8 +36,10 @@ $ordenColumnas = [1 => 'Requerimiento', 2 => 'Pendiente', 3 => 'Proceso', 4 => '
         .modal-overlay { background-color: rgba(17, 24, 39, 0.5); backdrop-filter: blur(2px); }
         .ck-content { color: #374151 !important; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.helpdesk.consulta'])
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+<body data-sigtram-screen="mod_ti.helpdesk.consulta" class="sigtram-module bg-gray-50 flex flex-col min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.helpdesk.consulta'])
 
 <div class="p-4 sm:p-6 w-full max-w-[1600px] mx-auto flex-1 flex flex-col">
     <!-- ENCABEZADO DE SECCIÓN -->

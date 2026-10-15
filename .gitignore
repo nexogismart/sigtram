@@ -27,3 +27,12 @@ Thumbs.db
 /vendor
 # Configuración local de Docker (contiene credenciales)
 .env.docker
+
+# Evidencias locales: pueden incluir datos de usuarios y trámites.
+/output/nexo-login/
+/output/nexo-workspace/
+/output/sigtram-renovacion/
+/docs/frontend/*
+!/docs/frontend/inventario-vistas.json
+!/docs/frontend/contratos-vistas-originales.json
+!/docs/frontend/integracion-front-back.md

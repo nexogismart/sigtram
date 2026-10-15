@@ -16,6 +16,7 @@
     </style>
 </head>
 <body>
+@include('components.sigtram.print-brand')
     <button class="no-print" onclick="window.print()">Imprimir</button>
     <h1>Bandeja de Archivo - {{ ucfirst($bandeja) }}</h1>
     <div class="meta">Generado: {{ $generado }} | Total: {{ $rows->count() }}</div>

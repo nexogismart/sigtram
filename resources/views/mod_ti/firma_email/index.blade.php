@@ -6,8 +6,10 @@
     <title>Generador de Firmas de Correo</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_ti/firma_email/css/app.css') }}?v=1">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.firma_email.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.firma_email.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.firma_email.index'])
     <div id="firma-app">
         <div class="card">
             <h1>Generador de Firmas de Correo</h1>

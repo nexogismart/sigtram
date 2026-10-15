@@ -6,8 +6,10 @@
     <title>Dispositivos de Seguridad</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_ti/dispositivo_seg/css/app.css') }}?v=1">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.dispositivo_seg.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_ti.dispositivo_seg.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.dispositivo_seg.index'])
     <main class="app">
         <header class="app__header">
             <div>

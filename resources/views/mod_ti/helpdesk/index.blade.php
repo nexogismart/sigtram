@@ -5,28 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Bandeja OTI - Mesa de Ayuda</title>
-    
+
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         body { font-family: 'Inter', sans-serif; }
-        
+
         .custom-scrollbar-light::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
+
         /* Pequeños ajustes que Tailwind no cubre nativamente */
         .ck-powered-by { display: none !important; }
         .ck-editor__editable_inline { min-height: 200px; border-bottom-left-radius: 0.75rem !important; border-bottom-right-radius: 0.75rem !important; }
         .ck-toolbar { border-top-left-radius: 0.75rem !important; border-top-right-radius: 0.75rem !important; background-color: #f8fafc !important;}
-        
+
         .table-row-hover { transition: all 0.2s ease-in-out; }
         .table-row-hover:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); z-index: 10; position: relative; }
-        
+
         tr { transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
         .no-results { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -34,40 +34,34 @@
         /* Modales Generales */
         .modal-overlay { background-color: rgba(17, 24, 39, 0.5); backdrop-filter: blur(2px); }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_ti.helpdesk.index'])
+    @include('components.sigtram.helpdesk-head')
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased flex flex-col min-h-screen">
-<div class="p-4 sm:p-6 w-full max-w-[1400px] mx-auto flex-1">
-
-    {{-- ENCABEZADO Y ACCIONES --}}
-    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800 tracking-tight"><i class="fas fa-headset text-blue-600 mr-2"></i>Mesa de Ayuda - OTI</h2>
-            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider font-bold">Genera y administra tus requerimientos de soporte</p>
-        </div>
-        <div class="hidden sm:block">
-            <span class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-100">
-                <i class="fas fa-info-circle mr-1"></i> Sistema de Soporte Técnico
-            </span>
-        </div>
-    </div>
-
+<body data-sigtram-screen="mod_ti.helpdesk.index" class="sigtram-module bg-gray-50 text-gray-800 antialiased flex flex-col min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_ti.helpdesk.index'])
+<main class="hd-shell" data-helpdesk>
+    <header class="hd-page-heading"><div><p class="hd-section-label">Mesa de ayuda · OTI</p><h1>Centro de soporte</h1><p>Solicita asistencia técnica y consulta la atención de tus tickets.</p></div><div class="hd-schedule"><i class="fa-regular fa-clock" aria-hidden="true"></i><div><strong>Horario de atención</strong><span>{{ $horarioInicioFmt }} — {{ $horarioFinFmt }}</span></div></div></header>
+    <div class="hd-layout">
+        <aside class="hd-sidebar" aria-label="Contacto y orientación de soporte">
+            <div class="hd-support-note"><span class="hd-support-icon"><i class="fa-solid fa-headset" aria-hidden="true"></i></span><h2>Tu trabajo puede continuar.</h2><p>Comunica la incidencia. Aporta los detalles. Consulta su atención.</p><div class="hd-support-route" aria-hidden="true"><i class="fa-regular fa-file-lines"></i><span></span><i class="fa-solid fa-headset"></i><span></span><i class="fa-solid fa-check"></i></div></div>
+            <details class="hd-contact-details" open data-contact-required="{{ (!$phone_ok || $showPhoneAlert) ? 'true' : 'false' }}"><summary><i class="fa-regular fa-address-card" aria-hidden="true"></i><strong>Datos de contacto</strong><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
     {{-- TARJETA DE INFORMACIÓN DE CONTACTO (INDEPENDIENTE) --}}
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6 relative overflow-hidden transition-shadow hover:shadow-md">
-        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-        <div class="flex items-start gap-4 mb-5">
+    <div class="hd-contact-card">
+
+        <div class="hd-contact-heading">
             <div class="bg-blue-100 text-blue-600 p-3 rounded-lg flex-shrink-0">
                 <i class="fas fa-address-book text-xl"></i>
             </div>
             <div>
-                <h3 class="text-base font-bold text-gray-800">Información de Contacto</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Mantenga sus datos actualizados para una mejor atención</p>
+                <h3 class="text-base font-bold text-gray-800">Datos para contactarte</h3>
+                <p class="text-xs text-gray-500 mt-0.5">OTI utilizará estos datos para atender tu solicitud.</p>
             </div>
             <div id="unsavedWarning" class="ml-auto hidden animate-bounce flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg border border-amber-200 text-[11px] font-bold">
                 <i class="fas fa-exclamation-circle"></i> Cambios sin guardar
             </div>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+
+        <div class="hd-contact-fields">
             {{-- Celular de Contacto --}}
             <div class="relative group">
                 <label for="telefono_contacto" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 transition-colors group-focus-within:text-blue-600">
@@ -77,9 +71,9 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 transition-colors">
                         <span class="text-sm font-semibold">+51</span>
                     </div>
-                    <input type="text" id="telefono_contacto" 
-                        value="{{ $phone_val ?? '' }}" 
-                        placeholder="987654321" 
+                    <input type="text" id="telefono_contacto"
+                        value="{{ $phone_val ?? '' }}"
+                        placeholder="987654321"
                         class="w-full bg-white border border-gray-300 rounded-lg pl-12 pr-10 py-2.5 text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
                         maxlength="9">
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none hidden" id="telefonoIcon">
@@ -99,9 +93,9 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 transition-colors">
                         <i class="fas fa-key text-xs"></i>
                     </div>
-                    <input type="text" id="anydesk_contacto" 
-                        value="{{ $anydesk_val ?? '' }}" 
-                        placeholder="Ej. 123 456 789 o ALIAS" 
+                    <input type="text" id="anydesk_contacto"
+                        value="{{ $anydesk_val ?? '' }}"
+                        placeholder="Ej. 123 456 789 o ALIAS"
                         class="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2.5 text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm">
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none hidden" id="anydeskIcon">
                         <i class="fas fa-check-circle text-green-500 hidden" id="anydeskSuccessIcon"></i>
@@ -111,7 +105,7 @@
                 <span id="anydeskError" class="text-red-500 text-[11px] mt-1.5 hidden flex items-start gap-1 font-medium transition-all"><i class="fas fa-info-circle mt-0.5"></i> <span id="anydeskErrorText">Código AnyDesk requerido.</span></span>
             </div>
         </div>
-        
+
         <div>
             <button type="button" id="btnUpdateContact" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-5 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2">
                 <i class="fas fa-save"></i> Actualizar Datos
@@ -119,6 +113,13 @@
         </div>
     </div>
 
+            </details>
+            <p class="hd-sidebar-tip"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> Indica qué intentabas hacer y qué ocurrió. Una captura puede ayudar a explicar el problema.</p>
+        </aside>
+        <div class="hd-workspace">
+            <nav class="hd-tabs" role="tablist" aria-label="Mesa de ayuda"><button type="button" role="tab" id="hd-compose-tab" data-helpdesk-view="compose" aria-controls="hd-compose-panel" aria-selected="true"><i class="fa-solid fa-plus" aria-hidden="true"></i> Solicitar soporte</button><button type="button" role="tab" id="hd-history-tab" data-helpdesk-view="history" aria-controls="hd-history-panel" aria-selected="false"><i class="fa-regular fa-folder-open" aria-hidden="true"></i> Mis tickets <span>{{ count($tickets) }}</span></button></nav>
+            <section id="hd-compose-panel" role="tabpanel" aria-labelledby="hd-compose-tab" tabindex="-1">
+                @if($errors->any())<div class="hd-server-errors" role="alert"><strong>Revisa la solicitud</strong><ul>@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>@endif
     {{-- ALERTAS Y MENSAJES DE ESTADO --}}
     @if(session('ticket_enviado'))
             <div class="bg-emerald-50 border border-emerald-200 p-4 mb-6 rounded-xl shadow-sm flex items-start gap-4" id="successMessage">
@@ -143,32 +144,27 @@
 
         @if(!$isRestricted)
         {{-- FORMULARIO DE GENERACIÓN DE TICKET --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-8 transition-shadow hover:shadow-md">
-            <div class="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <h3 class="text-base font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fas fa-plus-circle text-blue-500"></i> Nuevo Requerimiento
-                </h3>
-            </div>
-            
-            <div class="p-6">
+        <div class="hd-request-card">
+            <header class="hd-request-heading"><div><h2>Redacta tu solicitud</h2><p>Cuéntanos qué necesitas para que OTI pueda atenderte con el contexto correcto.</p></div><span class="hd-paper-mark" aria-hidden="true"><i class="fa-regular fa-file-lines"></i></span></header>
+            <div class="hd-request-body">
                 <form id="ticketForm" method="post" action="{{ route('helpdesk.index.store') }}" enctype="multipart/form-data">
                     @csrf
-                    
+
                     {{-- Hidden inputs to submit contact info along with ticket if not updated --}}
                     <input type="hidden" name="telefono_contacto" id="hidden_telefono_contacto" value="{{ $phone_val ?? '' }}">
                     <input type="hidden" name="anydesk_contacto" id="hidden_anydesk_contacto" value="{{ $anydesk_val ?? '' }}">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        {{-- Asunto Breve --}}
+
+                    <div class="hd-request-fields">
+                        {{-- Asunto de la solicitud --}}
                         <div class="relative group">
                             <label for="asunto" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 transition-colors group-focus-within:text-blue-600">
-                                <i class="fas fa-tag text-gray-400 mr-1 group-focus-within:text-blue-500"></i> Asunto Breve
+                                <i class="fas fa-tag text-gray-400 mr-1 group-focus-within:text-blue-500"></i> Resume lo que necesitas *
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 transition-colors">
                                     <i class="fas fa-pen text-xs"></i>
                                 </div>
-                                <input type="text" id="asunto" name="asunto" placeholder="Ej. Problema con la impresora..." 
+                                <input type="text" id="asunto" name="asunto" placeholder="Ej. No puedo imprimir la hoja de ruta en SIGTRAM"
                                     class="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm">
                             </div>
                             <span id="asuntoError" class="text-red-500 text-[11px] mt-1.5 hidden flex items-start gap-1 font-medium transition-all"><i class="fas fa-info-circle mt-0.5"></i> <span>Complete este campo.</span></span>
@@ -177,15 +173,15 @@
                         {{-- Tipo de Servicio --}}
                         <div class="relative group">
                             <label for="incidencia" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 transition-colors group-focus-within:text-blue-600">
-                                <i class="fas fa-concierge-bell text-gray-400 mr-1 group-focus-within:text-blue-500"></i> Tipo de Servicio
+                                <i class="fas fa-concierge-bell text-gray-400 mr-1 group-focus-within:text-blue-500"></i> Servicio relacionado *
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 transition-colors z-10">
                                     <i class="fas fa-list-ul text-xs"></i>
                                 </div>
-                                <select id="incidencia" name="incidencia" 
+                                <select id="incidencia" name="incidencia"
                                     class="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2.5 text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm appearance-none cursor-pointer">
-                                    <option value="">-- SELECCIONE SERVICIO --</option>
+                                    <option value="">Selecciona el servicio</option>
                                     @foreach ($incidencias as $inc)
                                         <option value="{{ $inc->id }}">{{ $inc->detalle }}</option>
                                     @endforeach
@@ -198,23 +194,18 @@
                         </div>
                     </div>
 
-                    <div class="mb-6">
-                        <label for="editor" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Descripción Detallada del Problema</label>
-                        <div class="border border-gray-300 rounded-xl shadow-sm bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                            <textarea id="editor" name="descripcion" placeholder="Escriba los detalles aquí..."></textarea>
-                        </div>
-                    </div>
+                    @include('components.sigtram.helpdesk-writer')
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6 bg-gray-50 p-5 rounded-xl border border-gray-100">
+                    <div class="hd-request-extras">
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-paperclip text-gray-400 mr-1"></i> Archivos Adjuntos (Opcional)</label>
+                            <label for="archivos" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-paperclip text-gray-400 mr-1"></i> Evidencia adicional (opcional)</label>
                             <input type="file" name="archivos[]" id="archivos" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-all cursor-pointer bg-white border border-gray-200 rounded-xl shadow-sm">
-                            <p class="text-[10px] text-gray-400 mt-2">Puede seleccionar múltiples archivos simultáneamente.</p>
+                            <p class="text-[10px] text-gray-400 mt-2">Adjunta capturas o documentos que ayuden a entender la solicitud.</p>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-tachometer-alt text-gray-400 mr-1"></i> Nivel de Urgencia</label>
-                            <div class="flex items-center gap-4 bg-white p-2 rounded-xl border border-gray-200 shadow-sm w-max">
+                        <div role="group" aria-labelledby="hd-priority-label">
+                            <p id="hd-priority-label" class="block text-xs font-bold text-gray-500 mb-3">Prioridad de atención</p>
+                            <div class="hd-urgency-selector">
                                 <label class="relative flex items-center cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                                     <input type="radio" id="normal" name="urgencia" value="normal" checked class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2">
                                     <span class="ml-2 text-sm font-semibold text-gray-700">Normal</span>
@@ -225,28 +216,33 @@
                                     <span class="ml-2 text-sm font-bold text-red-600">Urgente</span>
                                 </label>
                             </div>
+                            <p class="hd-priority-help">Elige Urgente si la incidencia impide continuar una tarea crítica. Indica el motivo.</p>
                             <input type="text" id="urgencia-descripcion" name="urgencia_descripcion" placeholder="Especifique brevemente el motivo de urgencia..." class="mt-3 w-full bg-white border border-red-200 rounded-xl px-4 py-2.5 text-gray-700 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all shadow-sm hidden">
                         </div>
                     </div>
 
-                    <div class="flex justify-end pt-2">
+                    <div class="hd-submit-bar"><p><i class="fa-solid fa-arrow-turn-up" aria-hidden="true"></i> Revisa el asunto, el servicio y la descripción antes de enviar a OTI.</p>
                         <button type="submit" id="btnSubmit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
-                            <i class="fas fa-paper-plane"></i> Enviar Requerimiento a OTI
+                            <i class="fas fa-paper-plane"></i> Enviar solicitud
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+        @else
+        <section class="hd-closed"><span class="hd-empty-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span><h2>Registro fuera del horario de atención</h2><p>Puedes registrar solicitudes de {{ $horarioInicioFmt }} a {{ $horarioFinFmt }}. Tus tickets continúan disponibles para consulta.</p><button type="button" data-helpdesk-view="history">Ver mis tickets <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button></section>
         @endif
 
+            </section>
+            <section id="hd-history-panel" role="tabpanel" aria-labelledby="hd-history-tab" tabindex="-1">
     {{-- TABLA DE HISTORIAL --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 z-10 shadow-sm">
+        <div class="hd-history-card">
+        <div class="hd-history-heading">
             <h3 class="text-base font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-history text-gray-400"></i> Mi Historial de Tickets
+                <i class="fas fa-history text-gray-400"></i> Mis tickets
             </h3>
             <div class="relative w-full sm:w-72">
-                <input type="text" id="tableSearch" placeholder="Buscar en historial..." class="w-full bg-white border border-gray-300 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm">
+                <label for="tableSearch" class="hd-search-label">Buscar en mis tickets</label><input type="text" id="tableSearch" placeholder="Buscar en historial..." class="w-full bg-white border border-gray-300 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
                     <i class="fas fa-search text-xs"></i>
                 </div>
@@ -297,9 +293,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-16 text-center text-gray-400 bg-gray-50/50">
+                            <td colspan="6" class="hd-empty-cell py-16 text-center text-gray-400 bg-gray-50/50">
                                 <i class="fas fa-inbox fa-3x mb-3 text-gray-300"></i>
-                                <p class="text-sm font-medium">Aún no has generado ningún ticket de soporte.</p>
+                                <p class="text-sm font-medium">Aún no tienes solicitudes de soporte.</p><p class="hd-empty-caption">Los tickets que registres aparecerán aquí para consultar su atención.</p><button type="button" class="hd-empty-action" data-helpdesk-view="compose">Solicitar soporte <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
                             </td>
                         </tr>
                     @endforelse
@@ -310,7 +306,12 @@
             <span>Últimos {{ count($tickets) }} registros mostrados</span>
         </div>
     </div>
-</div>
+
+
+            </section>
+        </div>
+    </div>
+</main>
 
 <!-- ========================================== -->
 <!-- MODALES -->
@@ -318,29 +319,30 @@
 
 
 <!-- Modal AJAX Genérico -->
-<div id="modal_ajax" class="fixed inset-0 z-[100] hidden overflow-y-auto" role="dialog" aria-modal="true">
+<div id="modal_ajax" class="fixed inset-0 z-[100] hidden overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="hd-detail-title">
     <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
         <div class="fixed inset-0 modal-overlay transition-opacity" aria-hidden="true" onclick="closeAjaxModal()"></div>
         <div class="relative inline-block bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-3xl w-full flex flex-col max-h-[90vh]">
-            
+
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
-                <h3 class="text-base leading-6 font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-info-circle text-blue-500"></i> Detalle del Requerimiento</h3>
+                <h3 id="hd-detail-title" class="text-base leading-6 font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-info-circle text-blue-500"></i> Detalle del Requerimiento</h3>
                 <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none bg-white p-1.5 rounded-lg border border-transparent hover:border-gray-200 shadow-sm transition-all" onclick="closeAjaxModal()">
                     <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
-            
+
             <!-- CONTENEDOR AJAX -->
             <div id="modal_ajax_content" class="bg-white flex-1 overflow-y-auto custom-scrollbar-light min-h-[300px]">
                 <div class="py-20 text-center text-gray-400"><i class="fas fa-spinner fa-spin fa-3x mb-4 text-blue-400"></i><p class="font-medium text-sm">Consultando base de datos...</p></div>
             </div>
-            
+
         </div>
     </div>
 </div>
 
 <!-- SCRIPTS JS -->
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/translations/es.js"></script>
 <script>
     // Configuración CSRF para Fetch
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -442,7 +444,7 @@
             3: { label: 'Atendido', color: 'emerald', icon: 'fa-check-double', desc: 'Solución implementada' },
             4: { label: 'Anulado', color: 'red', icon: 'fa-ban', desc: 'Ticket cancelado' }
         };
-        
+
         const sit = situacionMap[t.situacion] || situacionMap[1];
         const isUrgente = (t.prioridad_nombre && t.prioridad_nombre.toLowerCase() === 'urgente');
 
@@ -510,7 +512,7 @@
                             </span>
                         </div>
                     </div>
-                    
+
                     <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">${escapeHtml(t.asunto)}</h2>
                 </div>
 
@@ -548,9 +550,9 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             ${btnZip}
-                            
+
                             <button onclick="window.print()" class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all text-xs font-bold uppercase tracking-widest">
                                 <i class="fas fa-print"></i> Imprimir Reporte
                             </button>
@@ -594,7 +596,7 @@
         const radioNormal = document.getElementById('normal');
         const radioUrgente = document.getElementById('urgente');
         const campoUrgencia = document.getElementById('urgencia-descripcion');
-        
+
         function syncUrgencia() {
             if (!campoUrgencia) return;
             if (radioUrgente && radioUrgente.checked) {
@@ -634,17 +636,17 @@
         const editorEl = document.getElementById('editor');
         if (editorEl) {
             ClassicEditor.create(editorEl, {
+                language: 'es',
                 extraPlugins: [Base64UploadAdapterPlugin],
                 toolbar: {
                     items: [
-                        'heading', '|',
-                        'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
-                        'outdent', 'indent', '|',
-                        'imageUpload', 'insertTable', 'blockQuote', 'undo', 'redo'
+                        'bold', 'italic', 'bulletedList', 'numberedList', '|',
+                        'link', 'imageUpload', '|', 'undo', 'redo', '|',
+                        'heading', 'insertTable', 'blockQuote', 'outdent', 'indent'
                     ],
-                    shouldNotGroupWhenFull: true
+                    shouldNotGroupWhenFull: false
                 },
-                placeholder: 'Describa el problema detalladamente, adjunte capturas de pantalla si es necesario...',
+                placeholder: 'Describe qué necesitas, dónde ocurre y cómo afecta tu trabajo…',
                 image: {
                     toolbar: [
                         'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|',
@@ -653,7 +655,7 @@
                 }
             }).then(editor => {
                 theEditor = editor;
-                
+
                 if (!document.getElementById('successMessage')) {
                     const savedData = localStorage.getItem('ticketDraft');
                     if (savedData) {
@@ -671,6 +673,7 @@
                     }
                 }
                 editor.model.document.on('change:data', saveDraft);
+                document.dispatchEvent(new CustomEvent('sigtram:helpdesk-editor-ready', {detail: {editor}}));
             }).catch(error => console.error('Error CKEditor:', error));
         }
 
@@ -718,7 +721,7 @@
         function checkDirty() {
             const currentTel = document.getElementById('telefono_contacto')?.value || '';
             const currentAny = document.getElementById('anydesk_contacto')?.value || '';
-            
+
             const telDirty = currentTel !== initialContactValues.telefono;
             const anyDirty = currentAny !== initialContactValues.anydesk;
             const isDirty = telDirty || anyDirty;
@@ -753,7 +756,7 @@
                 }
                 field.el.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
                 field.el.classList.remove('border-green-500', 'border-blue-400', 'focus:ring-blue-500', 'focus:border-blue-500', 'border-gray-300');
-                
+
                 if (field.iconContainer) {
                     field.iconContainer.classList.remove('hidden');
                     field.iconError.classList.remove('hidden');
@@ -762,7 +765,7 @@
             } else {
                 if (field.errEl) field.errEl.classList.add('hidden');
                 field.el.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500', 'border-gray-300', 'border-green-500', 'border-blue-400');
-                
+
                 if (isDirty) {
                     // Si es válido pero no se ha guardado, borde azul/neutro y sin iconos
                     field.el.classList.add('border-blue-400', 'focus:ring-blue-500', 'focus:border-blue-500');
@@ -879,7 +882,7 @@
         if (form) {
             form.addEventListener('submit', function (event) {
                 let ok = true;
-                
+
                 Object.keys(inputsToValidate).forEach(key => {
                     const field = inputsToValidate[key];
                     if (field && field.el) {
@@ -893,6 +896,7 @@
                     }
                 });
 
+                if (event.defaultPrevented) ok = false;
                 if (!ok) {
                     event.preventDefault();
                     // Scroll al primer error

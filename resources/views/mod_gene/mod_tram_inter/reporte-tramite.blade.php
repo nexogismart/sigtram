@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
@@ -165,8 +165,10 @@
             font-size: .75rem; font-weight: 800;
         }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-tramite'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gene.mod_tram_inter.reporte-tramite" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-tramite'])
 <div class="wrap">
 
     <div class="top">

@@ -200,6 +200,7 @@
 <body>
 
     <div class="voucher-card">
+@include('components.sigtram.print-brand')
         <div class="header">
             <h1 class="company-name">Municipalidad de Puente Piedra</h1>
             <p class="title">Trámite Documentario</p>

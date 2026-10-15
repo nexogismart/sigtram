@@ -19,16 +19,18 @@
         .fila-alt { background-color: #f8fafc; }
         .fila-hover:hover { background-color: #f8fafc !important; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.correo-interno'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen">
+<body data-sigtram-screen="mod_gene.mod_tram_inter.correo-interno" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.correo-interno'])
 
 <div class="p-3 sm:p-5 w-full max-w-[1600px] mx-auto">
 
     {{-- Modelo segi_expedi: sidebar 10% + contenido 90% --}}
-    <div class="grid grid-cols-1 xl:grid-cols-[220px_1fr] gap-4 min-h-[85vh]">
+    <div class="sigtram-inbox-layout">
 
         {{-- ========== MENÚ LATERAL (segi_expedi.php) ========== --}}
-        <aside class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden xl:sticky xl:top-4 self-start">
+        <aside class="sigtram-inbox-nav bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden xl:sticky xl:top-4 self-start">
             <div class="bg-slate-800 text-white px-4 py-3">
                 <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Correo Interno</p>
                 <h1 class="text-sm font-bold mt-0.5">Bandejas</h1>

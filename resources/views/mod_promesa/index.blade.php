@@ -6,8 +6,10 @@
     <title>Audiencias Públicas</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('mod_promesa/css/app.css') }}?v=4">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_promesa.index'])
 </head>
-<body>
+<body data-sigtram-screen="mod_promesa.index" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_promesa.index'])
 <main class="app">
     <div class="app__title-row">
         <h1>Audiencias Públicas</h1>

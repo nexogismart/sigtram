@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Seguimiento de Expedientes ÔÇö SIGTRAM</title>
+    <title>Seguimiento de Expedientes Ã”Ã‡Ã¶ SIGTRAM</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +47,9 @@
             @apply fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[150] flex flex-col items-center justify-center p-4 transition-all duration-300;
         }
     </style>
-</head><body class="bg-gray-50 text-gray-900 antialiased" x-data="correoExternoApp()">
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_bandeja'])
+</head><body data-sigtram-screen="mod_gm.mod_tram_exte.segi_bandeja" class="sigtram-module bg-gray-50 text-gray-900 antialiased" x-data="correoExternoApp()">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_bandeja'])
 
     
     <div x-show="showToast" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
@@ -64,7 +66,7 @@
             <ol class="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
                 <li><a href="#" class="hover:text-blue-600 transition-colors">SIGTRAM</a></li>
                 <li><i class="fas fa-chevron-right text-[7px] opacity-30"></i></li>
-                <li><a href="#" class="hover:text-blue-600 transition-colors">Tr+ímite Externo</a></li>
+                <li><a href="#" class="hover:text-blue-600 transition-colors">Tr+Ã­mite Externo</a></li>
                 <li><i class="fas fa-chevron-right text-[7px] opacity-30"></i></li>
                 <li class="text-blue-600">Bandeja de Seguimiento</li>
             </ol>
@@ -78,7 +80,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Seguimiento de Expedientes</h1>
-                    <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-black">Bandeja unificada de expedientes de tr+ímite externo</p>
+                    <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-black">Bandeja unificada de expedientes de tr+Ã­mite externo</p>
                 </div>
             </div>
             
@@ -248,14 +250,14 @@
                         <div class="lg:col-span-2">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Criterio</label>
                             <select x-model="criterio" @change="page=1; fetchItems()" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-gray-700 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
-                                <option value="expe_todo">N-¦ de Expediente</option>
-                                <option value="expe_varios">N-¦ de Expediente Varios</option>
-                                <option value="solicitante">Nombre/Raz+¦n Social</option>
+                                <option value="expe_todo">N-Â¦ de Expediente</option>
+                                <option value="expe_varios">N-Â¦ de Expediente Varios</option>
+                                <option value="solicitante">Nombre/Raz+Â¦n Social</option>
                                 <option value="observaciones">Observaciones</option>
                             </select>
                         </div>
                         <div class="lg:col-span-2">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Descripci+¦n</label>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Descripci+Â¦n</label>
                             <input type="text" x-model="descripcion" @input.debounce.500ms="page=1; fetchItems()" placeholder="Texto a buscar..." class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-gray-700 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
                         </div>
                         <div class="lg:col-span-2">
@@ -295,8 +297,8 @@
                                     <input type="checkbox" @click="toggleSelectAll()" :checked="selectedIds.length === items.length" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 </th>
                                 <th class="px-6 py-4 w-12 text-center">Orig.</th>
-                                <th class="px-6 py-4">N-¦ Exp.</th>
-                                <th class="px-6 py-4">Nombre o Raz+¦n Social</th>
+                                <th class="px-6 py-4">N-Â¦ Exp.</th>
+                                <th class="px-6 py-4">Nombre o Raz+Â¦n Social</th>
                                 <th class="px-6 py-4">F. Entrada</th>
                                 <th class="px-6 py-4">Estado</th>
                                 <th class="px-6 py-4">Observaciones</th>
@@ -330,10 +332,10 @@
                                                 <i class="fas fa-print text-xs"></i>
                                             </button>
                                             
-                                            <!-- Indicador de semaforizaci+¦n (Silencio Administrativo) -->
+                                            <!-- Indicador de semaforizaci+Â¦n (Silencio Administrativo) -->
                                             <button @click="showSilencio(item)" class="w-8 h-8 flex items-center justify-center rounded-lg border" 
                                                     :class="item.dias_acumulados >= (item.nu_tiem_sile + item.nu_tiem_sile_adcnal) && (item.nu_tiem_sile > 0) ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200' : 'bg-gray-50 hover:bg-slate-200 text-gray-400 border-gray-200'"
-                                                    :title="'D+¡as Acumulados: ' + item.dias_acumulados + ' / Silencio: ' + (item.nu_tiem_sile + item.nu_tiem_sile_adcnal)">
+                                                    :title="'D+Â¡as Acumulados: ' + item.dias_acumulados + ' / Silencio: ' + (item.nu_tiem_sile + item.nu_tiem_sile_adcnal)">
                                                 <i class="fas text-[10px]" :class="item.dias_acumulados >= (item.nu_tiem_sile + item.nu_tiem_sile_adcnal) && (item.nu_tiem_sile > 0) ? 'fa-exclamation-triangle' : 'fa-eye'"></i>
                                             </button>
 
@@ -351,26 +353,26 @@
                     </table>
                 </div>
 
-                <!-- Footer / Paginaci+¦n -->
+                <!-- Footer / Paginaci+Â¦n -->
                 <footer class="p-4 bg-slate-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         <div class="flex justify-center space-x-4 mt-4">
-                            <button @click="prevPage" :disabled="page <= 1" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded shadow-sm disabled:opacity-50 transition-colors">ÔåÉ Anterior</button>
-                            <span class="flex items-center gap-1">P+ígina <span class="text-blue-600 px-2 font-bold" x-text="page"></span> de <span x-text="lastPage"></span></span>
-                            <button @click="nextPage" :disabled="page >= lastPage" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded shadow-sm disabled:opacity-50 transition-colors">Siguiente ÔåÆ</button>
+                            <button @click="prevPage" :disabled="page <= 1" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded shadow-sm disabled:opacity-50 transition-colors">Ã”Ã¥Ã‰ Anterior</button>
+                            <span class="flex items-center gap-1">P+Ã­gina <span class="text-blue-600 px-2 font-bold" x-text="page"></span> de <span x-text="lastPage"></span></span>
+                            <button @click="nextPage" :disabled="page >= lastPage" class="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded shadow-sm disabled:opacity-50 transition-colors">Siguiente Ã”Ã¥Ã†</button>
                         </div>
                     </div>
                 </footer>
             </div>
         </div>
 
-        <!-- Panel de Hist+¦rico Timeline (Aparece abajo al hacer click en una fila) -->
+        <!-- Panel de Hist+Â¦rico Timeline (Aparece abajo al hacer click en una fila) -->
         <section x-show="selectedExpediente" x-transition x-cloak class="mt-6 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-history text-blue-600 text-lg"></i>
                     <h2 class="text-base font-bold text-gray-800">
-                        Historial del Expediente N-¦ <span class="text-blue-600" x-text="selectedExpediente?.nu_expe_todo"></span>
+                        Historial del Expediente N-Â¦ <span class="text-blue-600" x-text="selectedExpediente?.nu_expe_todo"></span>
                     </h2>
                 </div>
                 <button @click="selectedExpediente = null" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -378,14 +380,14 @@
                 </button>
             </div>
 
-            <!-- Tabla de Hist+¦rico -->
+            <!-- Tabla de Hist+Â¦rico -->
             <div class="overflow-auto custom-scrollbar mt-4 max-h-[300px]">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
                             <th class="px-4 py-3">F. Entrada</th>
                             <th class="px-4 py-3 text-center">T.E (Tiempo Transcurrido)</th>
-                            <th class="px-4 py-3">+ürea / Oficina</th>
+                            <th class="px-4 py-3">+Ã¼rea / Oficina</th>
                             <th class="px-4 py-3">Estado</th>
                             <th class="px-4 py-3">Observaciones</th>
                             <th class="px-4 py-3 text-center">U (Usuario)</th>
@@ -440,15 +442,15 @@
                 
                 <div class="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+¡as Permitidos de Ley</span>
+                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+Â¡as Permitidos de Ley</span>
                         <span class="font-bold text-gray-800 text-lg" x-text="silencioData?.nu_tiem_sile"></span>
                     </div>
                     <div>
-                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+¡as Adicionales (Pr+¦rroga)</span>
+                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+Â¡as Adicionales (Pr+Â¦rroga)</span>
                         <span class="font-bold text-gray-800 text-lg" x-text="silencioData?.nu_tiem_sile_adcnal"></span>
                     </div>
                     <div class="col-span-2 pt-2 border-t border-gray-100">
-                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+¡as Transcurridos desde Ingreso</span>
+                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">D+Â¡as Transcurridos desde Ingreso</span>
                         <span class="font-bold text-lg" :class="silencioData?.dias_acumulados >= (silencioData?.nu_tiem_sile + silencioData?.nu_tiem_sile_adcnal) ? 'text-red-600' : 'text-emerald-600'" x-text="silencioData?.dias_acumulados"></span>
                     </div>
                 </div>
@@ -474,7 +476,7 @@
                     Va a recepcionar <span class="text-blue-600" x-text="selectedIds.length"></span> expediente(s) seleccionado(s).
                 </p>
                 <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Recepci+¦n</label>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Recepci+Â¦n</label>
                     <input type="datetime-local" x-model="recepcionFecha" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
@@ -530,13 +532,13 @@
                     <div class="flex items-center justify-end">
                         <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
                             <input type="checkbox" x-model="derivarConTramite" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            Enviar con tr+ímite interno asociado
+                            Enviar con tr+Ã­mite interno asociado
                         </label>
                     </div>
 
-                    <!-- Formulario de tr+ímite interno asociado -->
+                    <!-- Formulario de tr+Ã­mite interno asociado -->
                     <div x-show="derivarConTramite" x-transition x-cloak class="border border-blue-200 bg-blue-50/30 rounded-xl p-4 space-y-3">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+ímite Interno</h4>
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+Ã­mite Interno</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Tipo de Documento</label>
@@ -548,7 +550,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Tr+ímite</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Tr+Ã­mite</label>
                                 <div class="flex gap-1.5">
                                     <input type="text" x-model="derivarTramiteNro" placeholder="0001-2026" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                     <button type="button" @click="fetchSemilla('derivar')" class="px-3 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black rounded-xl uppercase tracking-widest transition-colors shadow-sm">Generar</button>
@@ -561,7 +563,7 @@
                         </div>
                     </div>
 
-                    <!-- Adjuntar Anexos M+¦ltiples -->
+                    <!-- Adjuntar Anexos M+Â¦ltiples -->
                     <fieldset class="border border-gray-200 rounded-xl p-4 space-y-2.5">
                         <legend class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Adjuntar Anexos</legend>
                         <div class="grid grid-cols-2 gap-2">
@@ -572,7 +574,7 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="w-24">
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Folios</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Folios</label>
                                 <input type="number" x-model="derivarFolios" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none">
                             </div>
                             <p class="text-[10px] text-gray-400 font-medium self-end mb-1">Cantidad total de folios adjuntados.</p>
@@ -580,7 +582,7 @@
                     </fieldset>
 
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Derivaci+¦n</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Derivaci+Â¦n</label>
                         <input type="datetime-local" x-model="derivarFecha" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
@@ -610,13 +612,13 @@
             <form x-ref="formAsignar" @submit.prevent="submitAsignar($refs.formAsignar)" enctype="multipart/form-data">
                 <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">
-                        Va a asignar <span class="text-blue-600" x-text="selectedIds.length"></span> expediente(s) seleccionado(s) a personal de su misma +írea.
+                        Va a asignar <span class="text-blue-600" x-text="selectedIds.length"></span> expediente(s) seleccionado(s) a personal de su misma +Ã­rea.
                     </p>
                     
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Asignar a Responsable</label>
                         <select x-model="asignarCargo" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="0">-- Seleccione cargo del +írea --</option>
+                            <option value="0">-- Seleccione cargo del +Ã­rea --</option>
                             <template x-for="c in cargos" :key="c.cdgo_crgo">
                                 <option :value="c.cdgo_crgo" x-text="c.de_crgo + ' (' + c.no_crto + ')'"></option>
                             </template>
@@ -626,13 +628,13 @@
                     <div class="flex items-center justify-end">
                         <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
                             <input type="checkbox" x-model="asignarConTramite" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            Enviar con tr+ímite interno asociado
+                            Enviar con tr+Ã­mite interno asociado
                         </label>
                     </div>
 
-                    <!-- Formulario de tr+ímite interno asociado -->
+                    <!-- Formulario de tr+Ã­mite interno asociado -->
                     <div x-show="asignarConTramite" x-transition x-cloak class="border border-blue-200 bg-blue-50/30 rounded-xl p-4 space-y-3">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+ímite Interno</h4>
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+Ã­mite Interno</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Tipo de Documento</label>
@@ -644,7 +646,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Tr+ímite</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Tr+Ã­mite</label>
                                 <div class="flex gap-1.5">
                                     <input type="text" x-model="asignarTramiteNro" placeholder="0001-2026" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                     <button type="button" @click="fetchSemilla('asignar')" class="px-3 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black rounded-xl uppercase tracking-widest transition-colors shadow-sm">Generar</button>
@@ -657,7 +659,7 @@
                         </div>
                     </div>
 
-                    <!-- Adjuntar Anexos M+¦ltiples -->
+                    <!-- Adjuntar Anexos M+Â¦ltiples -->
                     <fieldset class="border border-gray-200 rounded-xl p-4 space-y-2.5">
                         <legend class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Adjuntar Anexos</legend>
                         <div class="grid grid-cols-2 gap-2">
@@ -666,14 +668,14 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="w-24">
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Folios</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Folios</label>
                                 <input type="number" x-model="asignarFolios" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none">
                             </div>
                         </div>
                     </fieldset>
 
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Asignaci+¦n</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Asignaci+Â¦n</label>
                         <input type="datetime-local" x-model="asignarFecha" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
@@ -696,18 +698,18 @@
             <header class="bg-slate-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between">
                 <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
                     <i class="fas fa-layer-group text-blue-600"></i>
-                    Enviar a M+¦ltiples +üreas
+                    Enviar a M+Â¦ltiples +Ã¼reas
                 </h3>
                 <button @click="modalEnviar = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </header>
             <form x-ref="formEnviar" @submit.prevent="submitEnviar($refs.formEnviar)" enctype="multipart/form-data">
                 <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">
-                        Va a enviar <span class="text-blue-600" x-text="selectedIds.length"></span> expediente(s) a m+¦ltiples oficinas de destino en paralelo.
+                        Va a enviar <span class="text-blue-600" x-text="selectedIds.length"></span> expediente(s) a m+Â¦ltiples oficinas de destino en paralelo.
                     </p>
 
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">+üreas de Destino</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">+Ã¼reas de Destino</label>
                         <div class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 h-48 overflow-y-auto custom-scrollbar">
                             <template x-for="a in areas" :key="a.id">
                                 <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer py-1.5 hover:bg-gray-200 rounded px-2 transition-colors" :class="a.level === 0 ? 'font-bold' : (a.level === 1 ? 'ml-4' : 'ml-8')">
@@ -721,13 +723,13 @@
                     <div class="flex items-center justify-end">
                         <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
                             <input type="checkbox" x-model="enviarConTramite" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            Enviar con tr+ímite interno asociado
+                            Enviar con tr+Ã­mite interno asociado
                         </label>
                     </div>
 
-                    <!-- Formulario de tr+ímite interno asociado -->
+                    <!-- Formulario de tr+Ã­mite interno asociado -->
                     <div x-show="enviarConTramite" x-transition x-cloak class="border border-blue-200 bg-blue-50/30 rounded-xl p-4 space-y-3">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+ímite Interno</h4>
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+Ã­mite Interno</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Tipo de Documento</label>
@@ -739,7 +741,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Tr+ímite</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Tr+Ã­mite</label>
                                 <div class="flex gap-1.5">
                                     <input type="text" x-model="enviarTramiteNro" placeholder="0001-2026" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                     <button type="button" @click="fetchSemilla('enviar')" class="px-3 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black rounded-xl uppercase tracking-widest transition-colors shadow-sm">Generar</button>
@@ -752,7 +754,7 @@
                         </div>
                     </div>
 
-                    <!-- Adjuntar Anexos M+¦ltiples -->
+                    <!-- Adjuntar Anexos M+Â¦ltiples -->
                     <fieldset class="border border-gray-200 rounded-xl p-4 space-y-2.5">
                         <legend class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Adjuntar Anexos</legend>
                         <div class="grid grid-cols-2 gap-2">
@@ -761,14 +763,14 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="w-24">
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Folios</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Folios</label>
                                 <input type="number" x-model="enviarFolios" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none">
                             </div>
                         </div>
                     </fieldset>
 
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Envi+¦</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Envi+Â¦</label>
                         <input type="datetime-local" x-model="enviarFecha" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
@@ -804,13 +806,13 @@
                     <div class="flex items-center justify-end">
                         <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
                             <input type="checkbox" x-model="finalizarConTramite" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            Enviar con tr+ímite interno asociado
+                            Enviar con tr+Ã­mite interno asociado
                         </label>
                     </div>
 
-                    <!-- Formulario de tr+ímite interno asociado -->
+                    <!-- Formulario de tr+Ã­mite interno asociado -->
                     <div x-show="finalizarConTramite" x-transition x-cloak class="border border-blue-200 bg-blue-50/30 rounded-xl p-4 space-y-3">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+ímite Interno</h4>
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-1.5">Crear Tr+Ã­mite Interno</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Tipo de Documento</label>
@@ -822,7 +824,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Tr+ímite</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Tr+Ã­mite</label>
                                 <div class="flex gap-1.5">
                                     <input type="text" x-model="finalizarTramiteNro" placeholder="0001-2026" class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                                     <button type="button" @click="fetchSemilla('finalizar')" class="px-3 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black rounded-xl uppercase tracking-widest transition-colors shadow-sm">Generar</button>
@@ -835,7 +837,7 @@
                         </div>
                     </div>
 
-                    <!-- Adjuntar Anexos M+¦ltiples -->
+                    <!-- Adjuntar Anexos M+Â¦ltiples -->
                     <fieldset class="border border-gray-200 rounded-xl p-4 space-y-2.5">
                         <legend class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Adjuntar Documentos Finales</legend>
                         <div class="grid grid-cols-2 gap-2">
@@ -844,21 +846,21 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="w-24">
-                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-¦ Folios</label>
+                                <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">N-Â¦ Folios</label>
                                 <input type="number" x-model="finalizarFolios" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold outline-none">
                             </div>
                         </div>
                     </fieldset>
 
-                    <!-- Notificaci+¦n Correo -->
+                    <!-- Notificaci+Â¦n Correo -->
                     <div class="bg-slate-50 border border-gray-200 rounded-xl p-4 space-y-3">
                         <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-1.5">Notificar al Solicitante</h4>
                         <div class="flex items-center gap-6">
-                            <span class="text-xs font-bold text-gray-600">-+Enviar correo de confirmaci+¦n?</span>
+                            <span class="text-xs font-bold text-gray-600">-+Enviar correo de confirmaci+Â¦n?</span>
                             <div class="flex gap-4">
                                 <label class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 cursor-pointer">
                                     <input type="radio" value="1" x-model="finalizarEnviarCorreo" class="text-blue-600 focus:ring-blue-500">
-                                    S+¡
+                                    S+Â¡
                                 </label>
                                 <label class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 cursor-pointer">
                                     <input type="radio" value="2" x-model="finalizarEnviarCorreo" class="text-blue-600 focus:ring-blue-500">
@@ -867,18 +869,18 @@
                             </div>
                         </div>
                         <div x-show="finalizarEnviarCorreo === '1'" x-transition x-cloak class="bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] font-semibold text-gray-500">
-                            ­ƒôº El correo se enviar+í a la direcci+¦n registrada por el ciudadano.
+                            Â­Æ’Ã´Âº El correo se enviar+Ã­ a la direcci+Â¦n registrada por el ciudadano.
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Finalizaci+¦n</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Finalizaci+Â¦n</label>
                         <input type="datetime-local" x-model="finalizarFecha" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Observaciones Finales / Detalle de Cierre</label>
-                        <textarea x-model="finalizarObs" rows="3" placeholder="Detalle final del tr+ímite..." class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <textarea x-model="finalizarObs" rows="3" placeholder="Detalle final del tr+Ã­mite..." class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                 </div>
                 <footer class="bg-slate-50 border-t border-gray-100 px-6 py-4 flex items-center justify-end gap-3">
@@ -908,7 +910,7 @@
                         <div class="border border-gray-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
                             <div class="flex justify-between items-start border-b border-gray-100 pb-2">
                                 <div>
-                                    <h4 class="text-xs font-black text-gray-800 uppercase" x-text="req.de_nombre_usuario || 'Solicitante An+¦nimo'"></h4>
+                                    <h4 class="text-xs font-black text-gray-800 uppercase" x-text="req.de_nombre_usuario || 'Solicitante An+Â¦nimo'"></h4>
                                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider" x-text="(req.de_cargo ? req.de_cargo + ' - ' : '') + (req.de_institucion_uo || '')"></p>
                                 </div>
                                 <span class="px-2.5 py-1 text-[9px] font-black rounded-full uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200" 
@@ -917,16 +919,16 @@
                             <div class="grid grid-cols-2 gap-4 text-xs">
                                 <div>
                                     <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Correo</span>
-                                    <span class="font-bold text-gray-700" x-text="req.de_correo_solicitante || 'ÔÇö'"></span>
+                                    <span class="font-bold text-gray-700" x-text="req.de_correo_solicitante || 'Ã”Ã‡Ã¶'"></span>
                                 </div>
                                 <div>
                                     <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">F. Solicitud</span>
-                                    <span class="font-bold text-gray-700" x-text="req.fe_solicitud || 'ÔÇö'"></span>
+                                    <span class="font-bold text-gray-700" x-text="req.fe_solicitud || 'Ã”Ã‡Ã¶'"></span>
                                 </div>
                                 <div>
-                                    <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 text-red-500">Rango de Grabaci+¦n</span>
-                                    <span class="font-bold text-gray-700 block" x-text="'Inicio: ' + (req.fe_inicio_grabacion || 'ÔÇö')"></span>
-                                    <span class="font-bold text-gray-700 block" x-text="'Fin: ' + (req.fe_fin_grabacion || 'ÔÇö')"></span>
+                                    <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 text-red-500">Rango de Grabaci+Â¦n</span>
+                                    <span class="font-bold text-gray-700 block" x-text="'Inicio: ' + (req.fe_inicio_grabacion || 'Ã”Ã‡Ã¶')"></span>
+                                    <span class="font-bold text-gray-700 block" x-text="'Fin: ' + (req.fe_fin_grabacion || 'Ã”Ã‡Ã¶')"></span>
                                 </div>
                                 <div>
                                     <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">F. Entrega</span>
@@ -967,7 +969,7 @@
                             </div>
                             <div>
                                 <strong class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Doc. Identidad</strong>
-                                <span x-text="detalleData.documento_id || 'ÔÇö'"></span>
+                                <span x-text="detalleData.documento_id || 'Ã”Ã‡Ã¶'"></span>
                             </div>
                             <div>
                                 <strong class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Tipo</strong>
@@ -978,12 +980,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <strong class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Domicilio Fiscal</strong>
-                                <span x-text="detalleData.domicilio || 'ÔÇö'"></span>
+                                <span x-text="detalleData.domicilio || 'Ã”Ã‡Ã¶'"></span>
                             </div>
                             <div>
                                 <strong class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Contacto</strong>
-                                <div>Tel: <span x-text="detalleData.telefono || 'ÔÇö'"></span></div>
-                                <div>Email: <span x-text="detalleData.correo || 'ÔÇö'"></span></div>
+                                <div>Tel: <span x-text="detalleData.telefono || 'Ã”Ã‡Ã¶'"></span></div>
+                                <div>Email: <span x-text="detalleData.correo || 'Ã”Ã‡Ã¶'"></span></div>
                             </div>
                         </div>
 
@@ -1100,7 +1102,7 @@
                 enviarFolios: 1,
                 
                 finalizarFecha: '{{ date("Y-m-d") }}T{{ date("H:i") }}',
-                finalizarObs: 'TR+üMITE FINALIZADO',
+                finalizarObs: 'TR+Ã¼MITE FINALIZADO',
                 finalizarEnviarCorreo: '1',
                 finalizarConTramite: false,
                 finalizarDocTipo: '0',
@@ -1168,7 +1170,7 @@
                     .catch(err => {
                         this.loading = false;
                         console.error(err);
-                        this.triggerToast('Error de conexi+¦n con el servidor');
+                        this.triggerToast('Error de conexi+Â¦n con el servidor');
                     });
                 },
 
@@ -1224,7 +1226,7 @@
                     })
                     .catch(err => {
                         console.error(err);
-                        this.triggerToast('Error de conexi+¦n al cargar historial');
+                        this.triggerToast('Error de conexi+Â¦n al cargar historial');
                     });
                 },
 
@@ -1250,7 +1252,7 @@
                         }
                     })
                     .catch(err => {
-                        this.triggerToast('Error de conexi+¦n al obtener detalles');
+                        this.triggerToast('Error de conexi+Â¦n al obtener detalles');
                         this.modalDetalle = false;
                     });
                 },
@@ -1288,7 +1290,7 @@
                         this.silencioData = item;
                         this.modalSilencio = true;
                     } else {
-                        this.triggerToast('El tr+ímite no tiene silencio administrativo configurado.');
+                        this.triggerToast('El tr+Ã­mite no tiene silencio administrativo configurado.');
                     }
                 },
 
@@ -1349,7 +1351,7 @@
                     })
                     .catch(err => {
                         this.loading = false;
-                        this.triggerToast('Error de conexi+¦n');
+                        this.triggerToast('Error de conexi+Â¦n');
                     });
                 },
 
@@ -1384,7 +1386,7 @@
                     })
                     .catch(err => {
                         this.loading = false;
-                        this.triggerToast('Error de conexi+¦n');
+                        this.triggerToast('Error de conexi+Â¦n');
                     });
                 },
 
@@ -1418,7 +1420,7 @@
                     })
                     .catch(err => {
                         this.loading = false;
-                        this.triggerToast('Error de conexi+¦n');
+                        this.triggerToast('Error de conexi+Â¦n');
                     });
                 },
 
@@ -1452,7 +1454,7 @@
                     })
                     .catch(err => {
                         this.loading = false;
-                        this.triggerToast('Error de conexi+¦n');
+                        this.triggerToast('Error de conexi+Â¦n');
                     });
                 },
 
@@ -1486,7 +1488,7 @@
                     })
                     .catch(err => {
                         this.loading = false;
-                        this.triggerToast('Error de conexi+¦n');
+                        this.triggerToast('Error de conexi+Â¦n');
                     });
                 }
             };

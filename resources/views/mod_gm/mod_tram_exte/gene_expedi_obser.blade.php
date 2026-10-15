@@ -30,8 +30,10 @@
         .error { color:#dc2626; font-size:11px; }
         label { margin-right:18px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_obser'])
 </head>
-<body>
+<body data-sigtram-screen="mod_gm.mod_tram_exte.gene_expedi_obser" class="sigtram-module">
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_obser'])
 @php
     $areasJson = $todasAreas->map(fn ($a) => [
         'id' => (int) $a->cdgo_area,

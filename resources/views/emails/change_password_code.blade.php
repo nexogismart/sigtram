@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Código de Verificación - SIGTRAM</title>
+<style>body { color:#163b59; } h2 { color:#126bbb; }</style>
 </head>
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 30px; color: #1f2937; margin: 0;">
+@include('components.sigtram.mail-brand')
     <div style="max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb;">
         
         <!-- Header -->
@@ -13,7 +15,7 @@
                 <span style="font-size: 28px;">🔑</span>
             </div>
             <h2 style="color: #1e3a8a; margin: 0; text-transform: uppercase; font-size: 20px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.2;">
-                Municipalidad Distrital de Puente Piedra
+                SIGTRAM · Sistema de Gestión de Trámites
             </h2>
             <p style="font-weight: 700; color: #3b82f6; font-size: 13px; margin: 6px 0 0 0; text-transform: uppercase; letter-spacing: 0.1em;">
                 Sistema de Gestión de Trámite Municipal — SIGTRAM
@@ -47,7 +49,7 @@
         <div style="text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; padding-top: 25px; margin-top: 35px; line-height: 1.5;">
             <p>Este es un correo de notificación generado automáticamente por la plataforma SIGTRAM.</p>
             <p>Por favor, no respondas directamente a este mensaje.</p>
-            <p style="font-weight: bold; margin-top: 12px; color: #6b7280;">&copy; {{ date('Y') }} Municipalidad Distrital de Puente Piedra</p>
+            <p style="font-weight: bold; margin-top: 12px; color: #6b7280;">&copy; {{ date('Y') }} SIGTRAM · Sistema de Gestión de Trámites</p>
         </div>
         
     </div>

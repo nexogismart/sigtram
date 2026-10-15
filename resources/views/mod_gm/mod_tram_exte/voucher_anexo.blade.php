@@ -69,6 +69,7 @@
 </head>
 <body>
 <div class="voucher-card">
+@include('components.sigtram.print-brand')
     <div class="header">
         <p class="company-name">{{ $nomComp }}</p>
         <p class="title">Sistema Trámite Documentario</p>

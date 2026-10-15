@@ -16,8 +16,10 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
     </style>
+    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.ingresar-tramite'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="ingresarTramiteForm()" x-cloak>
+<body data-sigtram-screen="mod_gene.mod_tram_inter.ingresar-tramite" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="ingresarTramiteForm()" x-cloak>
+    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.ingresar-tramite'])
 
 {{-- Toast --}}
 <div x-show="toast.show" x-transition

@@ -10,7 +10,7 @@
         }
     </script>
     <meta name="theme-color" content="#f1f5f9">
-    <title>Seleccionar Compañía — SIGTRAM3</title>
+    <title>Seleccionar Compañía — SIGTRAM</title>
     
     <!-- Fuentes e Iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -54,6 +54,10 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+            .transition-transform { transition: none !important; }
+        }
     </style>
 </head>
 
@@ -61,7 +65,7 @@
     
     <!-- BACKGROUND SLANTED SPLIT (Igual al Login) -->
     <div class="absolute inset-y-0 left-0 w-[65%] lg:w-[60%] bg-slate-900 pointer-events-none" style="clip-path: polygon(0 0, 100% 0, 75% 100%, 0% 100%);">
-        <div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity" style="background-image: url('{{ asset('images/puentepiedra.jpg') }}');"></div>
+        <div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity" style="background-image: url('{{ asset('images/sigtram-login-office.png') }}');"></div>
     </div>
 
     <!-- MAIN CARD -->
@@ -69,13 +73,13 @@
         
         <!-- LEFT COLUMN: INSET IMAGE -->
         <div class="hidden lg:flex flex-col justify-between w-[48%] bg-slate-800 rounded-[2rem] p-8 relative overflow-hidden shadow-inner">
-            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105" style="background-image: url('{{ asset('images/puentepiedra.jpg') }}');"></div>
+            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105" style="background-image: url('{{ asset('images/sigtram-login-office.png') }}');"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/20 to-slate-900/90"></div>
             
             <div class="relative z-10 flex justify-between items-center w-full">
-                <span class="text-white font-bold text-sm tracking-wide">Plataforma SGT</span>
+                <span class="text-white font-bold text-sm tracking-wide">SIGTRAM</span>
                 <div class="flex gap-4 items-center">
-                    <span class="border border-white/30 rounded-full px-4 py-1.5 text-white text-[11px] font-bold backdrop-blur-md">V 3.0</span>
+                    <span class="border border-white/30 rounded-full px-4 py-1.5 text-white text-[11px] font-bold backdrop-blur-md">Acceso institucional</span>
                 </div>
             </div>
 
@@ -85,14 +89,11 @@
                         <img src="{{ asset('images/nexosigtram-documental-emblema.png') }}" class="w-full h-full object-contain" alt="SIGTRAM">
                     </div>
                     <div>
-                        <p class="text-white font-black text-sm leading-tight tracking-wide">Gestión Institucional</p>
-                        <p class="text-white/70 text-xs font-medium">Puente Piedra</p>
+                        <p class="text-white font-black text-sm leading-tight tracking-wide">Sistema de Gestión de Trámites</p>
+                        <p class="text-white/70 text-xs font-medium">Desarrollado por Nexo</p>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white backdrop-blur-md transition-all"><i class="fas fa-arrow-left text-[10px]"></i></button>
-                    <button class="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white backdrop-blur-md transition-all"><i class="fas fa-arrow-right text-[10px]"></i></button>
-                </div>
+
             </div>
         </div>
 
@@ -101,7 +102,7 @@
             
             <!-- Header Right: Logo & Botón Cerrar Sesión -->
             <div class="flex justify-between items-center mb-8 lg:mb-10">
-                <img src="{{ asset('images/mpp.png') }}" class="h-6 sm:h-7 object-contain" alt="SIGTRAM">
+                <img src="{{ asset('images/nexosigtram-documental-logo.png') }}" class="h-6 sm:h-7 object-contain" alt="SIGTRAM">
                 
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
@@ -124,7 +125,7 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fas fa-search text-slate-400"></i>
                     </div>
-                    <input type="text" id="buscador" onkeyup="filtrarCompanias()" autofocus
+                    <input type="text" id="buscador" aria-label="Buscar compañía o entidad" oninput="filtrarCompanias()" autofocus
                         class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all outline-none placeholder:text-slate-400 shadow-sm" 
                         placeholder="Buscar por compañía o entidad...">
                 </div>

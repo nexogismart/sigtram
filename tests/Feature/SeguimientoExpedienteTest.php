@@ -84,4 +84,19 @@ class SeguimientoExpedienteTest extends TestCase
         $this->postJson(route('mod_gm.segi_expedi.tabla'), ['bandeja' => 'inexistente'])
             ->assertUnprocessable()->assertJsonValidationErrors('bandeja');
     }
+
+    public function test_hoja_de_ruta_resuelve_vista_portable_y_respeta_compania(): void
+    {
+        $this->withoutVite();
+        $movimiento = new \App\DTOs\mod_gm\ExpedienteMovimientoDto(55, 'E-55-2026', 1, 2, 10, 101, 10, 20, 1);
+        $repo = $this->mock(TramiteExternoRepositoryInterface::class);
+        $repo->shouldReceive('obtenerMovimientosActivosPorExpediente')->once()->with(55, 2)->andReturn([$movimiento]);
+        $repo->shouldReceive('obtenerDatosHojaRuta')->once()->with(55, 2)->andReturn([
+            'expediente'=>(object)['nu_expe_todo'=>'E-55-2026','fe_ingr_trmte'=>'2026-10-15 10:00:00','no_crto'=>'Solicitante de prueba'],
+            'historial'=>[],
+        ]);
+        $this->mock(TramiteExternoPolicy::class)->shouldReceive('hojaRuta')->once()->andReturn(true);
+        $this->get(route('mod_gm.segi_expedi.hoja_ruta', ['id'=>55]))->assertOk()
+            ->assertViewIs('mod_gm.mod_tram_exte.hoja_ruta')->assertSee('E-55-2026');
+    }
 }

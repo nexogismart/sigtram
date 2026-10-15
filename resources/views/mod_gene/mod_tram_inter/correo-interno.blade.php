@@ -42,8 +42,8 @@
             'comprobantesPago' => route('mod_tram_inter.correo_interno.comprobantes_pago'),
         ],
         'context' => [
-            'areaId' => (int) ($areaId ?? session(\App\Support\SessionKeys::USER_AREA_ID, 0)),
-            'cargoId' => (int) ($cargoId ?? session(\App\Support\SessionKeys::USER_CARGO_ID, 0)),
+            'areaId' => (int) ($areaId ?? session(\App\Support\SessionKeys::AREA_ID, 0)),
+            'cargoId' => (int) ($cargoId ?? session(\App\Support\SessionKeys::CARGO_ID, 0)),
             'esAreaContabilidad' => !empty($esAreaContabilidad),
         ],
         'csrfToken' => csrf_token(),

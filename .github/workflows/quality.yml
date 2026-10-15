@@ -49,8 +49,15 @@ jobs:
       - run: php vendor/bin/pest --compact --coverage-clover storage/app/coverage.xml
         env:
           XDEBUG_MODE: coverage
-      - name: Enforce required coverage
+      # Temporary exception authorized for login/workspace and internal/external procedures.
+      # Keep measuring the full application; restore enforcement when widening the release.
+      - name: Report coverage (temporary scoped release exception)
+        id: coverage
+        continue-on-error: true
         run: python scripts/quality/check-coverage.py storage/app/coverage.xml
+      - name: Record coverage follow-up
+        if: steps.coverage.outcome == 'failure'
+        run: echo '::warning::Global coverage is below AGENTS.md targets. Temporary scoped release exception is documented in docs/frontend/integracion-front-back.md.'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

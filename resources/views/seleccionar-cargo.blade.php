@@ -68,7 +68,7 @@
                     <button type="submit" class="border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 cursor-pointer transition-colors shadow-sm">
                         <i class="fas fa-power-off"></i> Cerrar sesión
                     </button>
-                </form></div><h2 id="role-title">Selecciona tu cargo</h2><p>Busca por nombre del cargo o del área.</p><label class="sigtram-role-search" for="buscador">Buscar cargo o área<input type="text" id="buscador" onkeyup="filtrarCargos()" autofocus placeholder="Escribe el cargo o el área..."></label>
+                </form></div><h2 id="role-title">Selecciona tu cargo</h2><p>Busca por nombre del cargo o del área.</p><label class="sigtram-role-search" for="buscador">Buscar cargo o área<input type="text" id="buscador" oninput="filtrarCargos()" autofocus placeholder="Escribe el cargo o el área..."></label>
 @if ($errors->any())<p class="sigtram-role-error" role="alert">{{ $errors->first() }}</p>@endif
 <div id="lista-cargos" class="sigtram-role-list">                        @foreach ($cargos as $index => $cargo)
                             <form method="POST" action="{{ route('seleccionar.cargo.guardar') }}" class="cargo-item" onsubmit="showLoading(this)">

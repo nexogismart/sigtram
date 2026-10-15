@@ -13,7 +13,7 @@
     "app/Http/Controllers/mod_gene/mod_tram_inter/BuscarTramiteController.php": "1ea405c27a8f28c8d4affd5477e941c28b6c5a6781bbec255f2fa2d6e03ca465",
     "app/Http/Controllers/mod_gene/mod_tram_inter/CorreoInternoController.php": "1197642d43a52225248b0846dbc2dd5aee7c2de7dca5df0b6cf0b83f24fb010c",
     "app/Http/Controllers/mod_gm/mod_tram_exte/AdjuntarTramiteController.php": "247170b809c62c2d39ef06fb5e6a9bd2e84d6b983131c195d4b92578cacfa459",
-    "app/Http/Controllers/mod_gm/mod_tram_exte/CorreoExternoController.php": "a4026790a20b88c7fff152d2405b1491326433f7ac0e8cd8880aea8642a253ed",
+    "app/Http/Controllers/mod_gm/mod_tram_exte/CorreoExternoController.php": "ffcf1513abb50400041d747392e574cb130ba677058820c992e02537a603924d",
     "app/Http/Controllers/mod_gm/mod_tram_exte/ListaExpediTodoController.php": "43ab2330184eccb6ab32f5012b9a3dcb89bf0b15dd8b534bf3529004b516815f",
     "app/Http/Controllers/mod_gm/mod_tram_exte/ListaReporAreaController.php": "4d7dc24c88cad972322791e61b24206bd10c8d4630ee9504fbe9e7ffb50a5faa",
     "app/Http/Controllers/mod_gm/mod_tram_exte/ListaReporteController.php": "cb18317b1c3f4ddba98e2e2bf291c6ba7b39f3f3dcb08494588f335615dbe618",
@@ -64,6 +64,8 @@
     "app/Services/mod_ti/FirmaEmailService.php": "ba8fdbdd14525097b0c19e6c65af8a75e7ce345ca757999b87a6c2b6dde4a9e7",
     "app/Services/mod_ti/ReportePublicidad2026Service.php": "b70df3dbed12107b691ea3037f0db8d04de4b046ebe64ea4856e9a570ee9a9cd",
     "app/Services/mod_ti/ReportePublicidadService.php": "4300b48f94ca57b8a77c2efbd22bdc71f322729d1ccd2b1f7fff163d2c33afcb",
-    "app/Services/mod_ti/dispositivo_seg_proxy_stream.inc.php": "7dab4b094dfb0b0cc8c6f0124498fc159dae69d3c4ccb842bfeeb50d946a9daa"
+    "app/Services/mod_ti/dispositivo_seg_proxy_stream.inc.php": "7dab4b094dfb0b0cc8c6f0124498fc159dae69d3c4ccb842bfeeb50d946a9daa",
+    "resources/css/shared/tramite-bandejas.css": "b8185ed274f32f71ffbdd4bdec7a7630dbe4eaa0e764ff39bb8ac58ef844bba5",
+    "resources/views/mod_gene/mod_tram_inter/correo-interno.blade.php": "ae6aea4332be8a9caa7e41769f4a79fa0162c38c08d1a90521fd285295cc36d9"
   }
 }

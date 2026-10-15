@@ -621,7 +621,7 @@ class CorreoExternoController extends Controller
             return $mov;
         });
 
-        return view('mod_gm\mod_tram_exte\hoja_ruta', compact('expediente', 'historial'));
+        return view('mod_gm.mod_tram_exte.hoja_ruta', compact('expediente', 'historial'));
     }
 
     /**

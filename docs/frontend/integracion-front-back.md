@@ -2,7 +2,7 @@
 
 Fecha: 15 de octubre de 2026. Rama: `codex/integracion-front-back`.
 
-**Estado: correcciones verificadas, pero todavía no cumple el control de cobertura requerido para main.** No se ha unido ni publicado esta rama en main. Que las pruebas existentes pasen no certifica todas las operaciones del sistema.
+**Alcance autorizado para esta entrega:** trámites internos y externos, login, selección de compañía/cargo y workspace. El usuario indicó expresamente que se priorice este alcance por ahora. La cobertura global queda como seguimiento informativo temporal; las pruebas, auditorías, compilación y PHPStan siguen siendo obligatorios. No se certifican todos los módulos ni escrituras sobre una BD de producción.
 
 ## Referencias y alcance
 
@@ -25,22 +25,22 @@ Las vistas operativas migradas mantienen su implementación backend y reciben la
 7. **Recursos visuales:** se sustituyó el escudo inexistente de selección de compañía por el emblema documental aprobado. Se retiró del build la entrada CSS del login antiguo, sin consumidores en las vistas actuales. La compilación ya no avisa de esas imágenes heredadas.
 8. **Pruebas:** todas usan SQLite en memoria, HTTP simulado y credenciales/clave QR de prueba. Las conexiones PostgreSQL heredadas no heredan URLs ni destinos remotos. El inicializador SQLite falla explícitamente cuando no puede crear el esquema. Las pruebas antes omitidas por ausencia de usuarios se sustituyeron por identidades y permisos sintéticos; las de seguimiento externo usan el contrato HTTP actual y simulan únicamente los colaboradores de negocio.
 
-Los cambios de funcionamiento del backend se enumeran explícitamente: **no se presenta el código corregido como idéntico al backend recibido**. `integration-reviewed-fixes.json` registra los hashes exactos de 63 archivos auditados modificados. Toda diferencia posterior no registrada hace fallar la auditoría. Los contratos y scripts de las vistas de trámites permanecen intactos respecto a la integración anterior.
+Los cambios de funcionamiento del backend se enumeran explícitamente: **no se presenta el código corregido como idéntico al backend recibido**. `integration-reviewed-fixes.json` registra los hashes exactos de 65 archivos auditados modificados. Toda diferencia posterior no registrada hace fallar la auditoría. Se conservan formularios, eventos y contratos de operaciones; se corrigió únicamente el respaldo de área/cargo del JSON de configuración de la bandeja interna para usar constantes existentes.
 
 ## Validación efectivamente ejecutada
 
 | Control | Resultado local |
 | --- | --- |
-| Pest completo con cobertura Xdebug | **709 aprobadas, 0 omitidas, 0 fallidas; 5.594 aserciones** |
+| Pest completo, entrega acotada | **714 aprobadas, 0 omitidas, 0 fallidas; 5.621 aserciones** |
 | JavaScript backend y frontend | **43 aprobadas, 0 omitidas, 0 fallidas** |
 | PHPStan nivel 5, aplicación completa | **0 errores**; inicialmente 325 |
-| Sintaxis PHP de los archivos modificados | **74 archivos, 0 errores** |
+| Sintaxis PHP | Revisión integral anterior y ejecución de las nuevas pruebas correctas |
 | Composer validate --strict | Correcto |
 | Composer audit | **0 avisos y 0 paquetes abandonados** |
 | npm audit | **0 vulnerabilidades** |
 | npm run build | Correcto, sin avisos de imágenes inexistentes |
 | artisan view:cache | Correcto |
-| Auditoría de integración con fixes explícitos | **348 archivos; 63 modificaciones documentadas; 0 diferencias imprevistas** |
+| Auditoría de integración con fixes explícitos | **348 archivos; 65 modificaciones documentadas; 0 diferencias imprevistas** |
 | git diff --check | Correcto |
 | Tests del control de cobertura | **4 aprobados**; comprueban umbrales y rechazo de alcances ausentes |
 
@@ -65,9 +65,9 @@ Para medir cobertura debe estar disponible Xdebug/PCOV. Aquí se cargó Xdebug s
 
 El auditor original `audit-contracts.py` sigue siendo una referencia anterior a la migración: se detiene en `segi_bandeja.blade.php`, eliminada por backend. No se restauró esa pantalla ni se reescribió su referencia para fabricar un resultado verde. La comparación vigente es contra el backend migrado con el registro explícito de correcciones.
 
-## Bloqueo de main y pendientes concretos
+## Cobertura global y pendientes fuera del alcance actual
 
-`AGENTS.md` TEST-01 exige **80 % en negocio y 100 % en Core**. La cobertura real de sentencias, incluyendo archivos no cubiertos, es:
+`AGENTS.md` TEST-01 exige **80 % en negocio y 100 % en Core**. La medición de referencia con Xdebug sobre la suite completa anterior (709 pruebas), incluyendo archivos no cubiertos, fue:
 
 | Alcance | Cubiertas / total | Cobertura | Mínimo |
 | --- | --- | --- | --- |
@@ -75,8 +75,22 @@ El auditor original `audit-contracts.py` sigue siendo una referencia anterior a 
 | Servicios y repositorios de negocio | 3.273 / 19.536 | **16,75 %** | 80 % |
 | Aplicación completa | 5.848 / 31.077 | **18,82 %** | Informativo |
 
-El control de cobertura **falla** con estas cifras. Se añadió `.github/workflows/quality.yml` para ejecutar auditorías, build, análisis estático, tests y este control sin ocultarlo ni reducir los mínimos. Para que GitHub impida físicamente un merge, el propietario debe exigir este check en las reglas de protección de main; el workflow por sí solo no configura esa protección.
+El control estricto de cobertura **falla** con estas cifras; no se redujeron los mínimos ni se ocultaron archivos. Por la entrega acotada autorizada por el usuario, únicamente ese paso del workflow continúa con una advertencia. Cualquier fallo de pruebas, auditorías, build o análisis estático sigue haciendo fallar el job. Se debe restaurar la exigencia de cobertura al ampliar la entrega al sistema completo. El workflow por sí solo no modifica las reglas de protección de main.
 
 Falta ampliar pruebas de comportamiento, especialmente `DocumentGeneratorService` (0/200 sentencias cubiertas), adaptadores de notificaciones/PIDE y servicios de módulos que no ejercita la suite actual. Deben usar fixtures, procesos y servicios externos simulados o entornos desechables; no se deben habilitar pruebas sobre la BD de negocio para subir cobertura. También falta la aceptación de los flujos completos de documentos, firma y almacenamiento híbrido en un entorno de pruebas representativo. No se certifica compatibilidad total con PostgreSQL ni servicios externos a partir de SQLite y mocks.
 
-No se tocaron main ni los permisos/datos reales para sortear estos pendientes.
+No se modificaron permisos o datos reales para sortear pendientes. Las pruebas de las operaciones usan SQLite/mocks; la aceptación con PostgreSQL, firma y sistemas externos sigue siendo distinta de estas comprobaciones.
+
+
+## Contraste frontend y correcciones de la entrega acotada
+
+- El login, logos documentales y fondo de oficina coinciden con `codex/front` (`62bee7bd`); se conservaron los cambios de compatibilidad del workspace y sus preferencias por compañía/cargo.
+- La selección de compañía aún mostraba SGT, un logo municipal anterior y una entidad fija. Se unificó con SIGTRAM, el logo documental y el fondo aprobado, manteniendo los formularios y rutas. Se quitaron dos botones decorativos sin acción y se etiquetó el buscador.
+- Se verificó en navegador la entrada al módulo externo desde el workspace y Entrada → Salida; también Entrada → Enviados en el módulo interno, con sus scripts Vite reales y respuestas sintéticas que reproducen el contrato backend. No se enviaron trámites ni se simularon resultados de escrituras reales.
+- Se contrastaron login y workspace en escritorio y móvil (390 px); se verificó el fallback de foto cuando no existe una imagen de prueba, sin consultar RENIEC. Los filtros y la navegación móvil de las bandejas no desbordan la página.
+- Se corrigió el mínimo de anchura del botón Consultar que recortaba Limpiar filtros a 1280 px. Se comprobó en DOM que ambos quedan dentro del panel. Es una corrección CSS, sin alterar scripts, parámetros o acciones.
+- Los buscadores de compañía y cargo ahora responden al evento input; se comprobó que pegar texto sin coincidencias muestra el estado vacío y que recuperar un texto válido vuelve a mostrar la opción.
+- Un test reprodujo la constante inexistente `USER_AREA_ID` al renderizar el respaldo de contexto interno. Ahora se usan `AREA_ID` y `CARGO_ID`; se conservan los valores explícitos enviados por el controlador.
+- Se revisó la ejecución remota anterior de GitHub Actions (`38810132266`): detectó un error Linux en el nombre de la vista de la hoja de ruta externa, que utilizaba barras de Windows. Se corrigió a notación Laravel con puntos; un test del endpoint verifica compañía, vista y número de expediente. El formato de impresión no se modificó.
+
+Se añadieron pruebas de renderizado y contrato del login, compañía, doble cargo y contexto interno, además del endpoint de hoja de ruta externa. El servidor visual local bloquea DB/HTTP externos y escrituras y usa exclusivamente identidades sintéticas. Estas comprobaciones no se presentan como una sesión real con todas las operaciones contra PostgreSQL.

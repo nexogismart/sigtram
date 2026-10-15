@@ -23,6 +23,21 @@ use Tests\TestCase;
 
 class TramiteInternoCompaniaTest extends TestCase
 {
+    /** Institutional titles omit the sender; personal titles use initials like Word drafts. */
+    public static function tiposDeNumeracion(): array
+    {
+        return ['institucional' => [0, ''], 'personal' => [1, '-jp']];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Exercise real commit/rollback boundaries without opening PostgreSQL.
+        config(['database.default'=>'sqlite', 'database.connections.sqlite.database'=>':memory:']);
+        DB::purge('sqlite');
+        DB::statement('CREATE TABLE transaction_probe (id INTEGER PRIMARY KEY)');
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -42,7 +57,8 @@ class TramiteInternoCompaniaTest extends TestCase
     /**
      * Demuestra que compañía activa 2 guarda obligatoriamente p_dtos_ntrnos.cdgo_cmpnia = 2.
      */
-    public function test_tramite_interno_guarda_compania_activa_2(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('tiposDeNumeracion')]
+    public function test_tramite_interno_guarda_compania_activa_2(int $personal, string $sufijo): void
     {
         $this->autenticarUsuario(10);
         session([SessionKeys::CARGO_ID => 101]);
@@ -63,7 +79,7 @@ class TramiteInternoCompaniaTest extends TestCase
 
         $mockRepo->shouldReceive('obtenerUsuarioLogin')->with(10)->andReturn((object) ['no_crto' => 'J. Perez']);
         $mockRepo->shouldReceive('obtenerAnioPorValor')->andReturn((object) ['cdgo_anio' => 2026, 'de_anio' => '2026']);
-        $mockRepo->shouldReceive('obtenerInfoTipoTramite')->with(1)->andReturn((object) ['de_tpo_trmte' => 'INFORME', 'in_scncal' => 0, 'in_cc' => 1]);
+        $mockRepo->shouldReceive('obtenerInfoTipoTramite')->with(1)->andReturn((object) ['de_tpo_trmte' => 'INFORME', 'in_scncal' => $personal, 'in_cc' => 1]);
         $mockRepo->shouldReceive('obtenerJerarquiaArea')->with(5)->andReturn((object) ['dc_area_prim' => 'GM', 'dc_area' => 'SGT']);
         $mockRepo->shouldReceive('obtenerNuevaSemilla')->andReturn(1);
         $mockRepo->shouldReceive('guardarSemilla')->once();
@@ -71,12 +87,12 @@ class TramiteInternoCompaniaTest extends TestCase
         // Verificación clave: registrarNuevoTramite DEBE recibir cdgo_cmpnia = 2
         $mockRepo->shouldReceive('registrarNuevoTramite')
             ->once()
-            ->with(Mockery::on(function (array $cabecera) {
+            ->with(Mockery::on(function (array $cabecera) use ($sufijo) {
                 return isset($cabecera['cdgo_cmpnia'])
                     && $cabecera['cdgo_cmpnia'] === 2
                     && $cabecera['nu_tram_todo'] === '1-2026'
                     && $cabecera['nu_tram'] === 1
-                    && $cabecera['nu_tram_cmplto'] === 'INFORME Nº 0001-2026-MDPP-GM-SGT';
+                    && $cabecera['nu_tram_cmplto'] === 'INFORME Nº 0001-2026-MDPP-GM-SGT'.$sufijo;
             }))
             ->andReturn(5001);
 
@@ -305,7 +321,10 @@ class TramiteInternoCompaniaTest extends TestCase
         $mockRepo->shouldReceive('obtenerJerarquiaArea')->andReturn(null);
         $mockRepo->shouldReceive('obtenerNuevaSemilla')->andReturn(1);
         $mockRepo->shouldReceive('guardarSemilla');
-        $mockRepo->shouldReceive('registrarNuevoTramite')->andReturn(777);
+        $mockRepo->shouldReceive('registrarNuevoTramite')->andReturnUsing(function () {
+            DB::table('transaction_probe')->insert(['id'=>777]);
+            return 777;
+        });
         $mockRepo->shouldReceive('actualizarRutaAdjunto');
         $mockRepo->shouldReceive('obtenerCargosDestinoPorAreas')->andReturn(collect([
             20 => collect() // Sin cargos asignados
@@ -321,14 +340,19 @@ class TramiteInternoCompaniaTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Fallo catastrófico al insertar destinos');
 
-        $service->registrarTramite([
-            'sel_cdgo_tpo_trmte'  => 1,
-            'txt_nu_smlla_intrno' => '1-2026',
-            'txt_fe_rcbdo'        => '2026-10-14 10:00:00',
-            'sel_areas'           => [20],
-            'txt_de_obser'        => 'Prueba rollback',
-            'rdn_in_prrdad_trmte' => 1,
-        ], [], 0, 2);
+        try {
+            $service->registrarTramite([
+                'sel_cdgo_tpo_trmte'  => 1,
+                'txt_nu_smlla_intrno' => '1-2026',
+                'txt_fe_rcbdo'        => '2026-10-14 10:00:00',
+                'sel_areas'           => [20],
+                'txt_de_obser'        => 'Prueba rollback',
+                'rdn_in_prrdad_trmte' => 1,
+            ], [], 0, 2);
+        } finally {
+            $this->assertSame(0, DB::table('transaction_probe')->count());
+            $this->assertSame(0, DB::connection()->transactionLevel());
+        }
     }
 
     /**

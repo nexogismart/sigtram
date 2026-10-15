@@ -167,7 +167,7 @@ class VerRequerimientoLocadorService
     public function guardarPlantilla(int $id, ?UploadedFile $archivo): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cab = $this->cabecera($id, $areaId);
         if ($cab === null) {
             return $this->fail('No se encontró el requerimiento.');

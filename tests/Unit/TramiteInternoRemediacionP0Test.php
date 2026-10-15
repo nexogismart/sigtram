@@ -734,7 +734,7 @@ class TramiteInternoRemediacionP0Test extends TestCase
             $payloadCapturado = $payload;
         });
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $service->auditarDescarga(42, '192.168.1.50', 'documento.pdf');
 
         $columnasEsperadas = ['de_urls_dscrgas', 'cdgo_lgin', 'fe_sgmto_dscrgas', 'de_ip'];

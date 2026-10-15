@@ -49,7 +49,7 @@ class VerRequerimientoLocadorController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores - Locador'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores - Locador'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores - Locador';
         }

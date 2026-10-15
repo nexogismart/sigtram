@@ -39,7 +39,7 @@ class NotificarPlataformaController extends Controller
         }
 
         $pathVista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Notificar Plataforma'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Notificar Plataforma'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Notificar Plataforma';
         }
@@ -118,8 +118,8 @@ class NotificarPlataformaController extends Controller
             return $nu;
         }
 
-        $mid = ($parts[1] ?? '').'-'.substr((string) ($parts[2] ?? ''), 2, 10);
+        $mid = ($parts[1]).'-'.substr((string) ($parts[2]), 2, 10);
 
-        return ($parts[0] ?? '').'-'.str_pad($mid, 9, '0', STR_PAD_LEFT);
+        return ($parts[0]).'-'.str_pad($mid, 9, '0', STR_PAD_LEFT);
     }
 }

@@ -28,6 +28,7 @@ class IngresoExpedienteVoucherYTrackingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['services.qr.key'=>'test-only-qr-signing-key-0000000000000000']);
 
         $this->mockService = Mockery::mock(IngresoExpedienteService::class);
         $this->mockRepo = Mockery::mock(IngresoExpedienteRepositoryInterface::class);
@@ -483,4 +484,3 @@ class IngresoExpedienteVoucherYTrackingTest extends TestCase
         $this->controller->voucher(99999);
     }
 }
-

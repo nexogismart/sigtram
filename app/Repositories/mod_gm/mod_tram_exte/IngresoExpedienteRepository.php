@@ -462,8 +462,8 @@ class IngresoExpedienteRepository implements IngresoExpedienteRepositoryInterfac
             return null;
         }
 
-        $expediente->dc_tpo_trmte = $dcTpo;
-        $expediente->de_tpo_trmte = $deTpo !== '' ? $deTpo : null;
+        $expediente->setAttribute('dc_tpo_trmte', $dcTpo);
+        $expediente->setAttribute('de_tpo_trmte', $deTpo !== '' ? $deTpo : null);
         $expediente->in_docu_trmte = !empty($expediente->in_docu_trmte) ? (string) $expediente->in_docu_trmte : null;
 
         $token = PublicTrackingToken::generate($expedienteId);
@@ -476,8 +476,8 @@ class IngresoExpedienteRepository implements IngresoExpedienteRepositoryInterfac
             'compania' => $compania,
             'publicTrackingUrl' => $publicTrackingUrl,
             'qrCode' => $qrCode,
-            'dc_tpo_trmte' => $expediente->dc_tpo_trmte,
-            'de_tpo_trmte' => $expediente->de_tpo_trmte,
+            'dc_tpo_trmte' => $expediente->getAttribute('dc_tpo_trmte'),
+            'de_tpo_trmte' => $expediente->getAttribute('de_tpo_trmte'),
             'in_docu_trmte' => $expediente->in_docu_trmte,
         ];
     }
@@ -896,7 +896,7 @@ class IngresoExpedienteRepository implements IngresoExpedienteRepositoryInterfac
             return null;
         }
 
-        $companiaNombre = trim((string) ($expediente->compania?->de_cmpnia ?? ''));
+        $companiaNombre = trim((string) ($expediente->compania->de_cmpnia ?? ''));
         if ($companiaNombre === '') {
             \Illuminate\Support\Facades\Log::warning("obtenerSeguimientoPublico: expediente {$expedienteId} carece de compañía válida.");
             return null;
@@ -917,7 +917,7 @@ class IngresoExpedienteRepository implements IngresoExpedienteRepositoryInterfac
             return null;
         }
 
-        $descTupa = trim((string) ($expediente->documentoTupa?->de_docmnto_trmte ?? ''));
+        $descTupa = trim((string) ($expediente->documentoTupa->de_docmnto_trmte ?? ''));
         $deTpo = trim((string) ($tipoCatalogo->de_tpo_trmte ?? ''));
         $dcTpo = trim((string) ($tipoCatalogo->dc_tpo_trmte ?? ''));
 
@@ -931,12 +931,12 @@ class IngresoExpedienteRepository implements IngresoExpedienteRepositoryInterfac
             return null;
         }
 
-        $solicitanteNombre = trim((string) ($expediente->usrio?->no_crto ?? ''));
+        $solicitanteNombre = trim((string) ($expediente->usrio->no_crto ?? ''));
         if ($solicitanteNombre === '') {
             $solicitanteNombre = 'Solicitante no disponible';
         }
 
-        $areaActual = trim((string) ($expediente->area?->de_area ?? 'Mesa de Partes'));
+        $areaActual = trim((string) ($expediente->area->de_area ?? 'Mesa de Partes'));
 
         // Consultar movimientos históricos públicos (sin exponer IDs sensibles ni adjuntos privados)
         // Incluye todos los movimientos históricos: tanto in_esta = 0 como in_esta = 1

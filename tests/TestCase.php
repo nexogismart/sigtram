@@ -6,6 +6,7 @@ namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
@@ -15,17 +16,27 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        Http::preventStrayRequests();
+        // Named legacy connections must never inherit production URLs during tests.
+        foreach (config('database.connections', []) as $name => $connection) {
+            if (($connection['driver'] ?? '') !== 'sqlite') {
+                config(["database.connections.$name.url"=>null,
+                    "database.connections.$name.host"=>'127.0.0.1',
+                    "database.connections.$name.port"=>1]);
+            }
+        }
+
         $this->inicializarBaseDesechableSiAplica();
 
         // Guardrail P0: Prevenir conexiones reales accidentales a PostgreSQL
         /** @phpstan-ignore-next-line */
         if (! (bool) env('ALLOW_DANGEROUS_DB_TESTS', false)) {
-            DB::beforeExecuting(function (string $query, array $bindings, $connection): void {
+            $guard = function (string $query, array $bindings, $connection): void {
                 $driver = $connection->getDriverName();
                 $database = (string) $connection->getDatabaseName();
                 $host = (string) ($connection->getConfig('host') ?? '');
 
-                $isDisposable = ($driver === 'sqlite' || $database === ':memory:' || str_contains($database, 'test'));
+                $isDisposable = $driver === 'sqlite' && $database === ':memory:';
 
                 if (! $isDisposable || $host === '192.168.2.40' || $database === 'sigtramv3') {
                     throw new RuntimeException(
@@ -33,7 +44,11 @@ abstract class TestCase extends BaseTestCase
                         "Está estrictamente prohibido tocar la base de datos configurada sin autorización explícita."
                     );
                 }
-            });
+            };
+            DB::beforeExecuting($guard);
+            foreach (array_keys(config('database.connections', [])) as $name) {
+                if ($name !== DB::getDefaultConnection()) DB::connection($name)->beforeExecuting($guard);
+            }
         }
     }
 
@@ -143,7 +158,7 @@ abstract class TestCase extends BaseTestCase
                     in_popup TEXT DEFAULT '0'
                 );");
             } catch (\Throwable $e) {
-                // Fallback silencioso si el driver sqlite no está disponible
+                throw new RuntimeException('No se pudo inicializar SQLite de pruebas.', 0, $e);
             }
         }
     }

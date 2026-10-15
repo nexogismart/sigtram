@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test": "node --test tests/js/*.test.js"
+        "test": "node --test tests/js/*.test.js tests/Frontend/*.test.cjs"
     },
     "devDependencies": {
         "@fortawesome/fontawesome-free": "^7.3.1",

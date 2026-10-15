@@ -1,0 +1,58 @@
+name: Integration quality
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, pdo_pgsql, pgsql, gd, zip, intl, bcmath
+          coverage: xdebug
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --prefer-dist --no-interaction --no-scripts
+      - name: Prepare isolated environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan package:discover
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+      - run: composer validate --strict
+      - run: composer audit
+      - run: npm ci --ignore-scripts
+      - run: npm audit
+      - run: npm test
+      - run: npm run build
+      - run: php vendor/bin/phpstan analyse --no-progress
+      - run: python -m unittest discover -s tests/Quality
+      - run: python scripts/frontend/audit-integration.py --reviewed-fixes
+      - run: php vendor/bin/pest --compact --coverage-clover storage/app/coverage.xml
+        env:
+          XDEBUG_MODE: coverage
+      - name: Enforce required coverage
+        run: python scripts/quality/check-coverage.py storage/app/coverage.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: storage/app/coverage.xml

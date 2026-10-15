@@ -81,7 +81,7 @@ class PideCore implements PideCoreInterface
 
         // 2. Realizamos la lógica de persistencia / discrepancia
         try {
-            return DB::transaction(function () use ($resultado, $documento, $tipo) {
+            return DB::transaction(function () use ($resultado, $tipo) {
                 if ($tipo === 'DNI') {
                     return $this->procesarPersistenciaPersona($resultado);
                 } else {

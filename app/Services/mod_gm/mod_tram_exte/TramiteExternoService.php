@@ -111,7 +111,7 @@ class TramiteExternoService
      * Deriva expedientes recibidos hacia un área/cargo destino.
      *
      * @param ContextoUsuarioAutenticadoDto $contexto
-     * @param array<int> $expedienteIds
+     * @param array<int> $movimientoIds
      * @param int $cargoDestinoId
      * @param string $fecha
      * @param string|null $observaciones
@@ -262,7 +262,7 @@ class TramiteExternoService
      * Asigna expedientes a un funcionario interno de la misma área.
      *
      * @param ContextoUsuarioAutenticadoDto $contexto
-     * @param array<int> $expedienteIds
+     * @param array<int> $movimientoIds
      * @param int $cargoInternoId
      * @param string $fecha
      * @param string|null $observaciones
@@ -288,7 +288,7 @@ class TramiteExternoService
      * Asigna expedientes a un funcionario interno de la misma área.
      *
      * @param ContextoUsuarioAutenticadoDto $contexto
-     * @param array<int> $expedienteIds
+     * @param array<int> $movimientoIds
      * @param int $cargoInternoId
      * @param string $fecha
      * @param string|null $observaciones
@@ -437,7 +437,7 @@ class TramiteExternoService
      * Resuelve CE-P1-003, CE-P1-004 y CE-07.
      *
      * @param ContextoUsuarioAutenticadoDto $contexto
-     * @param array<int> $expedienteIds
+     * @param array<int> $movimientoIds
      * @param array<int> $areasDestinoIds
      * @param string $fecha
      * @param string|null $observaciones
@@ -602,7 +602,7 @@ class TramiteExternoService
      * Finaliza expedientes en custodia.
      *
      * @param ContextoUsuarioAutenticadoDto $contexto
-     * @param array<int> $expedienteIds
+     * @param array<int> $movimientoIds
      * @param string $fecha
      * @param string $observaciones
      * @param string|null $correoNotificar

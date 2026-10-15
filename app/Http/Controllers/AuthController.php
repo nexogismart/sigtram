@@ -32,8 +32,7 @@ class AuthController extends Controller
      */
     protected ModuleDispatcher $dispatcher;
 
-    /**
-     * AuthController constructor.
+    /** Active company/cargo context service. */
     protected \App\Contracts\Services\ContextoUsuarioAutenticadoServiceInterface $contextoService;
 
     /**

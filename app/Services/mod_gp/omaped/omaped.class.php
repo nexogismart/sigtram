@@ -20,19 +20,7 @@ class omaped_class {
 
     // ==================== MÉTODOS DE UTILIDAD ====================
 
-    /**
-     * Códigos de login (cdgo_lgin / sesión usIds o id) autorizados a ENTRAR al módulo OMAPED.
-     * Es independiente del perfil SIGTRAM: aunque el perfil tenga el permiso del módulo,
-     * solo entran quienes figuren aquí.
-     */
-    private function obtenerCodigosLoginPermitidosAccesoModulo() {
-        return array(
-            15481,
-            2765,
-            16502,
-            11931,
-        );
-    }
+
 
     /**
      * Códigos de login permitidos solo para ELIMINAR registros OMAPED (puede ser distinto del acceso).
@@ -72,15 +60,18 @@ class omaped_class {
      * Registra error en el log del sistema
      * @param string $mensaje Mensaje de error
      * @param string|null $sql Consulta SQL relacionada (opcional)
-     * @param resource|null $cn Conexión de base de datos (opcional, si es null usa $this->cn)
+     * @param \PgSql\Connection|null $cn Conexión de base de datos (opcional, si es null usa $this->cn)
      */
     /**
      * Registra errores en el log (optimizado para producción)
      * @param string $mensaje Mensaje de error
      * @param string|null $sql Consulta SQL relacionada (opcional)
-     * @param resource|null $cn Conexión de base de datos (opcional)
+     * @param \PgSql\Connection|null $cn Conexión de base de datos (opcional)
      */
     private function logError($mensaje, $sql = null, $cn = null) {
+        if (!defined('__DOCROOT__') || !defined('__SUBDIRECTORY__')) {
+            return;
+        }
         $destino = __DOCROOT__ . __SUBDIRECTORY__ . "/Negocio/admin/log/ver.log";
         $abrirdes = @fopen($destino, "a");
         if (!$abrirdes) {
@@ -111,7 +102,7 @@ class omaped_class {
      * Versión estática de logError para usar desde archivos AJAX
      * Reutiliza la lógica de logError pero sin instancia
      * @param string $mensaje Mensaje de error
-     * @param resource|null $cn Conexión de base de datos
+     * @param \PgSql\Connection|null $cn Conexión de base de datos
      * @param string|null $sql Consulta SQL relacionada
      */
     public static function logErrorEstatico($mensaje, $cn = null, $sql = null) {
@@ -132,6 +123,9 @@ class omaped_class {
             $a .= "Mensaje BD : " . ($errorBD ? $errorBD : '') . "\n";
         }
         $a .= "\n\n";
+        if (!defined('__DOCROOT__') || !defined('__SUBDIRECTORY__')) {
+            return;
+        }
         $destino = __DOCROOT__ . __SUBDIRECTORY__ . "/Negocio/admin/log/ver.log";
         $abrirdes = @fopen($destino, "a");
         if ($abrirdes) {
@@ -144,7 +138,7 @@ class omaped_class {
      * Ejecuta una consulta SQL parametrizada
      * @param string $sql Consulta SQL con placeholders $1, $2, etc.
      * @param array $params Parámetros para la consulta
-     * @return resource|false Resultado de la consulta o false si falla
+     * @return \PgSql\Result|false Resultado de la consulta o false si falla
      */
     private function ejecutar($sql, $params = array()) {
         $result = @pg_query_params($this->cn, $sql, $params);
@@ -194,7 +188,7 @@ class omaped_class {
      * @return string|null Nombre del archivo guardado o null si falla
      */
     private function subirArchivo($archivo, $tipo, $dni, $idAdicional = null) {
-        if (!isset($archivo) || !isset($archivo['error']) || $archivo['error'] !== UPLOAD_ERR_OK) {
+        if (!isset($archivo['error']) || $archivo['error'] !== UPLOAD_ERR_OK) {
             $codigoError = isset($archivo['error']) ? (int)$archivo['error'] : -1;
             $this->logError("subirArchivo: archivo inválido o con error PHP upload (code=$codigoError, tipo=$tipo).", null);
             return null;
@@ -386,7 +380,7 @@ class omaped_class {
             // Fallback muy raro: si random_bytes falla, registramos y usamos openssl
             $this->logError('Error al generar token seguro con random_bytes: ' . $e->getMessage(), null);
             $fallback = openssl_random_pseudo_bytes((int)$bytes);
-            return bin2hex($fallback !== false ? $fallback : uniqid('', true));
+            return bin2hex($fallback);
         }
     }
 
@@ -421,7 +415,7 @@ class omaped_class {
      * @return int|null ID validado o null si es inválido
      */
     private function validarIdPositivo($value, $campo = '') {
-        if (!isset($value) || $value === '' || $value === null) return null;
+        if ($value === null || $value === '') return null;
         if (!is_numeric($value)) {
             return null;
         }
@@ -1395,7 +1389,7 @@ class omaped_class {
         $sensorial = $this->boolFrom(!empty($discapacidad['sensorial']));
         $intelectual = $this->boolFrom(!empty($discapacidad['intelectual']));
         $mentalRaw = isset($discapacidad['mental']) ? $discapacidad['mental'] : false;
-        $mental = $this->boolFrom(!empty($mentalRaw) || $mentalRaw === true || $mentalRaw === 'true' || $mentalRaw === 1 || $mentalRaw === '1');
+        $mental = $this->boolFrom(!empty($mentalRaw));
         
 
         // Busca discapacidad existente si no se proporciona ID
@@ -1760,20 +1754,12 @@ class omaped_class {
             // Formatear fechas en PHP (más rápido que TO_CHAR en SQL)
             $fechaNac = '';
             if (!empty($row['fecha_nacimiento'])) {
-                if (is_string($row['fecha_nacimiento'])) {
-                    $fechaNac = substr($row['fecha_nacimiento'], 0, 10); // Extraer solo YYYY-MM-DD
-                } else {
-                    $fechaNac = date('Y-m-d', strtotime($row['fecha_nacimiento']));
-                }
+                $fechaNac = substr($row['fecha_nacimiento'], 0, 10); // Extraer solo YYYY-MM-DD
             }
             
             $fechaReg = '';
             if (!empty($row['fecha_registro'])) {
-                if (is_string($row['fecha_registro'])) {
-                    $fechaReg = substr($row['fecha_registro'], 0, 10);
-                } else {
-                    $fechaReg = date('Y-m-d', strtotime($row['fecha_registro']));
-                }
+                $fechaReg = substr($row['fecha_registro'], 0, 10);
             }
             
             // Convertir coordenadas float8 a string
@@ -1791,7 +1777,7 @@ class omaped_class {
                 'fechaNacimiento' => $fechaNac,
                 'idSector' => isset($row['id_sector']) && $row['id_sector'] > 0 ? (int)$row['id_sector'] : null,
                 'zona' => $row['zona'] ?? '',
-                'distritoOtro' => isset($row['otro_distr']) && $row['otro_distr'] !== null && $row['otro_distr'] !== '' ? (int)$row['otro_distr'] : null,
+                'distritoOtro' => isset($row['otro_distr']) && $row['otro_distr'] !== '' ? (int)$row['otro_distr'] : null,
                 'ubicacion' => $row['ubicacion'] ?? '',
                 'latitud' => $latitud,
                 'longitud' => $longitud,
@@ -1801,10 +1787,10 @@ class omaped_class {
                     'codigoConadis' => $row['codigo_conadis'] ?? '',
                     'gradoDiscapacidad' => $row['grado_discapacidad'] ?? '',
                     'seguroSalud' => $row['seguro_salud'] ?? '',
-                    'motora' => $row['motora'] === 't' || $row['motora'] === true,
-                    'sensorial' => $row['sensorial'] === 't' || $row['sensorial'] === true,
-                    'intelectual' => $row['intelectual'] === 't' || $row['intelectual'] === true,
-                    'mental' => $row['mental'] === 't' || $row['mental'] === true
+                    'motora' => $row['motora'] === 't',
+                    'sensorial' => $row['sensorial'] === 't',
+                    'intelectual' => $row['intelectual'] === 't',
+                    'mental' => $row['mental'] === 't'
                 )
             );
         }
@@ -1908,7 +1894,7 @@ class omaped_class {
                     'telefono' => $f['telefono'],
                     'direccion' => $f['direccion'],
                     'observaciones' => $f['observaciones'],
-                    'estado' => ($f['estado'] === 't' || $f['estado'] === true)
+                    'estado' => ($f['estado'] === 't')
                 );
             }
         }
@@ -1987,10 +1973,10 @@ class omaped_class {
                 'seguroSalud' => $rowDiscp['segro_salud'],
                 'archivoCarnetConadis' => $rowDiscp['arch_carnet'],
                 'archivoCertificadoDiscapacidad' => $rowDiscp['arch_cert_discp'],
-                'motora' => $rowDiscp['es_motora'] === 't' || $rowDiscp['es_motora'] === true,
-                'sensorial' => $rowDiscp['es_sensorial'] === 't' || $rowDiscp['es_sensorial'] === true,
-                'intelectual' => $rowDiscp['es_intelectual'] === 't' || $rowDiscp['es_intelectual'] === true,
-                'mental' => $rowDiscp['es_mental'] === 't' || $rowDiscp['es_mental'] === true
+                'motora' => $rowDiscp['es_motora'] === 't',
+                'sensorial' => $rowDiscp['es_sensorial'] === 't',
+                'intelectual' => $rowDiscp['es_intelectual'] === 't',
+                'mental' => $rowDiscp['es_mental'] === 't'
             ) : array(),
             'familiares' => $familiares,
             'familiar' => count($familiares) ? $familiares[0] : null,
@@ -2419,24 +2405,23 @@ class omaped_class {
             }
         }
 
-        if ($idAtn > 0 && count($idsServiciosNuevos) > 0) {
-            $placeholders = array();
-            $params = array($idAtn);
-            foreach ($idsServiciosNuevos as $idx => $idServ) {
-                $placeholders[] = '$' . ($idx + 2);
-                $params[] = $idServ;
-            }
-            $sqlDelServ = "UPDATE g_social.atncn_serv 
-                          SET estado = false, fec_del = CURRENT_TIMESTAMP, cdgo_lgin_del = $" . (count($idsServiciosNuevos) + 2) . "
-                          WHERE id_atncn = $1 AND estado = true AND id_serv NOT IN (" . implode(',', $placeholders) . ")";
-            $params[] = $cdgoLgin;
-            $rsDelServ = $this->ejecutar($sqlDelServ, $params);
-            if (!$rsDelServ) {
-                $this->rollback();
-                $this->logError("No se pudieron eliminar servicios no seleccionados - idAtn: $idAtn", $sqlDelServ);
-                return $this->fail('No se pudieron eliminar servicios no seleccionados.');
-            }
+        $placeholders = array();
+        $params = array($idAtn);
+        foreach ($idsServiciosNuevos as $idx => $idServ) {
+            $placeholders[] = '$' . ($idx + 2);
+            $params[] = $idServ;
         }
+        $sqlDelServ = "UPDATE g_social.atncn_serv
+                      SET estado = false, fec_del = CURRENT_TIMESTAMP, cdgo_lgin_del = $" . (count($idsServiciosNuevos) + 2) . "
+                      WHERE id_atncn = $1 AND estado = true AND id_serv NOT IN (" . implode(',', $placeholders) . ")";
+        $params[] = $cdgoLgin;
+        $rsDelServ = $this->ejecutar($sqlDelServ, $params);
+        if (!$rsDelServ) {
+            $this->rollback();
+            $this->logError("No se pudieron eliminar servicios no seleccionados - idAtn: $idAtn", $sqlDelServ);
+            return $this->fail('No se pudieron eliminar servicios no seleccionados.');
+        }
+
 
         if (!$this->commit()) {
             $this->rollback();
@@ -2664,73 +2649,11 @@ class omaped_class {
         );
     }
 
-    /**
-     * Enmascara un nombre: muestra las primeras 2 letras y reemplaza el resto con asteriscos.
-     * Ejemplo: "SANDRA MELISSA" → "SA**** ME****"
-     *
-     * @param string|null $nombre Nombre a enmascarar
-     * @return string Nombre enmascarado
-     */
-    private function enmascararNombre($nombre) {
-        if (empty($nombre)) {
-            return '';
-        }
 
-        $nombre = trim($nombre);
-        $palabras = preg_split('/\s+/', $nombre);
-        $palabrasEnmascaradas = array();
 
-        foreach ($palabras as $palabra) {
-            if (strlen($palabra) <= 2) {
-                $palabrasEnmascaradas[] = str_repeat('*', strlen($palabra));
-            } else {
-                $palabrasEnmascaradas[] = substr($palabra, 0, 2) . str_repeat('*', strlen($palabra) - 2);
-            }
-        }
 
-        return implode(' ', $palabrasEnmascaradas);
-    }
 
-    /**
-     * Enmascara un DNI: muestra solo los últimos 3 dígitos.
-     * Ejemplo: "73031854" → "*****854"
-     *
-     * @param string|null $dni DNI a enmascarar
-     * @return string DNI enmascarado
-     */
-    private function enmascararDNI($dni) {
-        if (empty($dni)) {
-            return '';
-        }
 
-        $dni = preg_replace('/[^0-9]/', '', (string)$dni);
-        if (strlen($dni) <= 3) {
-            return str_repeat('*', strlen($dni));
-        }
-
-        return str_repeat('*', strlen($dni) - 3) . substr($dni, -3);
-    }
-
-    /**
-     * Enmascara un código CONADIS: muestra solo los últimos 3-4 dígitos.
-     *
-     * @param string|null $codigo Código a enmascarar
-     * @return string Código enmascarado
-     */
-    private function enmascararCodigoConadis($codigo) {
-        if (empty($codigo)) {
-            return null;
-        }
-
-        $codigo = trim((string)$codigo);
-        $longitud = strlen($codigo);
-        if ($longitud <= 3) {
-            return str_repeat('*', $longitud);
-        }
-
-        $mostrar = min(4, max(3, (int)($longitud * 0.3))); // Mostrar 30% o mínimo 3-4
-        return str_repeat('*', $longitud - $mostrar) . substr($codigo, -$mostrar);
-    }
 
     /**
      * Registra un intento fallido de DNI para un token QR.

@@ -42,7 +42,7 @@ class VerRequerimientoTesoreriaController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores - Tesorería'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores - Tesorería'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores - Tesorería';
         }

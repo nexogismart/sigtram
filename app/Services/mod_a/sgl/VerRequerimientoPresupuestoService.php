@@ -162,7 +162,7 @@ class VerRequerimientoPresupuestoService
                     ? trim($documento . ' N° ' . $numero . ($areaDoc !== '' ? '-' . $areaDoc : ''))
                     : '',
                 'puede_enviar' => $completo && $estado === 12,
-                'puede_devolver' => $id > 0 && ! ($completo && $estado === 12),
+                'puede_devolver' => ! ($completo && $estado === 12),
                 'puede_publicar' => $estado === 10,
                 'items' => $items,
             ]);
@@ -340,7 +340,7 @@ class VerRequerimientoPresupuestoService
         }
 
         $partes = explode('-', trim($semilla));
-        $nu = (int) ltrim((string) ($partes[0] ?? '0'), '0');
+        $nu = (int) ltrim((string) ($partes[0]), '0');
         $anioDe = (string) ($partes[1] ?? date('Y'));
         if ($nu <= 0) {
             return $this->fail('Número de trámite no válido.');
@@ -348,7 +348,7 @@ class VerRequerimientoPresupuestoService
         $nuAuto = $nu . '-' . $anioDe;
         $company = $this->compania();
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         $anio = DB::table($this->schemaSistema . 'a_anios')
@@ -397,7 +397,7 @@ class VerRequerimientoPresupuestoService
 
                 $expe = explode('-', (string) ($cab->nu_tram_todo ?? ''));
                 $obs = 'CON REFERENCIA AL ' . (string) ($cab->de_tpo_trmte ?? '') . ' N° '
-                    . str_pad(trim(($expe[0] ?? '') . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
+                    . str_pad(trim(($expe[0]) . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
                     . ' DEL AREA ' . (string) ($cab->de_area ?? '');
                 $deObse = '; SE DERIVA CON ' . (string) ($tipo->de_tpo_trmte ?? '') . ' N° '
                     . str_pad($nuAuto, 10, '0', STR_PAD_LEFT);
@@ -488,7 +488,7 @@ class VerRequerimientoPresupuestoService
             return $this->fail('No se encontró el requerimiento.');
         }
 
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $dest = $this->cargoJefeArea(self::AREA_ABASTECIMIENTO);
         $tramiteId = (int) ($cab->cdgo_dtos_ntrnos ?? 0);

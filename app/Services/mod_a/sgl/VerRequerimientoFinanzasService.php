@@ -185,7 +185,7 @@ class VerRequerimientoFinanzasService
 
     public function finalizar(int $id): array
     {
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cab = $this->cabecera($id);
         if ($cab === null) {
             return $this->fail('No se encontró el requerimiento.');
@@ -238,7 +238,7 @@ class VerRequerimientoFinanzasService
 
     public function devolver(int $id, string $motivo): array
     {
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $motivo = mb_strtoupper(trim($motivo), 'UTF-8');
         if ($motivo === '') {

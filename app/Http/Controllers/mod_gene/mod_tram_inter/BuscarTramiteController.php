@@ -70,10 +70,9 @@ class BuscarTramiteController extends Controller
 
         $tramites = $this->buscarTramiteService->buscarTramites($filtros, 36, $page);
 
-        $tramites->getCollection()->transform(function ($item) {
+        foreach ($tramites->items() as $item) {
             $item->fe_ingrso_fmt = $this->formatFeIngrsoLocal($item->fe_ingrso);
-            return $item;
-        });
+        }
 
         if ($request->ajax()) {
             return response()->json([

@@ -537,7 +537,7 @@ class ModuleDispatcher
 
         $relViewPath = 'views/' . str_replace('.', '/', $pathVista) . '.blade.php';
 
-        if (function_exists('app') && method_exists(app(), 'resourcePath')) {
+        if (function_exists('app')) {
             $archivo = resource_path($relViewPath);
         } else {
             $archivo = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relViewPath);

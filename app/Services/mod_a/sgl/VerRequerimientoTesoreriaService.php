@@ -337,7 +337,7 @@ class VerRequerimientoTesoreriaService
             return $this->fail('No se encontró el cronograma de pago.');
         }
 
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
 
         try {
             return DB::transaction(function () use (

@@ -6,6 +6,8 @@ use App\Contracts\Services\BdCoreInterface;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
+    config(['database.connections.pgsql'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'']]);
+    DB::purge('pgsql');
     $this->bdCore = app(BdCoreInterface::class);
 });
 

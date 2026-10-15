@@ -515,7 +515,7 @@ class DispositivoSegController extends Controller
                 $key = $columnas[$c]['key'];
                 $val = $row[$key] ?? '';
                 $esNum = !empty($columnas[$c]['num']);
-                if ($esNum && $val !== '' && $val !== null) {
+                if ($esNum && $val !== '') {
                     $sheet .= '<c r="' . $ref . '"><v>' . intval($val) . '</v></c>';
                 } else {
                     $sheet .= '<c r="' . $ref . '" t="inlineStr"><is><t>' . $this->escXml($val) . '</t></is></c>';

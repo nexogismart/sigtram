@@ -18,6 +18,7 @@ class TramiteExternoHttpWiringTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withHeader('Idempotency-Key', 'test-http-wiring-001');
 
         $this->user = new User([
             'cdgo_usrios' => 200,

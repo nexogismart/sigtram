@@ -22,7 +22,7 @@ class SegiVerExpediController extends Controller
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
     {
         $pathVista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Seguimiento del expediente'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Seguimiento del expediente'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Seguimiento del expediente';
         }

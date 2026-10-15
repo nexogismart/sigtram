@@ -46,7 +46,7 @@ class VerRequerimientoPresupuestoController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores - Presupuesto'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores - Presupuesto'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores - Presupuesto';
         }

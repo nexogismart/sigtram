@@ -88,9 +88,7 @@ class ReportePublicidadController extends Controller
             $files = $request->file('imagenes');
             if (is_array($files)) {
                 foreach ($files as $file) {
-                    if ($file) {
-                        $imagenes[] = $file;
-                    }
+                    $imagenes[] = $file;
                 }
             } elseif ($files) {
                 $imagenes[] = $files;
@@ -134,8 +132,8 @@ class ReportePublicidadController extends Controller
         $contador = (int) $request->query('contador', $reporteId);
 
         $resultado = $this->service->obtenerParaPdf($reporteId);
-        if (($resultado['status'] ?? '') !== 'success') {
-            abort(404, $resultado['message'] ?? 'Reporte no encontrado');
+        if (($resultado['status']) !== 'success') {
+            abort(404, $resultado['message']);
         }
 
         $data = $resultado['data'];

@@ -82,7 +82,7 @@
             <div class="relative z-10 flex justify-between items-end w-full">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 flex items-center justify-center shadow-lg">
-                        <img src="{{ asset('images/imagen2.png') }}" class="w-full h-full object-contain" alt="Escudo">
+                        <img src="{{ asset('images/nexosigtram-documental-emblema.png') }}" class="w-full h-full object-contain" alt="SIGTRAM">
                     </div>
                     <div>
                         <p class="text-white font-black text-sm leading-tight tracking-wide">Gestión Institucional</p>

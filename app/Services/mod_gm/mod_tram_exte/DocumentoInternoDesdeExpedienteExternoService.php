@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\mod_gm\mod_tram_exte;
 
 use App\Contracts\Repositories\mod_gene\mod_tram_inter\TramiteInternoRepositoryInterface;
-use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
 use App\Contracts\Services\GestorAdjuntosInterface;
 use App\DTOs\Core\ContextoUsuarioAutenticadoDto;
 use App\DTOs\mod_gm\DocumentoInternoAsociadoDto;
@@ -26,7 +25,6 @@ class DocumentoInternoDesdeExpedienteExternoService
 {
     public function __construct(
         private readonly TramiteInternoRepositoryInterface $tramiteInternoRepo,
-        private readonly TramiteExternoRepositoryInterface $tramiteExternoRepo,
         private readonly ?GestorAdjuntosInterface $gestorAdjuntos = null
     ) {}
 

@@ -7,7 +7,6 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/css/login.css',
                 'resources/css/shared/v2-reporte-area-cargo.css',
                 'resources/css/tramite-interno/buscar-tramite.css',
                 'resources/css/tramite-interno/reporte-bandeja.css',

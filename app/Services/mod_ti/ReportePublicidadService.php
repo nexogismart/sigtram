@@ -221,12 +221,12 @@ class ReportePublicidadService
      */
     public function guardar(array $data, int $usuarioId, array $imagenes = []): array
     {
-        $mode = (string) ($data['modalMode'] ?? '');
+        $mode = (string) ($data['modalMode']);
         $cdgoReporte = (int) ($data['cdgo_reporte'] ?? 0);
-        $mdioEmpleado = mb_strtoupper(trim((string) ($data['mdio_empleado'] ?? '')), 'UTF-8');
-        $ubicacion = mb_strtoupper(trim((string) ($data['ubicacion'] ?? '')), 'UTF-8');
-        $fechIni = trim((string) ($data['fech_ini'] ?? ''));
-        $fechFin = trim((string) ($data['fech_fin'] ?? ''));
+        $mdioEmpleado = mb_strtoupper(trim((string) ($data['mdio_empleado'])), 'UTF-8');
+        $ubicacion = mb_strtoupper(trim((string) ($data['ubicacion'])), 'UTF-8');
+        $fechIni = trim((string) ($data['fech_ini']));
+        $fechFin = trim((string) ($data['fech_fin']));
         $enlace = trim((string) ($data['enlace'] ?? ''));
         $fundamento = mb_strtoupper(trim((string) ($data['fundamento'] ?? '')), 'UTF-8');
         $cuadros = is_array($data['cuadros'] ?? null) ? $data['cuadros'] : [];
@@ -437,7 +437,7 @@ class ReportePublicidadService
             if ($indice >= 6) {
                 break;
             }
-            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+            if (! $file->isValid()) {
                 continue;
             }
 

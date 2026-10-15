@@ -483,7 +483,7 @@ class ReportePublicidad2026Service
             if ($indice >= 6) {
                 break;
             }
-            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+            if (! $file->isValid()) {
                 continue;
             }
 

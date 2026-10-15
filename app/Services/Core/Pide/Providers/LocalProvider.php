@@ -11,11 +11,11 @@ use App\Models\PUsrrio;
 
 class LocalProvider implements PideProviderInterface
 {
-    private ?string $lastError = null;
+
 
     public function buscarDni(string $dni): ?PersonaDto
     {
-        $this->lastError = null;
+
 
         // Buscamos el usuario en p_usrios que esté activo ('1')
         $usuario = PUsrrio::where('nu_docu', $dni)
@@ -47,7 +47,7 @@ class LocalProvider implements PideProviderInterface
 
     public function buscarRuc(string $ruc, bool $full = false): ?EmpresaDto
     {
-        $this->lastError = null;
+
 
         // Buscamos en p_usrios por el número de documento RUC
         $usuario = PUsrrio::where('nu_docu', $ruc)
@@ -83,6 +83,6 @@ class LocalProvider implements PideProviderInterface
 
     public function obtenerUltimoError(): ?string
     {
-        return $this->lastError;
+        return null;
     }
 }

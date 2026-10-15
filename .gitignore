@@ -47,9 +47,12 @@ Thumbs.db
 !/docs/frontend/inventario-vistas.json
 !/docs/frontend/contratos-vistas-originales.json
 !/docs/frontend/integracion-front-back.md
+!/docs/frontend/integration-reviewed-fixes.json
 
 # Scripts y auditorías locales temporales
 /scratch/
 
 # Repositorios y herramientas anidadas
 /docs/gentle-ai/
+
+__pycache__/

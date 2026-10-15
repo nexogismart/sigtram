@@ -171,7 +171,7 @@ class PdfPageCounterService implements PdfPageCounterInterface
             );
         }
 
-        $configured = config('services.pdfinfo.binary', env('PDFINFO_BINARY', 'pdfinfo'));
+        $configured = config('services.pdfinfo.binary', 'pdfinfo');
         if (is_string($configured) && $configured !== '' && $this->isExecutable($configured)) {
             return $configured;
         }

@@ -98,7 +98,7 @@ class FirmaEmailService
      */
     public function generarIndividual(array $data, string $filename = 'generada.png'): array
     {
-        $nombre = trim((string) ($data['nombre'] ?? ''));
+        $nombre = trim((string) ($data['nombre']));
         if ($nombre === '') {
             return $this->fail('El nombre es obligatorio');
         }
@@ -322,7 +322,7 @@ class FirmaEmailService
         }
 
         if (count($results) === 0) {
-            $debug = 'Leído: ' . count($lines) . " líneas. Delim: '{$delimiter}'. Primera fila data: " . ($lines[1] ?? 'N/A');
+            $debug = 'Leído: ' . count($lines) . " líneas. Delim: '{$delimiter}'. Primera fila data: " . ($lines[1]);
 
             return ['error' => "No se pudieron procesar las filas. {$debug}", 'results' => []];
         }
@@ -440,7 +440,7 @@ class FirmaEmailService
         $fBlack = $this->assetsPath . '/fonts/Roboto-Black.ttf';
         $fReg = $this->assetsPath . '/fonts/Arial.ttf';
 
-        $nombre = (! empty($data['titulo']) ? trim((string) $data['titulo']) . ' ' : '') . ($data['nombre'] ?? '');
+        $nombre = (! empty($data['titulo']) ? trim((string) $data['titulo']) . ' ' : '') . ($data['nombre']);
         $nombre = mb_convert_case($nombre, MB_CASE_TITLE, 'UTF-8');
         $cargo = mb_convert_case((string) ($data['cargo'] ?? ''), MB_CASE_TITLE, 'UTF-8');
 

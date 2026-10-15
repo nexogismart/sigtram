@@ -8,22 +8,18 @@ use App\Contracts\Repositories\mod_gene\mod_tram_inter\TramiteInternoRepositoryI
 use App\Contracts\Services\GestorAdjuntosInterface;
 use App\DTOs\Core\ContextoUsuarioAutenticadoDto;
 use App\Policies\mod_gene\TramiteInternoPolicy;
-use Illuminate\Database\DatabaseManager;
 use InvalidArgumentException;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DescargaSeguraTramiteInternoService
 {
-    private string $schema;
 
     public function __construct(
         private readonly TramiteInternoRepositoryInterface $repository,
         private readonly GestorAdjuntosInterface $gestorAdjuntos,
-        private readonly TramiteInternoPolicy $policy,
-        private readonly ?DatabaseManager $db = null
+        private readonly TramiteInternoPolicy $policy
     ) {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
     }
 
     /**

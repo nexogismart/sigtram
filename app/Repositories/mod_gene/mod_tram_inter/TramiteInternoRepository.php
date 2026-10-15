@@ -471,9 +471,9 @@ class TramiteInternoRepository implements TramiteInternoRepositoryInterface
             $cargoOrigen = !empty($cargoOrigenRegistrado)
                 ? (string) $cargoOrigenRegistrado
                 : ($cargoSalidaId > 0 ? "Cargo ID #{$cargoSalidaId}" : 'Cargo no registrado en el movimiento');
-            $areaOrigen = !empty($areaSalida?->de_area)
+            $areaOrigen = !empty($areaSalida->de_area)
                 ? (string) $areaSalida->de_area
-                : (!empty($areaSalida?->dc_area) ? (string) $areaSalida->dc_area : 'Área no registrada');
+                : (!empty($areaSalida->dc_area) ? (string) $areaSalida->dc_area : 'Área no registrada');
 
             if ($cargoEntradaId > 0 && $cargoEntradaId === $cargoSalidaId) {
                 $destinos = [[
@@ -493,12 +493,12 @@ class TramiteInternoRepository implements TramiteInternoRepositoryInterface
             $movimiento->documento_id = $cdgoDtosNtrnos;
             $movimiento->fe_rcbdo_fmt = $fechaRecepcion ? Carbon::parse($fechaRecepcion)->format('d/m/Y H:i') : '-';
             $movimiento->tiempo_estimado = $tiempoEstimado;
-            $movimiento->dc_area = (string) ($areaSalida?->dc_area ?? '');
+            $movimiento->dc_area = (string) ($areaSalida->dc_area ?? '');
             $movimiento->de_area = $areaOrigen;
             $movimiento->de_crgo_sa = $cargoOrigen;
             $movimiento->dc_estdo_trmte = $estado;
-            $movimiento->dc_area_1 = (string) ($areaEntrada?->dc_area ?? '');
-            $movimiento->de_area_1 = (string) ($areaEntrada?->de_area ?? '');
+            $movimiento->dc_area_1 = (string) ($areaEntrada->dc_area ?? '');
+            $movimiento->de_area_1 = (string) ($areaEntrada->de_area ?? '');
             $movimiento->usuario_origen = $nombreOrigen;
             $movimiento->perfil_origen = $origen['perfil'] ?? null;
             $movimiento->actor = [

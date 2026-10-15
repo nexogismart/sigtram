@@ -42,7 +42,7 @@ class VerRequerimientoFinanzasController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores - Finanzas'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores - Finanzas'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores - Finanzas';
         }

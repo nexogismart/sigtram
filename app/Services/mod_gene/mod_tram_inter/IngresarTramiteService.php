@@ -95,6 +95,21 @@ class IngresarTramiteService
                 ]);
             }
 
+            // Institutional documents have no personal suffix; personal numbering uses initials,
+            // matching the Word draft instead of concatenating the sender's full name.
+            $sufijoPersonal = '';
+            if ((int) $infoTramite->in_scncal === 1) {
+                $partesNombre = preg_split('/\s+/u', trim($noCrto)) ?: [];
+                foreach ($partesNombre as $parte) {
+                    if ($parte !== '') {
+                        $sufijoPersonal .= mb_strtolower(mb_substr($parte, 0, 1, 'UTF-8'), 'UTF-8');
+                    }
+                }
+                if ($sufijoPersonal !== '') {
+                    $sufijoPersonal = '-'.$sufijoPersonal;
+                }
+            }
+
             if ($nuSmllaForm <= 0) {
                 throw new \RuntimeException('Debe especificar un N° de Documento válido (ej. 10-2026).');
             }
@@ -114,7 +129,7 @@ class IngresarTramiteService
                 $infoTramite->de_tpo_trmte,
                 $semillaGenerada['nu_smlla_intrno'],
                 (string) $anioForm,
-                $noCrto,
+                $sufijoPersonal,
                 $cdgoAreaSa
             );
             $numeroTramite = $semillaGenerada['nu_smlla_intrno'] . '-' . $anioForm;

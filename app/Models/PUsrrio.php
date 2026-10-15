@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $de_ocup_rubr
  * @property string $in_tipo_pers
  * @property string $nu_ruc
+ * @property string|null $de_foto
  */
 class PUsrrio extends Model
 {

@@ -18,7 +18,6 @@ use ZipArchive;
 
 class DescargaLoteTramiteInternoService
 {
-    private string $schema;
     private readonly TramiteInternoPolicy $policy;
 
     public function __construct(
@@ -27,7 +26,6 @@ class DescargaLoteTramiteInternoService
         private readonly DatabaseManager $db,
         ?TramiteInternoPolicy $policy = null
     ) {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
         $this->policy = $policy ?? app(TramiteInternoPolicy::class);
     }
 

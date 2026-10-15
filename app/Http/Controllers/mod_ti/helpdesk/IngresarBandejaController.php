@@ -31,7 +31,6 @@ class IngresarBandejaController extends Controller
     private const AREA_OTI = 103;
 
     /** Cargo Jefe OTI (excluido de la lista de derivación). */
-    private const CARGO_JEFE_OTI = 496;
 
     // ========================================================================
     // VISTAS PRINCIPALES

@@ -30,7 +30,7 @@ class TramiteInternoDescargaSeguraTest extends TestCase
         $policy = Mockery::mock(TramiteInternoPolicy::class);
         $db = Mockery::mock(DatabaseManager::class);
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $contexto = $this->crearContexto('usr', 1, 1, 10, 5, [10], []);
 
         $this->expectException(InvalidArgumentException::class);
@@ -48,7 +48,7 @@ class TramiteInternoDescargaSeguraTest extends TestCase
 
         $repo->shouldReceive('obtenerMovimientoPorId')->with(999, 1)->andReturn(null);
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $contexto = $this->crearContexto('usr', 1, 1, 10, 5, [10], []);
 
         $this->expectException(RuntimeException::class);
@@ -81,7 +81,7 @@ class TramiteInternoDescargaSeguraTest extends TestCase
         $repo->shouldReceive('obtenerMovimientoPorId')->with(10, 1)->andReturn($movimiento);
         $policy->shouldReceive('descargar')->andReturn(false);
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $contexto = $this->crearContexto('usr', 1, 1, 99, 9, [99], []);
 
         $this->expectException(RuntimeException::class);
@@ -125,7 +125,7 @@ class TramiteInternoDescargaSeguraTest extends TestCase
 
         $repo->shouldReceive('registrarAuditoriaDescargaInterna')->once();
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $contexto = $this->crearContexto('usr_test', 1, 1, 30, 3, [30], [], loginId: 99);
 
         $resultado = $service->procesarDescarga(10, $fileName, $contexto, '192.168.1.50');
@@ -171,7 +171,7 @@ class TramiteInternoDescargaSeguraTest extends TestCase
         // Simular falla catastrófica en BD durante la auditoría
         $repo->shouldReceive('registrarAuditoriaDescargaInterna')->once()->andThrow(new \Exception('DB Connection drop'));
 
-        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy, $db);
+        $service = new DescargaSeguraTramiteInternoService($repo, $gestor, $policy);
         $contexto = $this->crearContexto('usr_test', 1, 1, 30, 3, [30], [], loginId: 99);
 
         $this->expectException(RuntimeException::class);

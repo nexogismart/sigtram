@@ -20,7 +20,7 @@ class ListaReporAreaController extends Controller
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
     {
         $pathVista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Reporte de Expedientes'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Reporte de Expedientes'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Reporte de Expedientes';
         }

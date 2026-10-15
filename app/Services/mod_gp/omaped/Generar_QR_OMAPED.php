@@ -9,8 +9,8 @@ class Generar_QR_OMAPED
 {
     /**
      * Convierte una imagen a truecolor si no lo es
-     * @param resource $image Recurso de imagen GD
-     * @return resource Imagen en truecolor
+     * @param \GdImage $image Imagen GD
+     * @return \GdImage Imagen en truecolor
      */
     private static function ensureTruecolor($image) {
         if (imageistruecolor($image)) {
@@ -19,6 +19,9 @@ class Generar_QR_OMAPED
         $width = imagesx($image);
         $height = imagesy($image);
         $truecolor = imagecreatetruecolor($width, $height);
+        if ($truecolor === false) {
+            throw new \RuntimeException('No se pudo crear la imagen QR.');
+        }
         imagealphablending($truecolor, false);
         imagesavealpha($truecolor, true);
         $transparent = imagecolorallocatealpha($truecolor, 0, 0, 0, 127);
@@ -33,10 +36,13 @@ class Generar_QR_OMAPED
      * Crea una imagen truecolor con transparencia
      * @param int $width Ancho
      * @param int $height Alto
-     * @return resource Imagen GD
+     * @return \GdImage Imagen GD
      */
     private static function createTransparentImage($width, $height) {
         $image = imagecreatetruecolor($width, $height);
+        if ($image === false) {
+            throw new \RuntimeException('No se pudo crear la imagen transparente.');
+        }
         imagealphablending($image, false);
         imagesavealpha($image, true);
         $transparent = imagecolorallocatealpha($image, 0, 0, 0, 127);
@@ -50,7 +56,7 @@ class Generar_QR_OMAPED
      * 
      * @param string $qrcode_data_string Datos a codificar (URL)
      * @param string $qrcode_expe_string Nombre del archivo sin extensión
-     * @param int $qrcode_module_size Tamaño del módulo (recomendado: 4-5)
+     * @param int|numeric-string $qrcode_module_size Tamaño del módulo (recomendado: 4-5)
      * @return bool true si se generó correctamente
      */
     public static function Gene_QR_png($qrcode_data_string, $qrcode_expe_string, $qrcode_module_size = '4') {
@@ -72,7 +78,6 @@ class Generar_QR_OMAPED
         // NIVEL H (High) de corrección de errores - permite hasta ~30% de errores
         // Esto es esencial cuando se incrusta un logo en el centro
         $qrcode_error_correct = 'H';
-        $qrcode_version = null; // Auto-select version
         $qrcode_image_type = 'png';
         
         $qrcode_module_size = max(1, (int)$qrcode_module_size);
@@ -142,10 +147,10 @@ class Generar_QR_OMAPED
             $data_counter++;
             while ($i < $data_length) {
                 if (($i % 3) == 0) {
-                    $data_value[$data_counter] = substr($qrcode_data_string, $i, 1);
+                    $data_value[$data_counter] = (int) substr($qrcode_data_string, $i, 1);
                     $data_bits[$data_counter] = 4;
                 } else {
-                    $data_value[$data_counter] = $data_value[$data_counter] * 10 + substr($qrcode_data_string, $i, 1);
+                    $data_value[$data_counter] = $data_value[$data_counter] * 10 + (int) substr($qrcode_data_string, $i, 1);
                     if (($i % 3) == 1) {
                         $data_bits[$data_counter] = 7;
                     } else {
@@ -157,7 +162,7 @@ class Generar_QR_OMAPED
             }
         }
         
-        if (@$data_bits[$data_counter] > 0) {
+        if (isset($data_bits[$data_counter])) {
             $data_counter++;
         }
         
@@ -169,8 +174,7 @@ class Generar_QR_OMAPED
         }
         
         // Mapeo de niveles de corrección de errores
-        $ecc_character_hash = array("L"=>"1", "l"=>"1", "M"=>"0", "m"=>"0", "Q"=>"3", "q"=>"3", "H"=>"2", "h"=>"2");
-        $ec = isset($ecc_character_hash[$qrcode_error_correct]) ? $ecc_character_hash[$qrcode_error_correct] : 2; // H = 2
+        $ec = 2; // Nivel H, fijo para la generación con logo.
         
         // Array de bits máximos por versión y nivel ECC (4 niveles x 40 versiones)
         $max_data_bits_array = array(
@@ -185,23 +189,20 @@ class Generar_QR_OMAPED
         );
         
         // Auto-seleccionar versión
-        if (!$qrcode_version) {
-            $i = 1 + 40 * $ec; // Índice inicial para nivel H (ec=2): 1 + 40*2 = 81
-            $j = $i + 39; // Índice final: 81 + 39 = 120
-            $qrcode_version = 1;
-            while ($i <= $j) {
-                if (($max_data_bits_array[$i]) >= $total_data_bits + $codeword_num_plus[$qrcode_version]) {
-                    $max_data_bits = $max_data_bits_array[$i];
-                    break;
-                }
-                $i++;
-                $qrcode_version++;
+        $max_data_bits = 0;
+        $i = 1 + 40 * $ec; // Índice inicial para nivel H (ec=2): 1 + 40*2 = 81
+        $j = $i + 39; // Índice final: 81 + 39 = 120
+        $qrcode_version = 1;
+        while ($i <= $j) {
+            if (($max_data_bits_array[$i]) >= $total_data_bits + $codeword_num_plus[$qrcode_version]) {
+                $max_data_bits = $max_data_bits_array[$i];
+                break;
             }
-        } else {
-            $max_data_bits = $max_data_bits_array[$qrcode_version + 40 * $ec];
+            $i++;
+            $qrcode_version++;
         }
-        
-        if ($qrcode_version > $version_ul) {
+
+        if ($qrcode_version > $version_ul || $max_data_bits === 0) {
             throw new \Exception("Versión QR demasiado grande: " . $qrcode_version);
         }
         
@@ -518,6 +519,9 @@ class Generar_QR_OMAPED
         
         // Usar imagecreatetruecolor para soportar colores completos (no solo 256 colores)
         $output_image = imagecreatetruecolor($qrcode_image_size, $qrcode_image_size);
+        if ($output_image === false) {
+            throw new \RuntimeException('No se pudo crear la imagen de salida QR.');
+        }
         
         // Rellenar fondo blanco
         $blanco = imagecolorallocate($output_image, 255, 255, 255);
@@ -530,7 +534,12 @@ class Generar_QR_OMAPED
             throw new \Exception("Archivo de imagen base no encontrado: " . $image_path_file);
         }
         
-        $base_image = self::ensureTruecolor(ImageCreateFromPNG($image_path_file));
+        $base_image = imagecreatefrompng($image_path_file);
+        if ($base_image === false) {
+            imagedestroy($output_image);
+            throw new \RuntimeException('No se pudo leer la imagen base QR.');
+        }
+        $base_image = self::ensureTruecolor($base_image);
         
         $col[1] = imagecolorallocate($base_image, 0, 0, 0);
         $col[0] = imagecolorallocate($base_image, 255, 255, 255);

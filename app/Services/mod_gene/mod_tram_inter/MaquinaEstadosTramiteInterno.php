@@ -45,7 +45,6 @@ class MaquinaEstadosTramiteInterno
             'finalizar'   => EstadoTramiteInterno::FINALIZADO,
             'devolver'    => EstadoTramiteInterno::DEVUELTO,
         ],
-        24 => [],
         EstadoTramiteInterno::FINALIZADO->value => [],
         EstadoTramiteInterno::FINALIZADO_ATENDIDO->value => [],
     ];

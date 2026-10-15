@@ -134,7 +134,7 @@ class V2ListaReporteRequerimientosGeneralService
             ];
         }
 
-        if ($n === 3 && $tieneOs) {
+        if ($n === 3) {
             $lbl = 'O/S ya registrada — avance formal pendiente';
 
             return [
@@ -766,7 +766,7 @@ class V2ListaReporteRequerimientosGeneralService
                  FROM {$l}p_pgo_prvdres
                  {$f['sqlJoinNtrUlt']}
                  {$whereBase}"
-            )?->n ?? 0);
+            )->n ?? 0);
 
             $extraHito = $mlKey !== null
                 ? ', (' . $f['sqlOpHito'][$mlKey] . ') AS rep_area_ml_oper_txt'

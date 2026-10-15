@@ -46,7 +46,7 @@ class VerRequerimientoLogisticaController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores - Logística'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores - Logística'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores - Logística';
         }

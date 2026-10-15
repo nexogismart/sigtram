@@ -235,7 +235,7 @@ class PagoProveedoresIndexService
                 'documento' => $docLabel,
                 'editable' => $estado === 1 && ! $tieneTramite,
                 'readonly' => $tieneTramite || $estado !== 1,
-                'puede_anular' => ! $tieneTramite && $id > 0,
+                'puede_anular' => ! $tieneTramite,
                 'puede_finalizar' => $tieneTramite && $estado !== 2,
                 'puede_generar_tramite' => $estado === 1 && count($activos) > 0 && count($activos) === count($conTdr),
                 'puede_generar_memo' => $estado === 4 && $conformidadPendiente,
@@ -252,7 +252,7 @@ class PagoProveedoresIndexService
     public function guardar(array $datos): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         if ($areaId <= 0 || $userId <= 0) {
             return $this->fail('Sesión de cargo no válida.');
         }
@@ -363,7 +363,7 @@ class PagoProveedoresIndexService
     public function anular(int $id): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cab = $this->cabecera($id, $areaId);
         if ($cab === null) {
             return $this->fail('No se encontró el requerimiento.');
@@ -386,7 +386,7 @@ class PagoProveedoresIndexService
     public function finalizar(int $id): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $cab = $this->cabecera($id, $areaId);
         if ($cab === null) {
@@ -445,7 +445,7 @@ class PagoProveedoresIndexService
     public function bajaItem(int $itemId): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $item = $this->itemRaw($itemId, $areaId);
         if ($item === null) {
             return $this->fail('No se encontró el ítem.');
@@ -577,7 +577,7 @@ class PagoProveedoresIndexService
     public function guardarTdrSiga(int $itemId, ?UploadedFile $tdr, ?UploadedFile $siga): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $item = $this->itemRaw($itemId, $areaId);
         if ($item === null) {
             return $this->fail('No se encontró el ítem.');
@@ -696,7 +696,7 @@ class PagoProveedoresIndexService
     public function guardarConformidad(int $itemId, array $pagos, ?UploadedFile $adicional): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $item = $this->itemRaw($itemId, $areaId);
         if ($item === null) {
             return $this->fail('No se encontró el ítem.');
@@ -772,7 +772,7 @@ class PagoProveedoresIndexService
     private function generarDocumentoInterno(int $id, int $tipoId, string $semilla, ?UploadedFile $adjunto, string $modo): array
     {
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $company = $this->compania();
         $cab = $this->cabecera($id, $areaId);
@@ -807,9 +807,9 @@ class PagoProveedoresIndexService
         }
 
         $partes = explode('-', trim($semilla));
-        $nu = (int) ltrim((string) ($partes[0] ?? '0'), '0');
+        $nu = (int) ltrim((string) ($partes[0]), '0');
         if ($nu <= 0) {
-            $nu = (int) ($partes[0] ?? 0);
+            $nu = (int) ($partes[0]);
         }
         $anioDe = (string) ($partes[1] ?? date('Y'));
         if ($nu <= 0) {
@@ -867,7 +867,7 @@ class PagoProveedoresIndexService
                     $expe = explode('-', (string) ($cab->nu_tram_todo ?? ''));
                     $deArea = (string) ($cab->de_area ?? '');
                     $obs = 'CON REFERENCIA AL ' . (string) ($cab->de_tpo_trmte ?? '') . ' N° '
-                        . str_pad(trim(($expe[0] ?? '') . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
+                        . str_pad(trim(($expe[0]) . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
                         . ' DEL AREA ' . $deArea;
                     $refId = $tramOrig > 0 ? $tramOrig : null;
                 }

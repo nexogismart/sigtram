@@ -58,6 +58,9 @@ function ds_is_dahua_ptz_camera($item) {
 }
 
 // --- Laravel bootstrap inject ---
+if (!isset($id, $logFile) || !is_int($id) || !is_string($logFile)) {
+    throw new \LogicException('El proxy requiere un ID y una ruta de log válidos.');
+}
 if (!isset($item) || !is_array($item)) { http_response_code(500); header("Content-Type: text/plain; charset=UTF-8"); echo "Proxy mal configurado."; exit; }
 $tipo = isset($item["tipo_dispositivo"]) ? strtoupper(trim((string)$item["tipo_dispositivo"])) : "";
 if ($tipo !== "CAMARA") { http_response_code(400); header("Content-Type: text/plain; charset=UTF-8"); echo "El dispositivo no es una cámara."; exit; }
@@ -85,8 +88,8 @@ $format = isset($_GET["format"]) ? strtolower(trim((string)$_GET["format"])) : '
 $cred = ds_credenciales_camara_por_ip($ipSinMascara, $cnCamara);
 $defUsuario = defined('CAMARA_VISOR_USUARIO') ? CAMARA_VISOR_USUARIO : 'admin';
 $defPassword = defined('CAMARA_VISOR_PASSWORD') ? CAMARA_VISOR_PASSWORD : 'admin';
-$usuarioDb = isset($cred["usuario"]) ? trim((string)$cred["usuario"]) : '';
-$passwordDb = isset($cred["password"]) ? trim((string)$cred["password"]) : '';
+$usuarioDb = trim($cred["usuario"]);
+$passwordDb = trim($cred["password"]);
 // Evitar user/pass incompletos: si falta alguno, usar defaults
 $usuario = ($usuarioDb !== '' && $passwordDb !== '') ? $usuarioDb : $defUsuario;
 $password = ($usuarioDb !== '' && $passwordDb !== '') ? $passwordDb : $defPassword;
@@ -358,7 +361,7 @@ function ds_proxy_stream_rtsp($ipSinMascara, $usuario, $password, $logFile, $id)
         $lastStderrPullAt = $startAt;
 
         // Bucle de lectura no-bloqueante: asegura timeout y evita llamadas que puedan colgar.
-        while (!connection_aborted() && is_resource($proc)) {
+        while (!connection_aborted()) {
             $elapsed = microtime(true) - $startAt;
             if (!$firstFrameSent && $elapsed > $startWaitSeconds) {
                 ds_proxy_log(
@@ -525,7 +528,7 @@ function ds_proxy_stream_rtsp_hikvision($ipSinMascara, $usuario, $password, $log
         $bytesEnviados = 0;
         $startAt = microtime(true);
 
-        while (!connection_aborted() && is_resource($proc)) {
+        while (!connection_aborted()) {
             $elapsed = microtime(true) - $startAt;
             if (!$firstFrameSent && $elapsed > $startWaitSeconds) {
                 ds_proxy_log(
@@ -719,7 +722,7 @@ function ds_proxy_stream_hikvision_ts($ipSinMascara, $usuario, $password, $logFi
         $startAt = microtime(true);
         $lastBytesLogAt = $startAt;
 
-        while (!connection_aborted() && is_resource($proc)) {
+        while (!connection_aborted()) {
             $elapsed = microtime(true) - $startAt;
 
             if (!$firstBytesSent && $elapsed > $startWaitSeconds) {
@@ -884,7 +887,7 @@ function ds_proxy_stream_hikvision_fmp4($ipSinMascara, $usuario, $password, $log
         $startAt = microtime(true);
         $lastBytesLogAt = $startAt;
 
-        while (!connection_aborted() && is_resource($proc)) {
+        while (!connection_aborted()) {
             $elapsed = microtime(true) - $startAt;
 
             if (!$firstBytesSent && $elapsed > $startWaitSeconds) {
@@ -1402,7 +1405,7 @@ function ds_proxy_exec_stream($ch, $usuario, $password, $logFile, $id, $ipSinMas
         return connection_aborted() ? 1 : 0;
     });
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
     curl_setopt($ch, CURLOPT_BUFFERSIZE, 1024 * 16);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: close', 'Expect:'));
     curl_setopt($ch, CURLOPT_USERAGENT, 'SIGTRAM-ProxyStream/1.1');
@@ -1482,4 +1485,3 @@ if ($bytesEnviados === 0 && ($res['http'] === 401 || $res['http'] === 403)) {
 
 ds_proxy_log($logFile, "id={$id} ip={$ipSinMascara} end http={$statusFromUpstream} bytes={$bytesEnviados}");
 exit;
-

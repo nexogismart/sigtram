@@ -19,6 +19,6 @@ class HarnessGuardTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('GUARDRAIL P0 ACTIVADO');
 
-        DB::select('SELECT 1');
+        DB::connection('pgsql')->select('SELECT 1');
     }
 }

@@ -39,9 +39,6 @@ class TramiteExternoPolicy
         }
 
         foreach ($movimientos as $mov) {
-            if (!$mov instanceof ExpedienteMovimientoDto) {
-                continue;
-            }
             if ($mov->inEsta !== '1') {
                 continue;
             }
@@ -126,16 +123,14 @@ class TramiteExternoPolicy
 
         if ($contexto->tieneRol(1) || $contexto->tieneRol(3) || $contexto->tieneRol(18)) {
             foreach ($movimientos as $movimiento) {
-                if ($movimiento instanceof ExpedienteMovimientoDto
-                    && $movimiento->companiaId === $contexto->idCompania) {
+                if ($movimiento->companiaId === $contexto->idCompania) {
                     return true;
                 }
             }
         }
 
         foreach ($movimientos as $movimiento) {
-            if (!$movimiento instanceof ExpedienteMovimientoDto
-                || $movimiento->companiaId !== $contexto->idCompania) {
+            if ($movimiento->companiaId !== $contexto->idCompania) {
                 continue;
             }
 
@@ -365,9 +360,6 @@ class TramiteExternoPolicy
         }
 
         foreach ($movimientos as $mov) {
-            if (!$mov instanceof ExpedienteMovimientoDto) {
-                continue;
-            }
             if ($mov->inEsta !== '1') {
                 continue;
             }

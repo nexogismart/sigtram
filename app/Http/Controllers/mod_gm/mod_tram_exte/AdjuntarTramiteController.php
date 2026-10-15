@@ -193,9 +193,9 @@ class AdjuntarTramiteController extends Controller
             return $nu;
         }
 
-        $mid = ($parts[1] ?? '') . '-' . substr((string) ($parts[2] ?? ''), 2, 10);
+        $mid = ($parts[1]) . '-' . substr((string) ($parts[2]), 2, 10);
 
-        return ($parts[0] ?? '') . '-' . str_pad($mid, 8, '0', STR_PAD_LEFT);
+        return ($parts[0]) . '-' . str_pad($mid, 8, '0', STR_PAD_LEFT);
     }
 }
 

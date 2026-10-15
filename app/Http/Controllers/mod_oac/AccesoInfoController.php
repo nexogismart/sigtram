@@ -93,7 +93,7 @@ class AccesoInfoController extends Controller
                     'aet.de_estdo_trmte',
                     'aa.de_area'
                 )
-                ->orderBy('r.cdgo_trmte_dcmnto', 'DESC')
+                ->orderBy('r.cdgo_trmte_dcmnto', 'desc')
                 ->get();
 
             return view('mod_oac.acceso_informacion.acceso_info', [
@@ -188,7 +188,7 @@ class AccesoInfoController extends Controller
                     ->where('r.in_esta', '1');
             });
 
-            $query->orderBy('dto.cdgo_dto_trmte', 'DESC');
+            $query->orderBy('dto.cdgo_dto_trmte', 'desc');
 
             $expedientes = $query->paginate(15)->appends($request->except('page'));
             $expedientes->withPath(route('oac.acceso_info'));

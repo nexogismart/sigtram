@@ -437,9 +437,9 @@ class VerRequerimientoLogisticaService
 
         $pagos = max(1, (int) ($item->nu_pgos_cntdad ?? 1));
         $monto = (float) str_replace(',', '.', (string) ($datos['monto'] ?? $item->nu_mnto ?? 0));
-        $sldo = $pagos > 0 ? $monto / $pagos : $monto;
+        $sldo = $monto / $pagos;
         $dias = explode('|', (string) ($item->no_das_pgos ?? ''));
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
 
         $adjun = (string) ($item->de_urls_os ?? '');
         if ($os instanceof UploadedFile) {
@@ -540,7 +540,7 @@ class VerRequerimientoLogisticaService
         $nombres = mb_strtoupper(trim((string) ($datos['nombres'] ?? '')), 'UTF-8');
         $dire = mb_strtoupper(trim((string) ($datos['direccion'] ?? '')), 'UTF-8');
         $corto = trim($nombres . ' ' . $apPate . ' ' . $apMate);
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
 
         if ($corto === '') {
             return $this->fail('Ingrese los nombres del proveedor.');
@@ -669,7 +669,7 @@ class VerRequerimientoLogisticaService
 
         $entro = 1;
         $anio = (int) date('Y');
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $nombre = (string) $zip->getNameIndex($i);
@@ -758,7 +758,7 @@ class VerRequerimientoLogisticaService
             return $this->fail('No hay trámite o cargo jefe en Presupuesto (área 97).');
         }
 
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         try {
@@ -812,7 +812,7 @@ class VerRequerimientoLogisticaService
             return $this->fail('No se encontró el requerimiento.');
         }
 
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $areaDest = (int) ($cab->cdgo_area ?? 0);
         $dest = $this->cargoJefeArea($areaDest);
@@ -933,7 +933,7 @@ class VerRequerimientoLogisticaService
         }
 
         $partes = explode('-', trim($semilla));
-        $nu = (int) ltrim((string) ($partes[0] ?? '0'), '0');
+        $nu = (int) ltrim((string) ($partes[0]), '0');
         $anioDe = (string) ($partes[1] ?? date('Y'));
         if ($nu <= 0) {
             return $this->fail('Número de trámite no válido.');
@@ -941,7 +941,7 @@ class VerRequerimientoLogisticaService
         $nuAuto = $nu . '-' . $anioDe;
         $company = $this->compania();
         $areaId = $this->areaUsuario();
-        $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
+        $userId = (int) (Auth::user()->cdgo_lgin ?? 0);
         $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
 
         $anio = DB::table($this->schemaSistema . 'a_anios')
@@ -991,7 +991,7 @@ class VerRequerimientoLogisticaService
 
                 $expe = explode('-', (string) ($cab->nu_tram_todo ?? ''));
                 $obs = 'CON REFERENCIA AL ' . (string) ($cab->de_tpo_trmte ?? '') . ' N° '
-                    . str_pad(trim(($expe[0] ?? '') . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
+                    . str_pad(trim(($expe[0]) . '-' . ($expe[1] ?? '')), 13, '0', STR_PAD_LEFT)
                     . ' DEL AREA ' . (string) ($cab->de_area ?? '');
                 $deObse = '; SE DERIVA CON ' . (string) ($tipo->de_tpo_trmte ?? '') . ' N° '
                     . str_pad($nuAuto, 10, '0', STR_PAD_LEFT);
@@ -1384,7 +1384,7 @@ class VerRequerimientoLogisticaService
 
         DB::table(self::SCHEMA_LOGISTICA . 'h_deta_pgo_mmos')->where('cdgo_deta_pgo_prvdres', $itemId)->delete();
         $pagos = max(1, (int) ($it->nu_pgos_cntdad ?? 1));
-        $sldo = $pagos > 0 ? ((float) ($it->nu_mnto ?? 0)) / $pagos : 0;
+        $sldo = ((float) ($it->nu_mnto ?? 0)) / $pagos;
         $dias = explode('|', (string) ($it->no_das_pgos ?? ''));
         for ($u = 1; $u <= $pagos; $u++) {
             DB::table(self::SCHEMA_LOGISTICA . 'h_deta_pgo_mmos')->insert([

@@ -234,12 +234,12 @@ class PromesaService
     public function guardarLugar(array $datos, int $usuarioId): array
     {
         try {
-            $nombre = trim((string) ($datos['zona_nombre'] ?? ''));
+            $nombre = trim((string) ($datos['zona_nombre']));
             if ($nombre === '') {
                 return $this->fail('El nombre/ubicación es obligatorio.');
             }
 
-            $fecha = $this->fechaEeuu((string) ($datos['fecha_rnn'] ?? ''));
+            $fecha = $this->fechaEeuu((string) ($datos['fecha_rnn']));
             if ($fecha === null) {
                 return $this->fail('La fecha de la reunión es obligatoria y debe ser válida.');
             }
@@ -279,12 +279,12 @@ class PromesaService
                 return $this->fail('Lugar no encontrado.');
             }
 
-            $nombre = trim((string) ($datos['zona_nombre'] ?? ''));
+            $nombre = trim((string) ($datos['zona_nombre']));
             if ($nombre === '') {
                 return $this->fail('El nombre/ubicación es obligatorio.');
             }
 
-            $fecha = $this->fechaEeuu((string) ($datos['fecha_rnn'] ?? ''));
+            $fecha = $this->fechaEeuu((string) ($datos['fecha_rnn']));
             if ($fecha === null) {
                 return $this->fail('La fecha de la reunión es obligatoria y debe ser válida.');
             }
@@ -476,22 +476,22 @@ class PromesaService
     public function guardarPromesa(array $datos, int $usuarioId): array
     {
         try {
-            $idReunion = (int) ($datos['id_reunion'] ?? 0);
+            $idReunion = (int) ($datos['id_reunion']);
             if ($idReunion <= 0) {
                 return $this->fail('La reunión es obligatoria.');
             }
 
-            $dirigente = trim((string) ($datos['dirigente'] ?? ''));
+            $dirigente = trim((string) ($datos['dirigente']));
             if ($dirigente === '') {
                 return $this->fail('El nombre del dirigente es obligatorio.');
             }
 
-            $pedido = trim((string) ($datos['pedido'] ?? ''));
+            $pedido = trim((string) ($datos['pedido']));
             if ($pedido === '') {
                 return $this->fail('La descripción del pedido es obligatoria.');
             }
 
-            $areaId = (int) ($datos['area_id'] ?? 0);
+            $areaId = (int) ($datos['area_id']);
             if ($areaId <= 0) {
                 return $this->fail('La unidad orgánica es obligatoria.');
             }
@@ -557,17 +557,17 @@ class PromesaService
                 return $this->fail('Compromiso no encontrado.');
             }
 
-            $dirigente = trim((string) ($datos['dirigente'] ?? ''));
+            $dirigente = trim((string) ($datos['dirigente']));
             if ($dirigente === '') {
                 return $this->fail('El nombre del dirigente es obligatorio.');
             }
 
-            $pedido = trim((string) ($datos['pedido'] ?? ''));
+            $pedido = trim((string) ($datos['pedido']));
             if ($pedido === '') {
                 return $this->fail('La descripción del pedido es obligatoria.');
             }
 
-            $areaId = (int) ($datos['area_id'] ?? 0);
+            $areaId = (int) ($datos['area_id']);
             if ($areaId <= 0) {
                 return $this->fail('La unidad orgánica es obligatoria.');
             }

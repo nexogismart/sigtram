@@ -40,7 +40,7 @@ class OmapedController extends Controller
             'puedeEliminar' => $puedeEliminar,
             'usNomArea' => (string) $request->session()->get('sigtram_area_nombre', ''),
             'usNomCargo' => (string) $request->session()->get('sigtram_cargo_nombre', ''),
-            'usNombre' => method_exists($user, 'nombreMostrar') ? $user->nombreMostrar() : '',
+            'usNombre' => $user->nombreMostrar(),
         ]);
     }
 
@@ -276,7 +276,7 @@ class OmapedController extends Controller
         }
 
         // Acceso público con token solo para foto
-        if (!$autenticado && $tokenA !== '') {
+        if (!$autenticado) {
             if ($tipo !== 'foto') {
                 return response()->json(['success' => false, 'error' => 'Acceso denegado.'], 403);
             }

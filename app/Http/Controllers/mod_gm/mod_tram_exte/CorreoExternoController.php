@@ -531,15 +531,12 @@ class CorreoExternoController extends Controller
     private function resolverClaveIdempotencia(Request $request): ?string
     {
         $key = $request->header('Idempotency-Key') ?? $request->header('X-Idempotency-Key') ?? $request->input('idempotency_key');
-        if (!empty($key) && is_string($key)) {
-            return trim($key);
+        if (!is_string($key)) {
+            return null;
         }
 
-        if (app()->environment('testing')) {
-            return (string) \Illuminate\Support\Str::uuid();
-        }
-
-        return null;
+        $key = trim($key);
+        return $key !== '' ? $key : null;
     }
 
     /**

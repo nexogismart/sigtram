@@ -36,15 +36,15 @@ class ContextoUsuarioAutenticadoService implements ContextoUsuarioAutenticadoSer
             if (is_numeric($rawId) && (int) $rawId > 0) {
                 $idLogin = (int) $rawId;
             } elseif ($user) {
-                if (isset($user->cdgo_lgin) && is_numeric($user->cdgo_lgin) && (int) $user->cdgo_lgin > 0) {
+                if (isset($user->cdgo_lgin) && (int) $user->cdgo_lgin > 0) {
                     $idLogin = (int) $user->cdgo_lgin;
-                } elseif (isset($user->cdgo_usrios) && is_numeric($user->cdgo_usrios) && (int) $user->cdgo_usrios > 0) {
+                } elseif (isset($user->cdgo_usrios) && (int) $user->cdgo_usrios > 0) {
                     $idLogin = (int) $user->cdgo_usrios;
                 } elseif (isset($user->id) && is_numeric($user->id) && (int) $user->id > 0) {
                     $idLogin = (int) $user->id;
                 }
             }
-            if ($idLogin === null || $idLogin <= 0) {
+            if ($idLogin === null) {
                 $idLogin = (int) session(SessionKeys::LOGIN_ID, 0);
             }
         }
@@ -102,7 +102,7 @@ class ContextoUsuarioAutenticadoService implements ContextoUsuarioAutenticadoSer
         $contexto = $this->obtenerContextoActivo($idLogin, $idCompania, $idCargo);
         if ($contexto === null) {
             $user = Auth::user();
-            if (!$user && ($idLogin === null || $idLogin <= 0)) {
+            if (!$user && ($idLogin === null)) {
                 throw ContextoInvalidoException::sinAutenticacion();
             }
             $comp = $idCompania ?? (int) session(SessionKeys::COMPANIA_ID, 0);

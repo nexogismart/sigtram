@@ -21,7 +21,7 @@ class ListaReporteController extends Controller
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
     {
         $pathVista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Reportes de Expedientes Ingresados'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Reportes de Expedientes Ingresados'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Reportes de Expedientes Ingresados';
         }

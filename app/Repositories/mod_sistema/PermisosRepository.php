@@ -24,10 +24,14 @@ class PermisosRepository implements PermisosRepositoryInterface
     {
         $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
 
-        return Cache::remember(
-            SessionKeys::permKey($cdgoLgin),
-            now()->addHours(8),
-            function () use ($cdgoLgin, $cdgoCargo, $cdgoPerfl, $schema) {
+        $cacheKey = SessionKeys::permKey($cdgoLgin);
+        $scopeKey = $cdgoCargo . ':' . $cdgoPerfl;
+        $cached = Cache::get($cacheKey, []);
+        if (is_array($cached) && isset($cached['scopes'][$scopeKey])) {
+            return $cached['scopes'][$scopeKey];
+        }
+
+        $permisos = (function () use ($cdgoLgin, $cdgoCargo, $cdgoPerfl, $schema) {
                 $hasExceptionsTable = \Illuminate\Support\Facades\Schema::hasTable(
                     rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.r_prmsos_usrios'
                 );
@@ -105,8 +109,14 @@ class PermisosRepository implements PermisosRepositoryInterface
                 }
 
                 return $permisos;
-            }
-        );
+            })();
+
+        // Ignore unscoped legacy entries; a cargo must never reuse another cargo's permissions.
+        $scopes = is_array($cached) && is_array($cached['scopes'] ?? null) ? $cached['scopes'] : [];
+        $scopes[$scopeKey] = $permisos;
+        Cache::put($cacheKey, ['scopes' => $scopes], now()->addHours(8));
+
+        return $permisos;
     }
 
     /**

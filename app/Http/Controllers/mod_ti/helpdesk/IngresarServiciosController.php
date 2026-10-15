@@ -18,9 +18,6 @@ use Illuminate\View\View;
 class IngresarServiciosController extends Controller
 {
     private const LOGIN_OTI_SECRETARIA = 14528;
-    private const LOGIN_EXCLUIDO_OTI = 469;
-    private const AREA_OTI = 103;
-    private const LOGIN_HELP_SPECIAL = 72;
 
     public function index(Request $request): View|RedirectResponse
     {

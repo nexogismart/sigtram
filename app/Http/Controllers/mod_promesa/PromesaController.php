@@ -50,7 +50,7 @@ class PromesaController extends Controller
             'accesoPleno' => $accesoPleno,
             'usNomArea' => (string) $request->session()->get('sigtram_area_nombre', ''),
             'usNomCargo' => (string) $request->session()->get('sigtram_cargo_nombre', ''),
-            'usNombre' => method_exists($user, 'nombreMostrar') ? $user->nombreMostrar() : '',
+            'usNombre' => $user->nombreMostrar(),
             'areaId' => $areaId,
         ]);
     }

@@ -475,7 +475,7 @@ class TramiteExternoRepository implements TramiteExternoRepositoryInterface
                 'origen_flag'         => $indicadorOrigen,
                 'cdgo_usrios_trmte'   => $cdgoUsriosTrmte,
                 'cdgo_tpo_trmte'      => $cdgoTpoTrmte,
-                'dc_tpo_trmte'        => $dcTpo !== '' ? $dcTpo : null,
+                'dc_tpo_trmte'        => $dcTpo,
                 'de_tpo_trmte'        => $descripcion,
                 'in_docu_trmte'       => $inDocu !== '' ? $inDocu : null,
                 'nu_expe_todo'        => (string) ($row->nu_expe_todo ?? (string) $documentoId),
@@ -2298,7 +2298,6 @@ class TramiteExternoRepository implements TramiteExternoRepositoryInterface
             'a_tpo_trmtes.de_tpo_trmte' => 'a_tpo_trmtes.de_tpo_trmte',
             'a_estdos_trmtes.dc_estdo_trmte' => 'a_estdos_trmtes.dc_estdo_trmte',
             'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-            default => 'p.nu_expe_todo',
         };
         $query->whereRaw("UPPER({$col}) LIKE UPPER(?)", ['%' . $valor . '%']);
     }
@@ -2403,7 +2402,6 @@ class TramiteExternoRepository implements TramiteExternoRepositoryInterface
                     'a_docmntos_trmtes.de_docmnto_trmte' => 'a_docmntos_trmtes.de_docmnto_trmte',
                     'h_usrios_ntral.no_usrio' => 'h_usrios_ntral.no_usrio',
                     'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-                    default => 'p.nu_expe_todo',
                 };
                 $query->whereRaw("UPPER({$col}) LIKE UPPER(?)", ['%' . $palabra . '%']);
             }
@@ -2544,7 +2542,6 @@ class TramiteExternoRepository implements TramiteExternoRepositoryInterface
             'a_estdos_trmtes.dc_estdo_trmte' => 'a_estdos_trmtes.dc_estdo_trmte',
             'p_usrios_1.no_crto' => 'p_usrios_1.no_crto',
             'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-            default => 'p.nu_expe_todo',
         };
         $valor = trim((string) $valor);
         if ($valor === '') {
@@ -3538,7 +3535,6 @@ class TramiteExternoRepository implements TramiteExternoRepositoryInterface
                 'p_usrios.no_crto' => 'p_usrios.no_crto',
                 'a_tpo_trmtes.dc_tpo_trmte' => 'a_tpo_trmtes.dc_tpo_trmte',
                 'p_dto_trmtes.de_obse_todo' => 'p.de_obse_todo',
-                default => 'p.nu_expe_todo',
             };
             $query->whereRaw("UPPER({$col}) LIKE UPPER(?)", ['%' . $palabra . '%']);
         }

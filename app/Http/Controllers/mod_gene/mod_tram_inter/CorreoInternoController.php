@@ -44,7 +44,6 @@ class CorreoInternoController extends Controller
 {
     use ApiResponseTrait;
 
-    private string $schema;
     private readonly ValidadorPagoProveedoresTipo64Service $validadorTipo64;
     private readonly ConsolidadoExpedienteService $consolidadoService;
     private readonly DescargaLoteTramiteInternoService $descargaLoteService;
@@ -60,7 +59,6 @@ class CorreoInternoController extends Controller
         ?ReemplazarDocumentoFirmadoService $reemplazarService = null,
         private ?ContextoUsuarioAutenticadoServiceInterface $contextoService = null
     ) {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
         $this->validadorTipo64 = $validadorTipo64 ?? app(ValidadorPagoProveedoresTipo64Service::class);
         $this->consolidadoService = $consolidadoService ?? app(ConsolidadoExpedienteService::class);
         $this->descargaLoteService = $descargaLoteService ?? app(DescargaLoteTramiteInternoService::class);

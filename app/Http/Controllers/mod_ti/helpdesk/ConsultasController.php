@@ -336,7 +336,7 @@ class ConsultasController extends Controller
         ];
     }
 
-    private function calcularPorcentajeAvance(string $fInicio, string $fFin, int $filtroOti, int $filtroId = 0): ?float
+    private function calcularPorcentajeAvance(string $fInicio, string $fFin, int $filtroOti, int $filtroId = 0): float
     {
         $ti = $this->schemaTi();
         $query = DB::table($ti . 'bndja as b')

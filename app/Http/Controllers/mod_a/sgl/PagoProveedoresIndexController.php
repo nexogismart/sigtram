@@ -43,7 +43,7 @@ class PagoProveedoresIndexController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Pago a proveedores'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Pago a proveedores'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Pago a proveedores';
         }

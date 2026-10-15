@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
  */
 class OmapedBridge
 {
-    /** @var resource|\PgSql\Connection|null */
+    /** @var \PgSql\Connection|null */
     private static $cn = null;
 
     public static function boot(): void
@@ -51,9 +51,7 @@ class OmapedBridge
             $_SESSION['usIds'] = (int) $user->cdgo_lgin;
             $_SESSION['id'] = (int) $user->cdgo_lgin;
             $_SESSION['usIdPrsna'] = (int) ($user->cdgo_usrios ?? 0);
-            $_SESSION['usNombre'] = method_exists($user, 'nombreMostrar')
-                ? (string) $user->nombreMostrar()
-                : (string) ($user->no_crto ?? '');
+            $_SESSION['usNombre'] = (string) $user->nombreMostrar();
         }
         $_SESSION['usNomArea'] = (string) session('sigtram_area_nombre', '');
         $_SESSION['usNomCargo'] = (string) session('sigtram_cargo_nombre', '');

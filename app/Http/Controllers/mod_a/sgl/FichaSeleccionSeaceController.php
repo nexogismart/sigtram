@@ -41,7 +41,7 @@ class FichaSeleccionSeaceController extends Controller
             $vista = $pathVista;
         }
 
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Fichas de selección SE@CE'));
+        $tituloOpcion = trim((string) ($opcionMenu->dc_rle ?? 'Fichas de selección SE@CE'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Fichas de selección SE@CE';
         }

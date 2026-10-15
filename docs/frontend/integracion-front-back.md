@@ -94,3 +94,10 @@ No se modificaron permisos o datos reales para sortear pendientes. Las pruebas d
 - Se revisó la ejecución remota anterior de GitHub Actions (`38810132266`): detectó un error Linux en el nombre de la vista de la hoja de ruta externa, que utilizaba barras de Windows. Se corrigió a notación Laravel con puntos; un test del endpoint verifica compañía, vista y número de expediente. El formato de impresión no se modificó.
 
 Se añadieron pruebas de renderizado y contrato del login, compañía, doble cargo y contexto interno, además del endpoint de hoja de ruta externa. El servidor visual local bloquea DB/HTTP externos y escrituras y usa exclusivamente identidades sintéticas. Estas comprobaciones no se presentan como una sesión real con todas las operaciones contra PostgreSQL.
+
+
+### Portabilidad y ejecución limpia de CI
+
+La ejecución remota `38813343236` superó PHPStan y detectó dos dependencias que no estaban reflejadas en el checkout: Poppler para los tests reales de conteo PDF y un informe local del catálogo. CI instala ahora `poppler-utils`; esos tests siguen ejecutando el contador real sobre PDFs sintéticos, sin mocks ni omisiones. El servidor de destino necesita `pdfinfo` disponible o `PDFINFO_BINARY` configurado.
+
+La clasificación del workspace usa en tests un snapshot estructural versionado de 43 módulos y 204 opciones, capturado en la auditoría de solo lectura del 13 de octubre. Contiene exclusivamente IDs y nombres de menús; no incluye personas, asignaciones, URLs ni resultados de clasificación calculados. El test vuelve a calcular y comprobar la organización desde cero. El informe local con posible información sensible sigue excluido de Git. Esto no afirma que el catálogo de la BD permanezca idéntico al snapshot.

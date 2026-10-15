@@ -1,0 +1,902 @@
+{
+  "capturedAt": "2026-10-13",
+  "description": "Structural menu snapshot from the read-only catalogue audit. Contains only module/option IDs and labels; no users, grants, paths or computed classification. Classification is recomputed by each test.",
+  "groups": [
+    {
+      "id": 1,
+      "label": "Tramites Externos",
+      "children": [
+        {
+          "id": 2,
+          "label": "Ingresar Expedientes"
+        },
+        {
+          "id": 3,
+          "label": "Corr. Externo"
+        },
+        {
+          "id": 4,
+          "label": "Ver Expedientes"
+        },
+        {
+          "id": 5,
+          "label": "Reporte de Movimientos"
+        },
+        {
+          "id": 6,
+          "label": "Reportes"
+        },
+        {
+          "id": 7,
+          "label": "Ver Expedientes Area"
+        },
+        {
+          "id": 8,
+          "label": "Notificar Finalizados"
+        },
+        {
+          "id": 9,
+          "label": "Reportes tramites"
+        },
+        {
+          "id": 10,
+          "label": "Ver Criticos"
+        },
+        {
+          "id": 11,
+          "label": "Corr. Archivo"
+        },
+        {
+          "id": 12,
+          "label": "Adjuntar Archivo"
+        },
+        {
+          "id": 13,
+          "label": "Redirigir"
+        },
+        {
+          "id": 14,
+          "label": "Ver Criticos"
+        },
+        {
+          "id": 15,
+          "label": "Reporte Expedientes"
+        },
+        {
+          "id": 51,
+          "label": "Generales"
+        },
+        {
+          "id": 106,
+          "label": "Reporte Cargo Externo"
+        },
+        {
+          "id": 123,
+          "label": "Ingresar Prescripcion"
+        },
+        {
+          "id": 132,
+          "label": "Ver TUPA"
+        },
+        {
+          "id": 133,
+          "label": "Admin TUPA"
+        },
+        {
+          "id": 136,
+          "label": "Ver Historico"
+        },
+        {
+          "id": 205,
+          "label": "Reporte Cargo Externo V2"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "label": "Tramites Internos",
+      "children": [
+        {
+          "id": 17,
+          "label": "Ingresar Tramite"
+        },
+        {
+          "id": 18,
+          "label": "Corr. Interno"
+        },
+        {
+          "id": 19,
+          "label": "Tramite Area"
+        },
+        {
+          "id": 82,
+          "label": "Buscar Tramite"
+        },
+        {
+          "id": 86,
+          "label": "Secuencial Tramite"
+        },
+        {
+          "id": 107,
+          "label": "Reporte Cargo Interno"
+        },
+        {
+          "id": 137,
+          "label": "Buscar Interno"
+        },
+        {
+          "id": 141,
+          "label": "Reporte Trámite"
+        },
+        {
+          "id": 203,
+          "label": "Reporte Cargo Interno V2"
+        },
+        {
+          "id": 204,
+          "label": "Reporte Req."
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "label": "Programas Sociales",
+      "children": [
+        {
+          "id": 21,
+          "label": "SISFOH"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "label": "Lic. Funcionamiento",
+      "children": [
+        {
+          "id": 23,
+          "label": "Ingresar Licencias"
+        },
+        {
+          "id": 24,
+          "label": "Modifica Licencia de Funcionamiento"
+        },
+        {
+          "id": 25,
+          "label": "Extemporáneo"
+        },
+        {
+          "id": 26,
+          "label": "Bandeja Licencias"
+        },
+        {
+          "id": 110,
+          "label": "Consulta Licencias"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "label": "Aut. Ambulatoria",
+      "children": [
+        {
+          "id": 28,
+          "label": "Bandeja Ambulatorio"
+        },
+        {
+          "id": 29,
+          "label": "Registro Ambulatorio"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "label": "Seguridad",
+      "children": [
+        {
+          "id": 196,
+          "label": "Perfil"
+        },
+        {
+          "id": 197,
+          "label": "Cargos"
+        },
+        {
+          "id": 198,
+          "label": "Opciones"
+        },
+        {
+          "id": 199,
+          "label": "Usuario"
+        },
+        {
+          "id": 200,
+          "label": "Accesos"
+        },
+        {
+          "id": 201,
+          "label": "Perfiles Opciones"
+        },
+        {
+          "id": 202,
+          "label": "Cambiar Contraseña"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "label": "Gestion del Riesgo",
+      "children": [
+        {
+          "id": 32,
+          "label": "Ingreso Gestion de Riesgo"
+        },
+        {
+          "id": 33,
+          "label": "Ver Autorizados DC"
+        },
+        {
+          "id": 34,
+          "label": "Bandeja Gestion Riesgo"
+        },
+        {
+          "id": 35,
+          "label": "Ver Todos DC"
+        },
+        {
+          "id": 36,
+          "label": "Ver Rechazados DC"
+        },
+        {
+          "id": 37,
+          "label": "Ver Solicitados DC"
+        },
+        {
+          "id": 38,
+          "label": "Ver Tramite DC"
+        },
+        {
+          "id": 101,
+          "label": "Extemporáneo GR"
+        },
+        {
+          "id": 126,
+          "label": "Bandeja Ord Urbano"
+        },
+        {
+          "id": 127,
+          "label": "Ver Procedentes"
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "label": "Eventos",
+      "children": [
+        {
+          "id": 40,
+          "label": "Ingresar Eventos"
+        },
+        {
+          "id": 41,
+          "label": "Bandeja Eventos"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "label": "Matrimonio",
+      "children": [
+        {
+          "id": 43,
+          "label": "Ingreso Matrimonio"
+        },
+        {
+          "id": 44,
+          "label": "Lista Matrimonio"
+        },
+        {
+          "id": 45,
+          "label": "Postergación"
+        },
+        {
+          "id": 46,
+          "label": "Oficios Reniec"
+        },
+        {
+          "id": 47,
+          "label": "Matrimonio Civil"
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "label": "Rentas",
+      "children": [
+        {
+          "id": 49,
+          "label": "Const. no deudo"
+        },
+        {
+          "id": 50,
+          "label": "NULL::character varying"
+        },
+        {
+          "id": 115,
+          "label": "Ingresa Cons. Posesion"
+        },
+        {
+          "id": 116,
+          "label": "Bandeja Constancia Posesion"
+        },
+        {
+          "id": 124,
+          "label": "Prescripcion"
+        },
+        {
+          "id": 131,
+          "label": "Consult. Duplicados"
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "label": "Fiscalización",
+      "children": [
+        {
+          "id": 53,
+          "label": "Ingresar Notif. Prev."
+        },
+        {
+          "id": 54,
+          "label": "Ingresar Res. Sanción"
+        },
+        {
+          "id": 55,
+          "label": "Lista Fiscalizador"
+        },
+        {
+          "id": 56,
+          "label": "Reporte"
+        },
+        {
+          "id": 57,
+          "label": "Consulta Licencias"
+        },
+        {
+          "id": 58,
+          "label": "Mantenimiento Fiscalizador"
+        },
+        {
+          "id": 59,
+          "label": "Reporte Pagos"
+        },
+        {
+          "id": 60,
+          "label": "Lista RS"
+        },
+        {
+          "id": 61,
+          "label": "Lista NC"
+        },
+        {
+          "id": 69,
+          "label": "Pagar Multas"
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "label": "Denuncias",
+      "children": [
+        {
+          "id": 63,
+          "label": "Motivo Denuncias"
+        },
+        {
+          "id": 64,
+          "label": "Ingresar Motivos"
+        },
+        {
+          "id": 65,
+          "label": "Ingresar Denuncias"
+        },
+        {
+          "id": 66,
+          "label": "Asignar Responsable"
+        },
+        {
+          "id": 67,
+          "label": "Lista Denuncias"
+        },
+        {
+          "id": 68,
+          "label": "Reporte"
+        },
+        {
+          "id": 142,
+          "label": "Bandeja Denuncias"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "label": "Transportes",
+      "children": [
+        {
+          "id": 71,
+          "label": "Mantenimiento de Papeletas"
+        },
+        {
+          "id": 72,
+          "label": "Mantenimiento Acta Liberacion"
+        },
+        {
+          "id": 73,
+          "label": "Pago Acta de Control"
+        },
+        {
+          "id": 74,
+          "label": "Lista Acta de Control"
+        },
+        {
+          "id": 75,
+          "label": "Padron General"
+        },
+        {
+          "id": 76,
+          "label": "Acta Entrega"
+        },
+        {
+          "id": 77,
+          "label": "Mantemiento padron general"
+        },
+        {
+          "id": 111,
+          "label": "Edita Papeletas"
+        },
+        {
+          "id": 120,
+          "label": "Padron"
+        },
+        {
+          "id": 121,
+          "label": "Mantenimiento de Padron"
+        },
+        {
+          "id": 122,
+          "label": "Mantenimiento Editar de Padron"
+        },
+        {
+          "id": 125,
+          "label": "Lista sin Intern."
+        },
+        {
+          "id": 128,
+          "label": "Editar Entrega"
+        },
+        {
+          "id": 148,
+          "label": "Plaqueo"
+        }
+      ]
+    },
+    {
+      "id": 78,
+      "label": "Buscar Solicitante",
+      "children": []
+    },
+    {
+      "id": 79,
+      "label": "Cer. Parametros",
+      "children": [
+        {
+          "id": 80,
+          "label": "Ingreso Parametros"
+        },
+        {
+          "id": 81,
+          "label": "Bandeja Parametros"
+        }
+      ]
+    },
+    {
+      "id": 83,
+      "label": "RUOS",
+      "children": [
+        {
+          "id": 84,
+          "label": "Lista RUOS"
+        },
+        {
+          "id": 85,
+          "label": "Ingresar RUOS"
+        }
+      ]
+    },
+    {
+      "id": 87,
+      "label": "Colas",
+      "children": [
+        {
+          "id": 88,
+          "label": "Televisor"
+        },
+        {
+          "id": 89,
+          "label": "Totem"
+        },
+        {
+          "id": 90,
+          "label": "Gestión Turno"
+        },
+        {
+          "id": 94,
+          "label": "Gestión Principal"
+        },
+        {
+          "id": 95,
+          "label": "Gestión Area"
+        }
+      ]
+    },
+    {
+      "id": 91,
+      "label": "Aut. Municipales",
+      "children": [
+        {
+          "id": 92,
+          "label": "Ingreso Certificado"
+        },
+        {
+          "id": 93,
+          "label": "Bandeja Aut. Municipales"
+        }
+      ]
+    },
+    {
+      "id": 96,
+      "label": "Anuncios",
+      "children": [
+        {
+          "id": 97,
+          "label": "Ingresar Anuncio"
+        },
+        {
+          "id": 98,
+          "label": "Bandeja Anuncios"
+        },
+        {
+          "id": 102,
+          "label": "Extemporáneo"
+        }
+      ]
+    },
+    {
+      "id": 99,
+      "label": "Acc. Información",
+      "children": [
+        {
+          "id": 100,
+          "label": "Solicitud"
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "label": "Salud",
+      "children": [
+        {
+          "id": 104,
+          "label": "Bandeja Certificados"
+        },
+        {
+          "id": 105,
+          "label": "Nuevo Certificado"
+        },
+        {
+          "id": 108,
+          "label": "Registro Canes"
+        },
+        {
+          "id": 109,
+          "label": "Bandeja Canes"
+        }
+      ]
+    },
+    {
+      "id": 112,
+      "label": "Niubiz",
+      "children": [
+        {
+          "id": 113,
+          "label": "Pagos Niubiz"
+        }
+      ]
+    },
+    {
+      "id": 117,
+      "label": "Const. Posesión",
+      "children": [
+        {
+          "id": 118,
+          "label": "Bandeja Cons. Posesión"
+        },
+        {
+          "id": 119,
+          "label": "Ingresar Cons. Posesión"
+        }
+      ]
+    },
+    {
+      "id": 129,
+      "label": "Unif. Licencia",
+      "children": [
+        {
+          "id": 130,
+          "label": "Bandeja Unificacion Licencia"
+        }
+      ]
+    },
+    {
+      "id": 134,
+      "label": "Mesa De Ayuda",
+      "children": [
+        {
+          "id": 135,
+          "label": "Ingresar Servicios"
+        },
+        {
+          "id": 143,
+          "label": "Ingresar Bandeja"
+        },
+        {
+          "id": 144,
+          "label": "Consultas"
+        },
+        {
+          "id": 174,
+          "label": "Tickets"
+        }
+      ]
+    },
+    {
+      "id": 138,
+      "label": "PIDE",
+      "children": []
+    },
+    {
+      "id": 139,
+      "label": "Mod Gerencial",
+      "children": [
+        {
+          "id": 140,
+          "label": "Reporte de Ingresos"
+        }
+      ]
+    },
+    {
+      "id": 145,
+      "label": "Aud. Públicas",
+      "children": [
+        {
+          "id": 146,
+          "label": "Cartas"
+        },
+        {
+          "id": 147,
+          "label": "Seguimiento"
+        }
+      ]
+    },
+    {
+      "id": 149,
+      "label": "Gestión Proveedores",
+      "children": [
+        {
+          "id": 150,
+          "label": "Requ. Locador"
+        },
+        {
+          "id": 151,
+          "label": "Requ. Logistica"
+        },
+        {
+          "id": 152,
+          "label": "Requ. Finanzas"
+        },
+        {
+          "id": 153,
+          "label": "Requ. Tesoreria"
+        },
+        {
+          "id": 154,
+          "label": "Requ. Presupuesto"
+        },
+        {
+          "id": 155,
+          "label": "Requ. GAF"
+        },
+        {
+          "id": 156,
+          "label": "Registro Requerimiento"
+        }
+      ]
+    },
+    {
+      "id": 158,
+      "label": "Reuniones",
+      "children": [
+        {
+          "id": 157,
+          "label": "Bandeja Areas"
+        },
+        {
+          "id": 159,
+          "label": "Registrar Reunion"
+        },
+        {
+          "id": 160,
+          "label": "Bandeja Reunion"
+        }
+      ]
+    },
+    {
+      "id": 161,
+      "label": "Mesa de Ayuda 2",
+      "children": [
+        {
+          "id": 162,
+          "label": "Registrar Ticket"
+        },
+        {
+          "id": 163,
+          "label": "Bandeja"
+        },
+        {
+          "id": 164,
+          "label": "Consulta"
+        }
+      ]
+    },
+    {
+      "id": 165,
+      "label": "Consulta GDU",
+      "children": []
+    },
+    {
+      "id": 166,
+      "label": "Inventario",
+      "children": [
+        {
+          "id": 167,
+          "label": "data"
+        },
+        {
+          "id": 168,
+          "label": "mantenimiento"
+        }
+      ]
+    },
+    {
+      "id": 169,
+      "label": "Reporte de Publicidad",
+      "children": [
+        {
+          "id": 170,
+          "label": "Registros"
+        },
+        {
+          "id": 188,
+          "label": "Registros 2026"
+        }
+      ]
+    },
+    {
+      "id": 171,
+      "label": "Reportes Control",
+      "children": [
+        {
+          "id": 172,
+          "label": "Buscar Pagos"
+        },
+        {
+          "id": 173,
+          "label": "Pagos Proveedores UO"
+        }
+      ]
+    },
+    {
+      "id": 175,
+      "label": "Asistente Virtual",
+      "children": []
+    },
+    {
+      "id": 176,
+      "label": "Acceso a la Información",
+      "children": [
+        {
+          "id": 177,
+          "label": "Bandeja"
+        }
+      ]
+    },
+    {
+      "id": 178,
+      "label": "Becas",
+      "children": [
+        {
+          "id": 179,
+          "label": "Bandeja"
+        },
+        {
+          "id": 180,
+          "label": "Graficos"
+        }
+      ]
+    },
+    {
+      "id": 181,
+      "label": "Colas 2",
+      "children": [
+        {
+          "id": 182,
+          "label": "Televisor"
+        },
+        {
+          "id": 183,
+          "label": "Totem"
+        },
+        {
+          "id": 184,
+          "label": "Gestión Turno"
+        },
+        {
+          "id": 185,
+          "label": "Gestión Principal"
+        },
+        {
+          "id": 186,
+          "label": "Gestión Area"
+        },
+        {
+          "id": 187,
+          "label": "Reportes Gráficos"
+        }
+      ]
+    },
+    {
+      "id": 189,
+      "label": "Atención al Ciudadano",
+      "children": [
+        {
+          "id": 192,
+          "label": "Personas"
+        },
+        {
+          "id": 193,
+          "label": "Denuncias Varios"
+        }
+      ]
+    },
+    {
+      "id": 190,
+      "label": "Dispositivo Seguridad",
+      "children": []
+    },
+    {
+      "id": 191,
+      "label": "OMAPED",
+      "children": []
+    },
+    {
+      "id": 194,
+      "label": "OTI",
+      "children": [
+        {
+          "id": 195,
+          "label": "Firma Email"
+        }
+      ]
+    }
+  ]
+}

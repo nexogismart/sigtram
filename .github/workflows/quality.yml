@@ -46,6 +46,8 @@ jobs:
       - run: php vendor/bin/phpstan analyse --no-progress
       - run: python -m unittest discover -s tests/Quality
       - run: python scripts/frontend/audit-integration.py --reviewed-fixes
+      - name: Install PDF page-counting runtime
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
       - run: php vendor/bin/pest --compact --coverage-clover storage/app/coverage.xml
         env:
           XDEBUG_MODE: coverage

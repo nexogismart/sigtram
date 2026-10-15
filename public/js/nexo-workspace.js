@@ -648,6 +648,16 @@
         persist("recent", recent);
         renderHome();
     }
+    function modulePath(path) {
+        const stripped = path.replace(/\/+$/, '').replace(/\.(?:blade\.php|php)$/i, '');
+        // These aliases resolve to the same backend controllers, not to additional menus.
+        const aliases = {
+            '/mod_gene/mod_tram_inter/correo-interno': '/mod_gene/mod_tram_inter/correo_interno',
+            '/mod_gene/mod_tram_inter/buscar-tramite': '/mod_gene/mod_tram_inter/buscar_tramite',
+            '/mod_gene/mod_tram_inter/ingresar-tramite': '/mod_gene/mod_tram_inter/ingresar_tramite',
+        };
+        return aliases[stripped] || stripped;
+    }
     function findAssignedModule(url) {
         const target = safeUrl(url);
         if (!target) return null;
@@ -655,7 +665,7 @@
         if (parsed.origin !== location.origin) return null;
         return modules.find(entry => {
             const assigned = new URL(entry.url);
-            return !entry.popup && assigned.origin === parsed.origin && assigned.pathname === parsed.pathname;
+            return !entry.popup && assigned.origin === parsed.origin && modulePath(assigned.pathname) === modulePath(parsed.pathname);
         }) || null;
     }
     function activateAssignedModule(entry, targetUrl = entry.url) {

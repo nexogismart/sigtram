@@ -121,4 +121,21 @@ class NexoWorkspaceTest extends TestCase
         $this->assertStringNotContainsString('href="/pide-antiguo"', $html);
         $this->assertStringContainsString('href="/firma-asignada" data-module-link', $html);
     }
+
+    public function test_same_area_and_cargo_labels_do_not_share_preferences_between_companies_or_cargo_ids(): void
+    {
+        $keys = [];
+        foreach ([[2,101], [3,101], [2,102], [2,101]] as [$company, $cargo]) {
+            session([\App\Support\SessionKeys::COMPANIA_ID=>$company, \App\Support\SessionKeys::CARGO_ID=>$cargo]);
+            $html = $this->renderWorkspace([], 'Mismo usuario', ['area'=>'Misma área', 'cargo'=>'Mismo cargo']);
+            preg_match('/<script id="workspaceData" type="application\/json">(.*?)<\/script>/s', $html, $matches);
+            $keys[] = json_decode($matches[1], true, 512, JSON_THROW_ON_ERROR)['storageKey'];
+        }
+        $this->assertNotSame($keys[0], $keys[1]);
+        $this->assertNotSame($keys[0], $keys[2]);
+        $this->assertSame($keys[0], $keys[3]);
+        $renamed = $this->renderWorkspace([], 'Mismo usuario', ['area'=>'Área renombrada', 'cargo'=>'Cargo renombrado']);
+        preg_match('/<script id="workspaceData" type="application\/json">(.*?)<\/script>/s', $renamed, $matches);
+        $this->assertSame($keys[0], json_decode($matches[1], true, 512, JSON_THROW_ON_ERROR)['storageKey']);
+    }
 }

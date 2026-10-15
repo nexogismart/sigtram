@@ -1,6 +1,12 @@
 @php
     $workspaceMenu = \App\Support\WorkspaceNavigation::decorate($menuItems);
     $visibleWorkspaceMenu = array_filter($workspaceMenu, fn ($group) => $group['workspace']['active'] ?? true);
+    $workspaceCompanyId = (int) session(\App\Support\SessionKeys::COMPANIA_ID, 0);
+    $workspaceCargoId = (int) session(\App\Support\SessionKeys::CARGO_ID, 0);
+    $workspaceStorageKey = 'nexosigtram.workspace.' . hash('sha256', json_encode([
+        auth()->id() ?? $usuario, $workspaceCompanyId,
+        $workspaceCargoId > 0 ? $workspaceCargoId : [$area, $cargo],
+    ], JSON_THROW_ON_ERROR));
 @endphp
 <!DOCTYPE html>
 <html lang="es">
@@ -76,7 +82,7 @@
 <form id="logoutForm" method="POST" action="{{ route('logout') }}" hidden>@csrf</form>
     <dialog id="logoutDialog"><div class="dialog-icon"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i></div><h2>¿Cerrar tu sesión?</h2><p>Podrás volver a ingresar cuando lo necesites.</p><div class="dialog-actions"><button id="cancelLogout" type="button">Seguir trabajando</button><button class="confirm-logout" id="confirmLogout" type="button">Cerrar sesión</button></div></dialog>
     <p class="toast" id="workspaceToast" role="status" hidden></p>
-    <script id="workspaceData" type="application/json">{!! json_encode(['menu' => $workspaceMenu, 'spaces' => config('workspace.spaces'), 'context' => ['area' => $area, 'cargo' => $cargo], 'storageKey' => 'nexosigtram.workspace.' . hash('sha256', (string) auth()->id() . '|' . $usuario . '|' . $area . '|' . $cargo)], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script id="workspaceData" type="application/json">{!! json_encode(['menu' => $workspaceMenu, 'spaces' => config('workspace.spaces'), 'context' => ['area' => $area, 'cargo' => $cargo], 'storageKey' => $workspaceStorageKey], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script src="{{ asset('js/nexo-workspace.js') }}?v={{ filemtime(public_path('js/nexo-workspace.js')) }}" defer></script>
 </body>
 </html>

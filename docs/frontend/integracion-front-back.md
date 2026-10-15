@@ -61,7 +61,7 @@ python scripts/frontend/audit-integration.py --reviewed-fixes
 php artisan view:cache
 ```
 
-Para medir cobertura debe estar disponible Xdebug/PCOV. Aquí se cargó Xdebug solo en el proceso de pruebas, sin modificar php.ini. Los logs, Clover y evidencias con posibles datos personales se conservan localmente bajo `storage/app/main-*` y `output/`, excluidos de Git. No se afirman resultados de CI remota ni pruebas de escritura en PostgreSQL real.
+Para medir cobertura debe estar disponible Xdebug/PCOV. Aquí se cargó Xdebug solo en el proceso de pruebas, sin modificar php.ini. Los logs, Clover y evidencias con posibles datos personales se conservan localmente bajo `storage/app/main-*` y `output/`, excluidos de Git. La ejecución remota aprobada se referencia al final; no se hicieron pruebas de escritura en PostgreSQL real.
 
 El auditor original `audit-contracts.py` sigue siendo una referencia anterior a la migración: se detiene en `segi_bandeja.blade.php`, eliminada por backend. No se restauró esa pantalla ni se reescribió su referencia para fabricar un resultado verde. La comparación vigente es contra el backend migrado con el registro explícito de correcciones.
 
@@ -101,3 +101,10 @@ Se añadieron pruebas de renderizado y contrato del login, compañía, doble car
 La ejecución remota `38813343236` superó PHPStan y detectó dos dependencias que no estaban reflejadas en el checkout: Poppler para los tests reales de conteo PDF y un informe local del catálogo. CI instala ahora `poppler-utils`; esos tests siguen ejecutando el contador real sobre PDFs sintéticos, sin mocks ni omisiones. El servidor de destino necesita `pdfinfo` disponible o `PDFINFO_BINARY` configurado.
 
 La clasificación del workspace usa en tests un snapshot estructural versionado de 43 módulos y 204 opciones, capturado en la auditoría de solo lectura del 13 de octubre. Contiene exclusivamente IDs y nombres de menús; no incluye personas, asignaciones, URLs ni resultados de clasificación calculados. El test vuelve a calcular y comprobar la organización desde cero. El informe local con posible información sensible sigue excluido de Git. Esto no afirma que el catálogo de la BD permanezca idéntico al snapshot.
+
+
+## Resultado remoto de la entrega acotada
+
+GitHub Actions completó correctamente la ejecución [38814116112](https://github.com/nexogismart/nexodoc/actions/runs/38814116112), sobre el commit funcional `0db1107d`, en Linux. Pasaron instalación, auditorías Composer/npm, JavaScript, build, PHPStan, tests del control de cobertura, auditoría de integración y Pest completo con Poppler disponible. La cobertura global se reportó con la excepción temporal autorizada; no se presenta como cumplida.
+
+La rama queda preparada para revisión/unión a main **con el alcance acotado solicitado**. Se preservan los pendientes de aceptación contra PostgreSQL/firma y de cobertura integral. Main no se modificó en esta entrega.

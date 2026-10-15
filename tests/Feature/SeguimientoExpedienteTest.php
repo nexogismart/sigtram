@@ -17,6 +17,9 @@ class SeguimientoExpedienteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        if (! (bool) env('ALLOW_DANGEROUS_DB_TESTS', false)) {
+            $this->markTestSkipped('TEST DB EXCLUIDO POR GUARDRAIL P0: Requiere base de datos desechable dedicada provista por el usuario.');
+        }
         $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
         
         // Obtener un usuario activo de la base de datos para autenticación

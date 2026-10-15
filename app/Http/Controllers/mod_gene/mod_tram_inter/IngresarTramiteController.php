@@ -5,53 +5,53 @@ namespace App\Http\Controllers\mod_gene\mod_tram_inter;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Services\mod_gene\IngresarTramiteService;
+use App\Services\mod_gene\mod_tram_inter\IngresarTramiteService;
+use App\Contracts\Repositories\mod_gene\mod_tram_inter\IngresarTramiteRepositoryInterface;
 use App\Http\Requests\mod_gene\mod_tram_inter\StoreTramiteInternoRequest;
 use App\Http\Requests\mod_gene\mod_tram_inter\GenerarBorradorTramiteRequest;
+use App\Http\Controllers\Concerns\ApiResponseTrait;
+use App\Support\SessionKeys;
 
 class IngresarTramiteController extends Controller
 {
-    private IngresarTramiteService $service;
+    use ApiResponseTrait;
 
-    public function __construct(IngresarTramiteService $service)
+    public function __construct(
+        private readonly IngresarTramiteService $service,
+        private readonly IngresarTramiteRepositoryInterface $repository
+    ) {}
+
+    /**
+     * Resuelve de forma estricta la compañía activa desde la sesión.
+     */
+    private function resolverCompaniaActiva(Request $request): int
     {
-        $this->service = $service;
+        $comp = (int) $request->session()->get(SessionKeys::COMPANIA_ID, 0);
+
+        if ($comp <= 0) {
+            abort(403, 'Sesión sin compañía activa válida o usuario no autorizado.');
+        }
+
+        return $comp;
     }
 
     public function index(Request $request)
     {
-        $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+        $companiaId = $this->resolverCompaniaActiva($request);
+        $cargoId = (int) $request->session()->get(SessionKeys::CARGO_ID, 0);
 
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-
-        // Obtener cdgo_area del cargo actual del usuario
-        $cargoInfo = DB::table($schema . 'p_crgos')
-            ->where('cdgo_crgo', $cargoId)
-            ->first();
+        // Obtener cdgo_area del cargo actual del usuario filtrado por compañía
+        $cargoInfo = $this->repository->obtenerCargoInfo($cargoId, $companiaId);
 
         $areaId = (int) ($cargoInfo->cdgo_area ?? 0);
         $inFrmaDgtalCargo = (int) ($cargoInfo->in_frma_dgtal ?? 0) === 1;
 
-        // Tipos de documento permitidos
-        $tiposDocumento = DB::table($schema . 'a_tpo_trmtes as t')
-            ->join($schema . 'r_tpo_trmte_areas as r', 't.cdgo_tpo_trmte', '=', 'r.cdgo_tpo_trmte')
-            ->select('t.cdgo_tpo_trmte', 't.de_tpo_trmte')
-            ->where('t.in_esta', '1')
-            ->where('r.in_esta', '1')
-            ->where('r.cdgo_area', $areaId)
-            ->distinct()
-            ->orderBy('t.de_tpo_trmte', 'asc')
-            ->get();
+        // Tipos de documento permitidos para el área
+        $tiposDocumento = $this->repository->obtenerTiposDocumentoPorArea($areaId);
 
-        // Áreas destino
-        $destinoAreas = DB::table($schema . 'a_areas')
-            ->select('cdgo_area', 'de_area', 'dc_area')
-            ->where('in_esta', '1')
-            ->orderBy('cdgo_tpo_area', 'asc')
-            ->orderBy('de_area', 'asc')
-            ->get();
+        // Áreas destino activas de la compañía activa
+        $destinoAreas = $this->repository->obtenerAreasDestino($companiaId);
 
         $defaultDate = Carbon::now('America/Lima')->format('Y-m-d\TH:i');
         $minDate = Carbon::now('America/Lima')->subDays(4)->format('Y-m-d') . 'T00:00';
@@ -72,22 +72,22 @@ class IngresarTramiteController extends Controller
     public function getSemilla(Request $request)
     {
         try {
+            $companiaId = $this->resolverCompaniaActiva($request);
             $cdgo_tpo_trmte = (int) $request->input('cdgo_tpo_trmte');
-            $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
 
-            $cargoId = (int) session('sigtram_cargo_id', 0);
-            $cargoInfo = DB::table($schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
+            $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
+            $cargoInfo = $this->repository->obtenerCargoInfo($cargoId, $companiaId);
             $areaId = (int) ($cargoInfo->cdgo_area ?? 0);
 
-            $currentYear = date('Y');
-            $anioInfo = DB::table($schema . 'a_anios')->where('de_anio', $currentYear)->first();
+            $currentYear = (int) date('Y');
+            $anioInfo = $this->repository->obtenerAnioPorValor($currentYear);
             $cdgo_anio = $anioInfo ? (int) $anioInfo->cdgo_anio : null;
 
             if (!$cdgo_anio) {
-                $latestAnio = DB::table($schema . 'a_anios')->orderBy('de_anio', 'desc')->first();
+                $latestAnio = $this->repository->obtenerAnioReciente();
                 if ($latestAnio) {
                     $cdgo_anio = (int) $latestAnio->cdgo_anio;
-                    $currentYear = $latestAnio->de_anio;
+                    $currentYear = (int) $latestAnio->de_anio;
                 }
             }
 
@@ -95,26 +95,19 @@ class IngresarTramiteController extends Controller
                 return response()->json(['success' => false, 'message' => 'Año de ejercicio no configurado.'], 400);
             }
 
-            $tpoTrmteInfo = DB::table($schema . 'a_tpo_trmtes')->where('cdgo_tpo_trmte', $cdgo_tpo_trmte)->first();
+            $tpoTrmteInfo = $this->repository->obtenerInfoTipoTramite($cdgo_tpo_trmte);
             if (!$tpoTrmteInfo) {
                 return response()->json(['success' => false, 'message' => 'Tipo de documento no válido.'], 400);
             }
 
             $in_scncal = (int) $tpoTrmteInfo->in_scncal;
-
-            // Consultar DB de forma rápida sin transacción solo para visualización
-            $query = DB::table($schema . 'a_smlla_intrno')
-                ->where('cdgo_tpo_trmte', $cdgo_tpo_trmte)
-                ->where('cdgo_anio', $cdgo_anio);
-
-            if ($in_scncal === 1) {
-                $query->where('cdgo_crgo', $cargoId);
-            } else {
-                $query->where('cdgo_area', $areaId);
-            }
-
-            $maxSemilla = $query->max('nu_smlla_intrno');
-            $nu_smlla = $maxSemilla ? ((int) $maxSemilla) + 1 : 1;
+            $nu_smlla = $this->repository->obtenerSemillaCorrelativo(
+                $cdgo_tpo_trmte,
+                $cdgo_anio,
+                $areaId,
+                $cargoId,
+                $in_scncal
+            );
 
             return response()->json([
                 'success' => true,
@@ -124,33 +117,33 @@ class IngresarTramiteController extends Controller
                 'in_scncal' => $in_scncal,
                 'in_frma_dgtal_trmte' => (int) $tpoTrmteInfo->in_frma_dgtal
             ]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        } catch (\Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al obtener correlativo de trámite.');
         }
     }
 
     public function getCargosArea(Request $request)
     {
-        $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
-        $cdgo_area = (int) $request->input('cdgo_area');
+        try {
+            $companiaId = $this->resolverCompaniaActiva($request);
+            $cdgo_area = (int) $request->input('cdgo_area');
 
-        $cargos = DB::table($schema . 'p_crgos')
-            ->select('cdgo_crgo', 'de_crgo')
-            ->where('cdgo_area', $cdgo_area)
-            ->whereNull('in_nvel')
-            ->orderBy('nu_orde', 'asc')
-            ->orderBy('de_crgo', 'asc')
-            ->get();
+            $cargos = $this->repository->obtenerCargosPorArea($cdgo_area, $companiaId);
 
-        return response()->json([
-            'success' => true,
-            'cargos' => $cargos
-        ]);
+            return response()->json([
+                'success' => true,
+                'cargos' => $cargos
+            ]);
+        } catch (\Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al obtener los cargos del área.');
+        }
     }
 
     public function store(StoreTramiteInternoRequest $request)
     {
         try {
+            $companiaId = $this->resolverCompaniaActiva($request);
+
             // El ID referente (en caso sea una respuesta) vendría en 'hdn_cdgo_dtos_ntrnos'
             $idReferencia = (int) $request->input('hdn_cdgo_dtos_ntrnos', 0);
 
@@ -161,32 +154,32 @@ class IngresarTramiteController extends Controller
                 'fle_adjunto4' => $request->file('fle_adjunto4'),
             ];
 
-            $resultado = $this->service->registrarTramite($request->validated(), array_filter($archivos), $idReferencia);
+            $resultado = $this->service->registrarTramite(
+                $request->validated(),
+                array_filter($archivos),
+                $idReferencia,
+                $companiaId
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Trámite interno (' . $resultado['titulo'] . ') registrado y enviado con éxito.'
             ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al guardar el trámite interno: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al guardar el trámite interno.');
         }
     }
 
     public function generarBorrador(GenerarBorradorTramiteRequest $request)
     {
         try {
-            $datosParaWord = $this->service->prepararDatosBorrador($request->validated());
+            $companiaId = $this->resolverCompaniaActiva($request);
+            $datosParaWord = $this->service->prepararDatosBorrador($request->validated(), $companiaId);
 
             $generator = app(\App\Services\Core\DocumentGeneratorService::class);
-            $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
 
-            $tpoTrmteInfo = DB::table($schema . 'a_tpo_trmtes')
-                ->where('cdgo_tpo_trmte', $datosParaWord['cdgo_tpo_trmte'])
-                ->first();
+            $tpoTrmteInfo = $this->repository->obtenerInfoTipoTramite((int) $datosParaWord['cdgo_tpo_trmte']);
 
             if (! $tpoTrmteInfo || empty($tpoTrmteInfo->no_plntlla)) {
                 return response()->json([
@@ -195,8 +188,8 @@ class IngresarTramiteController extends Controller
                 ], 400);
             }
 
-            $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-            $cargoInfo = DB::table($schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
+            $cargoId = (int) $request->session()->get(SessionKeys::CARGO_ID, 0);
+            $cargoInfo = $this->repository->obtenerCargoInfo($cargoId, $companiaId);
             $areaId = (int) ($cargoInfo->cdgo_area ?? 0);
 
             $templatePath = $this->resolverRutaPlantilla((string) $tpoTrmteInfo->no_plntlla, $areaId);
@@ -219,8 +212,8 @@ class IngresarTramiteController extends Controller
                 'X-Suggested-Filename' => rawurlencode($fileName),
             ])->deleteFileAfterSend(true);
 
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al generar borrador: ' . $e->getMessage()], 500);
+        } catch (\Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al generar el borrador del documento.');
         }
     }
 
@@ -253,7 +246,6 @@ class IngresarTramiteController extends Controller
             }
         }
 
-        // Legacy: copiar/usar desde el antiguo si existe
         $legacyRootRaw = (string) config('filesystems.legacy_sigtram_root', base_path('../sigtram_antiguo'));
         $legacyRoot = rtrim($legacyRootRaw, '/\\');
         if ($legacyRoot !== '' && ! preg_match('/^[A-Za-z]:[\\\\\\/]/', $legacyRoot) && ! str_starts_with($legacyRoot, '/')) {
@@ -271,7 +263,6 @@ class IngresarTramiteController extends Controller
             if (! is_file($src)) {
                 continue;
             }
-            // Cache local en storage para OpenTBS
             $destRel = $relBase . '/' . basename($src);
             $destAbs = storage_path('app/' . $destRel);
             if (! is_dir(dirname($destAbs))) {

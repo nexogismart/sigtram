@@ -1,0 +1,171 @@
+:root {
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --faint: #94a3b8;
+    --line: #e6ecf2;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --accent: #334155;
+    --accent-soft: #f1f5f9;
+    --accent-dark: #0f172a;
+    --ok: #475569;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --radius: 14px;
+}
+
+.reporte-tramite-page {
+    font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
+    background:
+        radial-gradient(900px 420px at 8% -10%, rgba(51, 65, 85, .08), transparent 55%),
+        radial-gradient(700px 380px at 100% 0%, rgba(15, 23, 42, .04), transparent 50%),
+        var(--bg);
+    color: var(--ink-2);
+    font-size: 14px;
+    min-height: 100vh;
+}
+
+.reporte-tramite-page h1, .reporte-tramite-page .num { font-family: "Outfit", "Figtree", sans-serif; }
+
+.reporte-tramite-page .wrap { max-width: 1400px; margin: 0 auto; padding: 1.25rem 1.5rem 3rem; }
+
+.reporte-tramite-page .top {
+    display: flex; flex-wrap: wrap; gap: .75rem;
+    align-items: flex-end; justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.reporte-tramite-page .top h1 {
+    margin: 0; font-size: 1.45rem; font-weight: 800;
+    letter-spacing: -.02em; color: var(--ink);
+}
+.reporte-tramite-page .top h1 span { color: var(--accent); }
+.reporte-tramite-page .top p { margin: .25rem 0 0; font-size: .78rem; font-weight: 600; color: var(--muted); }
+
+.reporte-tramite-page .filters {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
+    gap: .85rem; padding: 1rem 1.15rem; margin-bottom: 1rem;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.reporte-tramite-page .field label {
+    display: block; margin-bottom: .35rem; margin-left: .15rem;
+    font-size: .68rem; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--faint);
+}
+.reporte-tramite-page .field input {
+    width: 8.5rem; padding: .55rem .75rem;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: #fff; color: var(--ink); font: inherit; font-weight: 700;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.reporte-tramite-page .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(51, 65, 85, .15);
+}
+
+.reporte-tramite-page .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .6rem 1.05rem; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink-2); font: inherit;
+    font-size: .78rem; font-weight: 700; cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.reporte-tramite-page .btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.reporte-tramite-page .btn--primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+
+.reporte-tramite-page .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.reporte-tramite-page .table-wrap { overflow-x: auto; }
+
+table.rep {
+    width: 100%; border-collapse: collapse; font-size: .86rem;
+}
+table.rep thead th {
+    padding: .7rem .85rem;
+    background: #0f172a; color: #e2e8f0;
+    font-size: .68rem; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; white-space: nowrap;
+}
+table.rep thead th:first-child { text-align: center; width: 2.5rem; }
+table.rep thead th.left { text-align: left; }
+table.rep thead th.center { text-align: center; }
+table.rep thead th.right { text-align: right; }
+
+table.rep tbody td {
+    padding: .65rem .85rem; border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+}
+table.rep tbody tr.data:hover { background: #f8fafc; }
+table.rep tbody tr.detail-row td { padding: 0 .85rem; border-bottom: 1px solid var(--line); }
+table.rep tbody td.num-cell { text-align: center; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+table.rep tbody td.area { font-weight: 700; color: var(--ink); }
+table.rep tbody td.center { text-align: center; }
+table.rep tbody td.right { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+table.rep tbody td.total { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.reporte-tramite-page .cell-click {
+    display: inline-block; min-width: 2.1rem; padding: .2rem .55rem;
+    border-radius: 8px; cursor: pointer; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    transition: background .15s, color .15s;
+}
+.reporte-tramite-page .cell-click:hover { background: var(--accent-soft); color: var(--accent-dark); }
+.reporte-tramite-page .cell-click.active { background: var(--accent); color: #fff; font-weight: 800; }
+.reporte-tramite-page .cell-click.is-zero { color: var(--faint); font-weight: 600; }
+
+.reporte-tramite-page .pct { font-variant-numeric: tabular-nums; }
+.reporte-tramite-page .pct.ok { color: var(--ok); }
+.reporte-tramite-page .pct.warn { color: var(--warn); }
+.reporte-tramite-page .pct.bad { color: var(--bad); }
+
+table.rep tfoot td {
+    padding: .75rem .85rem; background: #0f172a; color: #fff;
+    font-weight: 800; font-variant-numeric: tabular-nums;
+}
+table.rep tfoot td.label {
+    text-align: right; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.reporte-tramite-page .detalle-box {
+    display: none; margin: .55rem 0 .85rem; padding: .75rem;
+    background: #f8fafc; border: 1px solid var(--line); border-radius: 12px;
+}
+.reporte-tramite-page .detalle-box.is-open { display: block; }
+
+.reporte-tramite-page .empty {
+    padding: 2.5rem 1rem; text-align: center; color: var(--faint); font-weight: 700;
+}
+
+.reporte-tramite-page .loading {
+    text-align: center; padding: 1rem; color: var(--accent-dark);
+    font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+}
+.reporte-tramite-page .err {
+    text-align: center; padding: .85rem; color: var(--bad);
+    font-size: .75rem; font-weight: 800;
+}
+
+/* Detalle de reporte de trámite */
+.det-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.det-tbl thead th {
+    padding: .45rem .55rem; background: #f8fafc; color: #0f172a;
+    font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+    border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap;
+}
+.det-tbl thead th.c { text-align: center; }
+.det-tbl tbody td {
+    padding: .45rem .55rem; border-bottom: 1px solid #e6ecf2; vertical-align: middle;
+    color: #334155;
+}
+.det-tbl tbody tr:hover { background: #f8fafc; }
+.det-tbl .c { text-align: center; }
+.det-tbl .tipo { font-weight: 800; color: #0f172a; }
+.det-tbl .tram { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: #0f172a; }
+.det-tbl .muted { color: #64748b; font-weight: 600; }
+.det-tbl a { color: #334155; text-decoration: none; }
+.det-tbl a:hover { color: #0f172a; }
+.det-empty { padding: 1.25rem; text-align: center; color: #94a3b8; font-weight: 700; }

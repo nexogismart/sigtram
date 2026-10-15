@@ -866,21 +866,35 @@
             background: rgba(198, 40, 40, 0.8);
         }
 
-        /* Contenido embebido en el panel principal */
+        /* Contenido embebido en el panel principal (Full-Bleed sin márgenes ni scroll exterior) */
+        body.has-module {
+            overflow: hidden !important;
+        }
+
+        .main-content.module-active {
+            padding: 0 !important;
+            height: calc(100vh - var(--navbar-height)) !important;
+            min-height: calc(100vh - var(--navbar-height)) !important;
+            overflow: hidden !important;
+        }
+
         .content-frame {
             display: none;
             width: 100%;
-            min-height: calc(100vh - var(--navbar-height) - 60px);
-            height: calc(100vh - var(--navbar-height) - 60px);
+            height: 100%;
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 0;
+            box-shadow: none;
             background: var(--color-white);
         }
 
         .content-frame.visible {
             display: block;
+            width: 100%;
+            height: 100%;
         }
+
+
 
         .dashboard-home.hidden {
             display: none;
@@ -1309,7 +1323,11 @@
         function showDashboardHome() {
             dashboardHome.classList.remove('hidden');
             contentFrame.classList.remove('visible');
+
             contentFrame.src = 'about:blank';
+            const mc = document.querySelector('.main-content');
+            if (mc) mc.classList.remove('module-active');
+            document.body.classList.remove('has-module');
         }
 
         function loadContentInPanel(url) {
@@ -1318,16 +1336,70 @@
             }
             dashboardHome.classList.add('hidden');
             contentFrame.classList.add('visible');
+            const mc = document.querySelector('.main-content');
+            if (mc) mc.classList.add('module-active');
+            document.body.classList.add('has-module');
             contentFrame.src = url;
         }
+
+
 
         function setActiveMenu(anchor) {
             menuLinks.forEach(l => l.classList.remove('active'));
             submenuLinks.forEach(l => l.classList.remove('active'));
             if (anchor) {
                 anchor.classList.add('active');
+                const parentSubmenu = anchor.closest('.submenu');
+                if (parentSubmenu) {
+                    parentSubmenu.style.maxHeight = '';
+                    parentSubmenu.classList.add('open');
+                    const parentMenuLink = parentSubmenu.previousElementSibling;
+                    if (parentMenuLink) {
+                        const arrow = parentMenuLink.querySelector('.menu-arrow');
+                        if (arrow) arrow.classList.add('open');
+                    }
+                }
             }
         }
+
+        window.activarModuloPorUrl = function(targetUrl) {
+            if (!targetUrl) return false;
+            const stripExt = (p) => (p || '').replace(/\.(php|blade\.php|html)$/i, '');
+            const normalize = (u) => stripExt((u || '').replace(/^https?:\/\/[^\/]+/, '').split('?')[0].replace(/\/+$/, ''));
+            const targetNorm = normalize(targetUrl);
+
+            for (const link of submenuLinks) {
+                const linkHref = link.getAttribute('href') || link.href || '';
+                const linkNorm = normalize(linkHref);
+                if (linkNorm && (linkNorm === targetNorm || linkNorm.endsWith(targetNorm) || targetNorm.endsWith(linkNorm))) {
+                    loadContentInPanel(link.href || linkHref);
+                    setActiveMenu(link);
+                    return true;
+                }
+            }
+            for (const link of menuLinks) {
+                const linkHref = link.getAttribute('href') || link.href || '';
+                const linkNorm = normalize(linkHref);
+                if (linkNorm && (linkNorm === targetNorm || linkNorm.endsWith(targetNorm) || targetNorm.endsWith(linkNorm))) {
+                    loadContentInPanel(link.href || linkHref);
+                    setActiveMenu(link);
+                    return true;
+                }
+            }
+            // Fallback directo si la ruta no tiene un link exacto en el menú
+            try {
+                loadContentInPanel(targetUrl);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.action === 'activar_modulo' && event.data.url) {
+                window.activarModuloPorUrl(event.data.url);
+            }
+        });
 
         // Toggle Sidebar
         sidebarToggle.addEventListener('click', function() {

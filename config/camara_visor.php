@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'usuario' => env('CAMARA_VISOR_USUARIO', 'admin'),
-    'password' => env('CAMARA_VISOR_PASSWORD', 'admin'),
+    'usuario' => env('CAMARA_VISOR_USUARIO', ''),
+    'password' => env('CAMARA_VISOR_PASSWORD', ''),
     'path' => env('CAMARA_VISOR_PATH', '/cgi-bin/mjpg/video.cgi?channel=1&subtype=1'),
     'use_rtsp' => env('CAMARA_VISOR_USE_RTSP', false),
     'rtsp_port' => (int) env('CAMARA_VISOR_RTSP_PORT', 554),

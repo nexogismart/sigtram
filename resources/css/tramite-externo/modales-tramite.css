@@ -1,0 +1,213 @@
+:root {
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+    --line: #d8dee6;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --label: #1e293b;
+}
+
+.modal-body {
+    margin: 0;
+    padding: 16px;
+    font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
+    font-size: 13px;
+    color: #334155;
+    background: var(--bg);
+}
+
+.modal-body-compact {
+    margin: 0;
+    padding: 14px;
+    font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
+    font-size: 13px;
+    color: var(--ink-2);
+    background: var(--bg);
+}
+
+.wrap, .modal-wrap {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 12px 30px rgb(15 23 42 / 0.08);
+}
+
+.modal-body input[type=text],
+.modal-body select,
+.modal-body textarea,
+.wrap input[type=text],
+.wrap select,
+.wrap textarea {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    min-height: 36px;
+    padding: 7px 9px;
+    font: inherit;
+}
+
+.modal-body textarea,
+.wrap textarea {
+    width: 100%;
+    min-height: 84px;
+    resize: vertical;
+}
+
+.modal-select-wide {
+    width: 100%;
+    max-width: 340px;
+}
+
+.mt-6px {
+    margin-top: 6px;
+}
+
+.w-48px {
+    width: 48px;
+}
+
+.title_td, .titulo, .modal-title {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--ink);
+    text-align: center;
+    padding: 7px 0 10px;
+    margin-bottom: 10px;
+}
+
+.item, .modal-item {
+    font-weight: 700;
+    color: #1e293b;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.item-left, .modal-item-left {
+    text-align: left !important;
+}
+
+.itemtex, .modal-itemtex {
+    text-align: left;
+    color: var(--ink-2);
+}
+
+fieldset, .modal-fieldset {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 8px 0;
+    padding: 10px 12px 12px;
+}
+
+legend, .modal-legend {
+    font-weight: 700;
+    color: #1e293b;
+    padding: 0 4px;
+}
+
+.btns, .modal-btns {
+    text-align: center;
+    padding-top: 14px;
+}
+
+.Button, .ModalButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    min-height: 38px;
+    padding: 7px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 0 4px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.Button.secondary, .ModalButton.secondary {
+    background: #fff;
+    color: var(--ink);
+}
+
+.Button:hover, .ModalButton:hover {
+    background: #1e293b;
+}
+
+.Button.secondary:hover, .ModalButton.secondary:hover {
+    background: #f1f5f9;
+    color: var(--ink);
+}
+
+.error, .modal-error {
+    color: #dc2626;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.vaucher-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #d8dee6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.vaucher-table th {
+    background: #0f172a;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+}
+.vaucher-table td {
+    padding: 10px 12px;
+    border-top: 1px solid #e2e8f0;
+}
+.vaucher-table tr.fila {
+    cursor: pointer;
+}
+.vaucher-table tr.fila:hover {
+    background: #f1f5f9;
+}
+.vaucher-table tr.fila_2 {
+    background: #f8fafc;
+}
+.vaucher-table .center {
+    text-align: center;
+}
+
+.requi {
+    max-height: 110px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 6px;
+    background: #fafbfc;
+    margin-top: 2px;
+}
+.requi table td {
+    padding: 2px 4px;
+}
+.ico-ok {
+    color: #16a34a;
+}
+.ico-no {
+    color: #dc2626;
+}
+.silencio {
+    text-align: center;
+    font-weight: 700;
+    padding: 4px 0;
+}
+.sin-req {
+    color: var(--muted);
+    padding: 4px 8px;
+}
+
+.text-justify {
+    text-align: justify;
+}

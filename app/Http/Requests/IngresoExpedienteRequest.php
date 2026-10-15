@@ -89,6 +89,7 @@ class IngresoExpedienteRequest extends FormRequest
 
         return [
             'tipo_tramite' => ['required', 'in:externo,simple'],
+            'in_docu_trmte' => ['nullable', 'in:E,S,O,e,s,o'],
             'cdgo_tpo_trmte' => ['nullable', 'integer'],
             'cdgo_tpo_observado' => ['nullable', 'integer'],
             'cdgo_area_observado' => ['nullable', 'integer'],

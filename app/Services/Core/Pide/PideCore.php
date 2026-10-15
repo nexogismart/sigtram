@@ -16,6 +16,7 @@ use App\Models\PUsrrio;
 use App\Models\UsrioNatural;
 use App\Models\UsrioJuridico;
 use App\Support\SessionKeys;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
@@ -392,7 +393,7 @@ class PideCore implements PideCoreInterface
      */
     protected function verificarRateLimit(): void
     {
-        $loginId = session(SessionKeys::USER_ID, 0);
+        $loginId = (int) (Auth::id() ?? session(SessionKeys::LOGIN_ID, 0));
         $key = $loginId > 0 ? "pide:{$loginId}" : "pide-ip:" . Request::ip();
 
         if (RateLimiter::tooManyAttempts($key, 30)) {
@@ -408,7 +409,7 @@ class PideCore implements PideCoreInterface
     protected function registrarAuditoria(string $numero, string $tipo, string $fuente, bool $exito, ?string $fuenteDetalle = null): void
     {
         try {
-            $loginId = session(SessionKeys::USER_ID, 0);
+            $loginId = (int) (Auth::id() ?? session(SessionKeys::LOGIN_ID, 0));
             $ip = Request::ip() ?? '127.0.0.1';
             $userAgent = Request::userAgent() ?? 'Desconocido';
 

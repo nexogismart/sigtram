@@ -9,6 +9,7 @@ use App\Services\mod_a\sgl\ReporteGerencialService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Support\SessionKeys;
 use Illuminate\View\View;
 
 /**
@@ -29,7 +30,7 @@ class ReporteGerencialController extends Controller
             return redirect()->route('login');
         }
 
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
+        $cargoId = (int) $request->session()->get(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return redirect()->route('seleccionar.cargo');
         }

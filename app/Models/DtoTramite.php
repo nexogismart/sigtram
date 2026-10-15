@@ -6,6 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $cdgo_dto_trmte
+ * @property int $cdgo_usrios
+ * @property int|null $cdgo_docmnto_trmte
+ * @property int $cdgo_tpo_trmte
+ * @property int $cdgo_anio
+ * @property int $cdgo_area
+ * @property int $cdgo_mdlo
+ * @property int $cdgo_cmpnia
+ * @property int|null $cdgo_usrios_crreo
+ * @property string $nu_expe_todo
+ * @property int $nu_expe_trmte
+ * @property string $nu_docu_trmte
+ * @property string $in_docu_trmte
+ * @property int $nu_foli_trmte
+ * @property mixed $fe_ingr_trmte
+ * @property mixed $fe_limi_trmte
+ * @property string $de_obse_trmte
+ * @property string $in_sile_admi
+ * @property string $in_encu_tram
+ * @property string $de_obse_todo
+ * @property int $co_usua_modi
+ * @property int $co_usua_ingr
+ * @property mixed $ts_usua_modi
+ */
 class DtoTramite extends Model
 {
     public $incrementing = true;
@@ -79,5 +104,10 @@ class DtoTramite extends Model
     public function documentos(): HasMany
     {
         return $this->hasMany(TramiteDocumento::class, 'cdgo_dto_trmte', 'cdgo_dto_trmte');
+    }
+
+    public function compania(): BelongsTo
+    {
+        return $this->belongsTo(Compania::class, 'cdgo_cmpnia', 'cdgo_cmpnia');
     }
 }

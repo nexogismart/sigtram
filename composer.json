@@ -11,6 +11,7 @@
         "chillerlan/php-qrcode": "^6.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
+        "openspout/openspout": "^4.28",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "tinybutstrong/opentbs": "^1.12"
     },

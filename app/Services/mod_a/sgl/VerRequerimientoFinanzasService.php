@@ -5,6 +5,7 @@ namespace App\Services\mod_a\sgl;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 use Throwable;
 
 /**
@@ -238,7 +239,7 @@ class VerRequerimientoFinanzasService
     public function devolver(int $id, string $motivo): array
     {
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $motivo = mb_strtoupper(trim($motivo), 'UTF-8');
         if ($motivo === '') {
             return $this->fail('Ingrese el motivo de devolución.');

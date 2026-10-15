@@ -85,6 +85,7 @@ class UsuarioController extends Controller
         
         $query = DB::table($schema . 'p_lgin as l')
             ->join($schema . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
+            ->leftJoin($schema . 'h_usrios_ntral as n', 'u.cdgo_usrios', '=', 'n.cdgo_usrios')
             ->join($schema . 'p_prfles as p', 'l.cdgo_prfle', '=', 'p.cdgo_prfle')
             ->select(
                 'l.cdgo_lgin',
@@ -97,7 +98,10 @@ class UsuarioController extends Controller
                 'u.de_mail',
                 'u.nu_tele',
                 'u.de_dire',
-                'p.nc_prfle'
+                'p.nc_prfle',
+                'n.ap_pate',
+                'n.ap_mate',
+                'n.no_usrio'
             );
 
         if ($request->filled('criterio')) {
@@ -110,6 +114,27 @@ class UsuarioController extends Controller
         }
 
         $usuarios = $query->orderBy('u.no_crto', 'asc')->paginate(10);
+
+        $usuarios->getCollection()->transform(function ($item) {
+            if (empty($item->ap_pate) && empty($item->no_usrio) && !empty($item->no_crto)) {
+                $partes = array_values(array_filter(explode(' ', trim((string) $item->no_crto))));
+                $total = count($partes);
+                if ($total >= 3) {
+                    $item->ap_mate = array_pop($partes);
+                    $item->ap_pate = array_pop($partes);
+                    $item->no_usrio = implode(' ', $partes);
+                } elseif ($total === 2) {
+                    $item->ap_pate = $partes[1];
+                    $item->no_usrio = $partes[0];
+                    $item->ap_mate = '';
+                } else {
+                    $item->no_usrio = $partes[0] ?? $item->no_crto;
+                    $item->ap_pate = '';
+                    $item->ap_mate = '';
+                }
+            }
+            return $item;
+        });
         
         $perfiles = DB::table($schema . 'p_prfles')->where('in_esta', '1')->orderBy('nc_prfle', 'asc')->get();
         $companias = DB::table($schema . 'a_cmpnias')->orderBy('de_cmpnia', 'asc')->get();

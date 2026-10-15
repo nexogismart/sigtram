@@ -14,7 +14,7 @@ body {
     font-family: 'Montserrat', sans-serif;
     background: 
         linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-        url('../images/imagen1.jpg');
+        url('/images/imagen1.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -37,7 +37,7 @@ body {
 
 .izquierda {
     width: 50%;
-    background: url('../images/imagen2.png');
+    background: url('/images/imagen2.png');
     background-size: cover;
     background-position: center;
 }

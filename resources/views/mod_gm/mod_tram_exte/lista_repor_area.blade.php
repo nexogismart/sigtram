@@ -5,24 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Reporte de Expedientes' }} — SIGTRAM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1rem; background: rgb(15 23 42 / 0.7); backdrop-filter: blur(8px);
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/reportes-expedientes.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="listaReporArea()" x-init="init()">
+@php
+    $frontendConfig = [
+        'routes' => [
+            'buscar' => route('mod_gm.lista_repor_area.buscar', [], false),
+            'buscaExpediDeta' => route('tramites.busca_expedi_deta', [], false),
+            'hojaRuta' => route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false),
+        ],
+    ];
+@endphp
+<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="listaReporArea()" data-config="{{ json_encode($frontendConfig) }}">
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -190,104 +184,5 @@
             <iframe :src="modalRuta.url" class="flex-1 w-full border-0 bg-white"></iframe>
         </div>
     </div>
-
-    <script>
-        function listaReporArea() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const routes = {
-                buscar: @json(route('mod_gm.lista_repor_area.buscar', [], false)),
-                buscaExpediDeta: @json(route('tramites.busca_expedi_deta', [], false)),
-                hojaRuta: @json(route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false)),
-            };
-
-            return {
-                loading: false,
-                items: [],
-                total: 0,
-                pagina: 1,
-                paginas: 1,
-                toast: { show: false, message: '', type: 'success' },
-                filtros: {
-                    bandeja: '1',
-                    modo: 'generico',
-                    palabra: '',
-                    campo: 'p_dto_trmtes.nu_expe_todo',
-                    fecha: '',
-                    desde: '',
-                    hasta: '',
-                },
-                modalOjo: { show: false, url: '' },
-                modalRuta: { show: false, url: '' },
-
-                init() { this.fetchLista(); },
-
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => { this.toast.show = false; }, 3500);
-                },
-                verTodo() {
-                    this.filtros.palabra = '';
-                    this.filtros.fecha = '';
-                    this.filtros.desde = '';
-                    this.filtros.hasta = '';
-                    this.filtros.modo = 'generico';
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                paginasVisibles() {
-                    const tam = 12;
-                    const seccion = Math.floor((this.pagina - 1) / tam);
-                    const inicio = seccion * tam + 1;
-                    const final = Math.min(inicio + tam - 1, this.paginas);
-                    const arr = [];
-                    for (let i = inicio; i <= final; i++) arr.push(i);
-                    return arr;
-                },
-                abrirOjo(item) {
-                    this.modalOjo.url = routes.buscaExpediDeta + '?cdgo_tram=' + item.id;
-                    this.modalOjo.show = true;
-                },
-                abrirHojaRuta(id) {
-                    this.modalRuta.url = routes.hojaRuta.replace('__HID__', id);
-                    this.modalRuta.show = true;
-                },
-                async fetchLista() {
-                    if (this.filtros.bandeja === '4') {
-                        this.items = [];
-                        this.total = 0;
-                        this.paginas = 1;
-                        this.showToast('El reporte de automáticos es un módulo aparte.', 'error');
-                        return;
-                    }
-                    this.loading = true;
-                    try {
-                        const res = await fetch(routes.buscar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ ...this.filtros, page: this.pagina }),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.items = data.data || [];
-                            this.total = data.total || 0;
-                            this.pagina = data.current_page || 1;
-                            this.paginas = data.last_page || 1;
-                        } else {
-                            this.showToast(data.message || 'No se pudo cargar el reporte.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cargar expedientes.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>

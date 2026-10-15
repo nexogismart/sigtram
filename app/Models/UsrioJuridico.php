@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $cdgo_usrios
+ * @property string $rz_soci
+ * @property int $co_usua_modi
+ * @property mixed $ts_usua_modi
+ * @property string $in_esta
+ */
 class UsrioJuridico extends Model
 {
     public $incrementing = false;

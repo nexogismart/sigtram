@@ -53,6 +53,14 @@ class clase_personas
 
     private static function upsertUsuarioBase($cn, $datos, $noCrto, $id)
     {
+        $cmpniaId = 0;
+        if (isset($datos['cdgo_cmpnia'])) {
+            $raw = $datos['cdgo_cmpnia'];
+            $cmpniaId = (is_numeric($raw) && (int) $raw > 0) ? (int) $raw : 0;
+        } elseif (function_exists('session')) {
+            $cmpniaId = (int) session(\App\Support\SessionKeys::USER_COMPANY, 0);
+        }
+
         $campos = [
             'nu_docu' => $datos['nu_docu'] ?? '',
             'no_crto' => $noCrto,
@@ -63,8 +71,11 @@ class clase_personas
             'in_tipo_pers' => $datos['in_tipo_pers'] ?? '0',
             'fe_inic_acti' => $datos['fe_inic_acti'] ?? date('Y-m-d'),
             'nu_ruc' => $datos['nu_ruc'] ?? '',
-            'cdgo_cmpnia' => $datos['cdgo_cmpnia'] ?? '2',
         ];
+
+        if ($cmpniaId > 0) {
+            $campos['cdgo_cmpnia'] = (string) $cmpniaId;
+        }
 
         if ($id) {
             $sets = [];

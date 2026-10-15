@@ -265,7 +265,8 @@
     "title": "Buscar Trámite Interno — SIGTRAM",
     "tables": 2,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/correo-interno.blade.php",
@@ -276,7 +277,8 @@
     "title": "Correo Interno — SIGTRAM",
     "tables": 2,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/ingresar-tramite.blade.php",
@@ -287,7 +289,8 @@
     "title": "Ingresar Documentos Internos — SIGTRAM",
     "tables": 0,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/partials/reporte-cargo-interno-detalle.blade.php",
@@ -298,7 +301,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/partials/reporte-tramite-detalle.blade.php",
@@ -309,7 +313,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/partials/v2_lista_reporte_area_cargo_detalle.blade.php",
@@ -320,7 +325,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/partials/ver_secuencial_area_lista.blade.php",
@@ -331,7 +337,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/reporte-cargo-interno.blade.php",
@@ -342,7 +349,8 @@
     "title": "Reporte por Cargo — SIGTRAM",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/reporte-tramite.blade.php",
@@ -353,7 +361,8 @@
     "title": "Sigtram | Reporte General de Trámites Internos",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/v2_lista_reporte_area_cargo.blade.php",
@@ -364,7 +373,8 @@
     "title": "Sigtram Intelligence | Advanced Report",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gene/mod_tram_inter/ver_secuencial_area.blade.php",
@@ -375,7 +385,8 @@
     "title": "Sigtram | Secuencial del Área",
     "tables": 0,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/agre_anexo.blade.php",
@@ -386,7 +397,8 @@
     "title": "{{ $titulo }}",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/busca_expedi.blade.php",
@@ -397,7 +409,8 @@
     "title": "{{ $tituloPrefijo }}{{ $numeroExpediente }}",
     "tables": 7,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/busca_expedi_deta.blade.php",
@@ -408,7 +421,8 @@
     "title": "{{ $tituloPrefijo }}{{ $numeroExpediente }}",
     "tables": 6,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/gene_expedi_cita.blade.php",
@@ -419,7 +433,8 @@
     "title": "Cita Virtual — {{ $numeroExpediente }}",
     "tables": 3,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/gene_expedi_obser.blade.php",
@@ -430,7 +445,8 @@
     "title": "Generar Trámite — {{ $numeroExpediente }}",
     "tables": 6,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/hoja_ruta.blade.php",
@@ -441,7 +457,8 @@
     "title": "Hoja de Ruta - {{ $expediente->nu_expe_todo }}",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/impr_expedi.blade.php",
@@ -452,7 +469,8 @@
     "title": "Imprimir expediente",
     "tables": 5,
     "forms": 1,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/index.blade.php",
@@ -463,7 +481,8 @@
     "title": "{{ $tituloOpcion ?? 'Ingresar Expedientes' }} — SIGTRAM",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/lista_expedi_todo.blade.php",
@@ -474,7 +493,8 @@
     "title": "{{ $tituloOpcion ?? 'Lista de Expedientes' }} — SIGTRAM",
     "tables": 2,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/lista_repor_area.blade.php",
@@ -485,7 +505,8 @@
     "title": "{{ $tituloOpcion ?? 'Reporte de Expedientes' }} — SIGTRAM",
     "tables": 1,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/lista_reporte.blade.php",
@@ -496,7 +517,8 @@
     "title": "{{ $tituloOpcion ?? 'Reportes de Expedientes Ingresados' }} — SIGTRAM",
     "tables": 2,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/lista_vaucher.blade.php",
@@ -507,7 +529,8 @@
     "title": "Lista de Vauchers",
     "tables": 1,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/notificar_pltfrma.blade.php",
@@ -518,7 +541,8 @@
     "title": "{{ $tituloOpcion ?? 'Notificar Plataforma' }} — SIGTRAM",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/formulario_filtros.blade.php",
@@ -529,7 +553,8 @@
     "title": "",
     "tables": 0,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/modal_detalle.blade.php",
@@ -540,7 +565,8 @@
     "title": "",
     "tables": 0,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/script.blade.php",
@@ -551,7 +577,8 @@
     "title": "",
     "tables": 0,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/tabla_resultados.blade.php",
@@ -562,7 +589,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/v2_lista_reporte_area_cargo_detalle.blade.php",
@@ -573,7 +601,8 @@
     "title": "",
     "tables": 1,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/partials/v2_lista_reporte_area_cargo_historico.blade.php",
@@ -584,7 +613,8 @@
     "title": "Histórico {{ $expediente }}",
     "tables": 1,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/pdf/reporte-expediente-pdf.blade.php",
@@ -595,7 +625,8 @@
     "title": "Expediente {{ $expediente['expediente'] }}",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-pdf"
+    "treatment": "impresion-pdf",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/pdf/reporte-general.blade.php",
@@ -606,7 +637,8 @@
     "title": "Reporte de Expedientes",
     "tables": 2,
     "forms": 0,
-    "treatment": "impresion-pdf"
+    "treatment": "impresion-pdf",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/pdf/segi-archivo-print.blade.php",
@@ -617,7 +649,8 @@
     "title": "Bandeja de Archivo",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/prescripcion.blade.php",
@@ -628,7 +661,8 @@
     "title": "",
     "tables": 0,
     "forms": 0,
-    "treatment": "fragmento-heredado"
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/redirigir.blade.php",
@@ -639,7 +673,8 @@
     "title": "{{ $tituloOpcion ?? 'Redirigir' }} — SIGTRAM",
     "tables": 2,
     "forms": 2,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/reporte-expediente.blade.php",
@@ -650,7 +685,8 @@
     "title": "{{ $tituloOpcion ?? 'Reporte General de Trámites Externos' }} — SIGTRAM",
     "tables": 2,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/reporte_bandeja.blade.php",
@@ -661,7 +697,8 @@
     "title": "Reporte de Bandeja",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/segi_adjuntar.blade.php",
@@ -672,7 +709,8 @@
     "title": "Sigtram | Adjuntar",
     "tables": 1,
     "forms": 2,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/segi_archivo.blade.php",
@@ -683,18 +721,8 @@
     "title": "Bandeja de Archivo - SIGTRAM",
     "tables": 1,
     "forms": 0,
-    "treatment": "pantalla"
-  },
-  {
-    "file": "resources/views/mod_gm/mod_tram_exte/segi_bandeja.blade.php",
-    "encoding": "cp1252",
-    "lines": 1497,
-    "body": true,
-    "extends": [],
-    "title": "Seguimiento de Expedientes ÔÇö SIGTRAM",
-    "tables": 2,
-    "forms": 5,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/segi_expedi.blade.php",
@@ -705,7 +733,8 @@
     "title": "Seguimiento de Expedientes — SIGTRAM",
     "tables": 2,
     "forms": 5,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/segi_verexpedi.blade.php",
@@ -716,7 +745,8 @@
     "title": "{{ $tituloOpcion ?? 'Seguimiento del expediente' }} — SIGTRAM",
     "tables": 2,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/stub_pendiente.blade.php",
@@ -727,7 +757,8 @@
     "title": "{{ $titulo }}",
     "tables": 0,
     "forms": 0,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/v2_lista_reporte_area_cargo.blade.php",
@@ -738,7 +769,8 @@
     "title": "Sigtram Intelligence | Advanced Report",
     "tables": 1,
     "forms": 1,
-    "treatment": "pantalla"
+    "treatment": "pantalla",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/voucher.blade.php",
@@ -749,7 +781,8 @@
     "title": "Comprobante de Trámite - {{ $expediente->nu_expe_todo }}",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gm/mod_tram_exte/voucher_anexo.blade.php",
@@ -760,7 +793,8 @@
     "title": "Vaucher Anexo - {{ $numeroExpediente }}",
     "tables": 1,
     "forms": 0,
-    "treatment": "impresion-navegador"
+    "treatment": "impresion-navegador",
+    "backend_native": true
   },
   {
     "file": "resources/views/mod_gp/omaped/entrada.blade.php",
@@ -1168,5 +1202,125 @@
     "tables": 0,
     "forms": 0,
     "treatment": "entrada"
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/hoja-ruta.blade.php",
+    "encoding": "utf-8",
+    "lines": 151,
+    "body": true,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 0,
+    "treatment": "pantalla",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/reporte-bandeja.blade.php",
+    "encoding": "utf-8",
+    "lines": 112,
+    "body": true,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 0,
+    "treatment": "pantalla",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/partials/filtros-tabla.blade.php",
+    "encoding": "utf-8",
+    "lines": 123,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 0,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/partials/historico.blade.php",
+    "encoding": "utf-8",
+    "lines": 23,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 0,
+    "forms": 0,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/partials/modales.blade.php",
+    "encoding": "utf-8",
+    "lines": 794,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 6,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gene/mod_tram_inter/partials/sidebar.blade.php",
+    "encoding": "utf-8",
+    "lines": 76,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 0,
+    "forms": 0,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gm/mod_tram_exte/partials_segi/filtros-tabla.blade.php",
+    "encoding": "utf-8",
+    "lines": 357,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 5,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gm/mod_tram_exte/partials_segi/historico.blade.php",
+    "encoding": "utf-8",
+    "lines": 118,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 1,
+    "forms": 0,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gm/mod_tram_exte/partials_segi/modales.blade.php",
+    "encoding": "utf-8",
+    "lines": 1013,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 0,
+    "forms": 4,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
+  },
+  {
+    "file": "resources/views/mod_gm/mod_tram_exte/partials_segi/sidebar.blade.php",
+    "encoding": "utf-8",
+    "lines": 55,
+    "body": false,
+    "extends": [],
+    "title": "",
+    "tables": 0,
+    "forms": 0,
+    "treatment": "fragmento-heredado",
+    "backend_native": true
   }
 ]

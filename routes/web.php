@@ -53,31 +53,6 @@ use App\Http\Controllers\Core\PideController;
 use App\Http\Controllers\mod_oac\AccesoInfoController;
 use App\Http\Controllers\mod_gdu\BandConsultaGduController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-
-Route::get('/dev-config', function () {
-    try {
-        $data = DB::table('ti.configuracion')->get();
-        $horaActual = now()->format('H:i:s');
-        $result = [
-            'status' => 'success',
-            'hora_actual_servidor' => $horaActual,
-            'timezone' => config('app.timezone'),
-            'data' => $data,
-        ];
-        file_put_contents(base_path('dev-config.json'), json_encode($result, JSON_PRETTY_PRINT));
-
-        return response()->json($result);
-    } catch (Throwable $e) {
-        $err = [
-            'status' => 'error',
-            'message' => $e->getMessage(),
-        ];
-        file_put_contents(base_path('dev-config.json'), json_encode($err, JSON_PRETTY_PRINT));
-
-        return response()->json($err);
-    }
-});
 
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin']);
@@ -92,9 +67,16 @@ Route::get('/mod_gp/omaped/ver-datos', [OmapedController::class, 'verDatos'])->n
 Route::get('/mod_gp/omaped/archivo-privado', [OmapedController::class, 'archivoPrivado'])->name('omaped.archivo_privado');
 Route::get('/mod_gp/omaped/qr-imagen/{token}', [OmapedController::class, 'qrImagen'])->name('omaped.qr_imagen');
 
+// SEGUIMIENTO PÚBLICO (QR)
+Route::get('/tramite/seguimiento/{token}', [\App\Http\Controllers\Publico\SeguimientoPublicoController::class, 'consultar'])
+    ->name('tramites.seguimiento_publico')
+    ->middleware('throttle:30,1');
+
 Route::middleware('auth')->group(function () {
     Route::get('/perfil/foto', \App\Http\Controllers\ProfilePhotoController::class)
         ->middleware('throttle:30,1')->name('perfil.foto');
+    Route::get('/seleccionar-compania', [AuthController::class, 'seleccionarCompania'])->name('seleccionar.compania');
+    Route::post('/seleccionar-compania', [AuthController::class, 'guardarCompania'])->name('seleccionar.compania.guardar');
     Route::get('/seleccionar-cargo', [AuthController::class, 'seleccionarCargo'])->name('seleccionar.cargo');
     Route::post('/seleccionar-cargo', [AuthController::class, 'guardarCargo'])->name('seleccionar.cargo.guardar');
     Route::get('/inicio', [AuthController::class, 'inicio'])->name('inicio');
@@ -346,8 +328,28 @@ Route::middleware('auth')->group(function () {
     // CORREO INTERNO (NUEVO)
     Route::get('/mod_gene/mod_tram_inter/correo_interno', [CorreoInternoController::class, 'index'])->name('mod_tram_inter.correo_interno');
     Route::post('/mod_gene/mod_tram_inter/correo_interno/tabla', [CorreoInternoController::class, 'tabla'])->name('mod_tram_inter.correo_interno.tabla');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/conteos', [CorreoInternoController::class, 'conteos'])->name('mod_tram_inter.correo_interno.conteos');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/participantes', [CorreoInternoController::class, 'participantes'])->name('mod_tram_inter.correo_interno.participantes');
     Route::post('/mod_gene/mod_tram_inter/correo_interno/historial', [CorreoInternoController::class, 'historial'])->name('mod_tram_inter.correo_interno.historial');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/auditoria_descargas', [CorreoInternoController::class, 'auditoriaDescargas'])->name('mod_tram_inter.correo_interno.auditoria_descargas');
     Route::post('/mod_gene/mod_tram_inter/correo_interno/recepcionar', [CorreoInternoController::class, 'recepcionar'])->name('mod_tram_inter.correo_interno.recepcionar');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/detalle_documento/{id}', [CorreoInternoController::class, 'detalleDocumento'])->name('mod_tram_inter.correo_interno.detalle_documento');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/reemplazar_firmado', [CorreoInternoController::class, 'reemplazarFirmado'])->name('mod_tram_inter.correo_interno.reemplazar_firmado');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/comprobantes_pago', [CorreoInternoController::class, 'comprobantesPago'])->name('mod_tram_inter.correo_interno.comprobantes_pago');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/voucher/{id}', [CorreoInternoController::class, 'voucher'])->name('mod_tram_inter.correo_interno.voucher');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/descargar-completo/{id}', [CorreoInternoController::class, 'descargarCompleto'])->name('mod_tram_inter.correo_interno.descargar_completo');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/descargar-lote', [CorreoInternoController::class, 'descargarLote'])->name('mod_tram_inter.correo_interno.descargar_lote');
+    Route::match(['get', 'post'], '/mod_gene/mod_tram_inter/correo_interno/imprimir_bandeja', [CorreoInternoController::class, 'imprimirBandeja'])->name('mod_tram_inter.correo_interno.imprimir_bandeja');
+
+    // SPEC-03: Rutas Transaccionales y Modales
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/datos_transaccionales', [CorreoInternoController::class, 'datosTransaccionales'])->name('mod_tram_inter.correo_interno.datos_transaccionales');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/correlativo_interno', [CorreoInternoController::class, 'correlativoInterno'])->name('mod_tram_inter.correo_interno.correlativo_interno');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/asignar', [CorreoInternoController::class, 'asignar'])->name('mod_tram_inter.correo_interno.asignar');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/derivar', [CorreoInternoController::class, 'derivar'])->name('mod_tram_inter.correo_interno.derivar');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/finalizar', [CorreoInternoController::class, 'finalizar'])->name('mod_tram_inter.correo_interno.finalizar');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/devolver', [CorreoInternoController::class, 'devolver'])->name('mod_tram_inter.correo_interno.devolver');
+    Route::post('/mod_gene/mod_tram_inter/correo_interno/reiterar', [CorreoInternoController::class, 'reiterar'])->name('mod_tram_inter.correo_interno.reiterar');
+    Route::get('/mod_gene/mod_tram_inter/correo_interno/hoja_ruta/{id}', [CorreoInternoController::class, 'hojaRuta'])->name('mod_tram_inter.correo_interno.hoja_ruta');
 
     // REPORTE GENERAL DE TRÁMITES INTERNOS (= lista_reporte_area.php)
     Route::match(['get', 'post'], '/mod_gene/mod_tram_inter/reporte_tramite', [ReporteTramiteController::class, 'index'])->name('mod_tram_inter.reporte_tramite');
@@ -411,7 +413,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/mod_gm/mod_tram_exte/notificar_pltfrma/tabla', [NotificarPlataformaController::class, 'tabla'])->name('tramites.notificar.tabla');
     Route::post('/mod_gm/mod_tram_exte/notificar_pltfrma/notificar/{id}', [NotificarPlataformaController::class, 'notificar'])->name('tramites.notificar.action');
 
-    // TRÁMITE EXTERNO — segi_expedi (APIs; el GET del menú lo resuelve AuthController vía BD)
+    // TRÁMITE EXTERNO — segi_expedi (Bandeja y APIs)
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi', [CorreoExternoController::class, 'index'])->name('tramites.bandeja');
     Route::post('/mod_gm/mod_tram_exte/segi_expedi/tabla', [CorreoExternoController::class, 'tabla'])->name('mod_gm.segi_expedi.tabla');
     Route::post('/mod_gm/mod_tram_exte/segi_expedi/historial', [CorreoExternoController::class, 'historial'])->name('mod_gm.segi_expedi.historial');
     Route::post('/mod_gm/mod_tram_exte/segi_expedi/recepcionar', [CorreoExternoController::class, 'recepcionar'])->name('mod_gm.segi_expedi.recepcionar');
@@ -423,8 +426,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/mod_gm/mod_tram_exte/segi_expedi/solicitud_video', [CorreoExternoController::class, 'solicitudVideo'])->name('mod_gm.segi_expedi.solicitud_video');
     Route::post('/mod_gm/mod_tram_exte/segi_expedi/semilla', [CorreoExternoController::class, 'obtenerSemilla'])->name('mod_gm.segi_expedi.semilla');
     Route::get('/mod_gm/mod_tram_exte/segi_expedi/hoja-ruta/{id}', [CorreoExternoController::class, 'hojaRuta'])->name('mod_gm.segi_expedi.hoja_ruta');
+    Route::get('/mod_gm/mod_tram_exte/expedientes/{id}/hoja-ruta', [CorreoExternoController::class, 'hojaRuta'])->name('mod_gm.segi_expedi.hoja_ruta.alias');
     Route::get('/mod_gm/mod_tram_exte/segi_expedi/descargar/{id}', [CorreoExternoController::class, 'descargarAdjunto'])->name('mod_gm.segi_expedi.descargar');
-    Route::post('/mod_gm/mod_tram_exte/segi_expedi/imprimir-bandeja', [CorreoExternoController::class, 'imprimirBandeja'])->name('mod_gm.segi_expedi.imprimir_bandeja');
+    Route::match(['get', 'post'], '/mod_gm/mod_tram_exte/segi_expedi/imprimir-bandeja', [CorreoExternoController::class, 'imprimirBandeja'])->name('mod_gm.segi_expedi.imprimir_bandeja');
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi/exportar-excel', [CorreoExternoController::class, 'exportarExcel'])->name('mod_gm.segi_expedi.exportar_excel');
+    Route::post('/mod_gm/mod_tram_exte/segi_expedi/devolver', [CorreoExternoController::class, 'devolver'])->name('mod_gm.segi_expedi.devolver');
+    Route::post('/mod_gm/mod_tram_exte/segi_expedi/archivar', [CorreoExternoController::class, 'archivar'])->name('mod_gm.segi_expedi.archivar');
+    Route::post('/mod_gm/mod_tram_exte/segi_expedi/prestar', [CorreoExternoController::class, 'prestar'])->name('mod_gm.segi_expedi.prestar');
+    Route::post('/mod_gm/mod_tram_exte/segi_expedi/retornar_prestamo', [CorreoExternoController::class, 'retornarPrestamo'])->name('mod_gm.segi_expedi.retornar_prestamo');
+    Route::post('/mod_gm/mod_tram_exte/segi_expedi/redirigir', [CorreoExternoController::class, 'redirigir'])->name('mod_gm.segi_expedi.redirigir');
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi/descargar-todos/{id}', [CorreoExternoController::class, 'descargarTodos'])->name('mod_gm.segi_expedi.descargar_todos');
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi/conteos', [CorreoExternoController::class, 'conteos'])->name('mod_gm.segi_expedi.conteos');
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi/participantes', [CorreoExternoController::class, 'participantes'])->name('mod_gm.segi_expedi.participantes');
+    Route::get('/mod_gm/mod_tram_exte/segi_expedi/auditoria-descargas', [CorreoExternoController::class, 'auditoriaDescargas'])->name('mod_gm.segi_expedi.auditoria_descargas');
 
     Route::post('/mod_gm/mod_tram_exte/reporte-expediente/buscar', [ReporteExpedienteController::class, 'buscar'])->name('mod_gm.reporte_expediente.buscar');
     Route::post('/mod_gm/mod_tram_exte/reporte-expediente/resumen', [ReporteExpedienteController::class, 'resumen'])->name('mod_gm.reporte_expediente.resumen');

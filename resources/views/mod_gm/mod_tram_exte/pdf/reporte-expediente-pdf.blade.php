@@ -13,7 +13,6 @@
     </style>
 </head>
 <body>
-@include('components.sigtram.print-brand', ['sigtramPdf' => true])
     <h1>Detalle de Expediente</h1>
     <div class="subtitle">{{ $expediente['expediente'] }}</div>
 

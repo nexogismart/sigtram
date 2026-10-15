@@ -5,26 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Notificar Plataforma' }} — SIGTRAM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1rem; background: rgb(15 23 42 / 0.7); backdrop-filter: blur(8px);
-        }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.notificar_pltfrma'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/reportes-expedientes.css', 'resources/js/app.js'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.notificar_pltfrma', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.notificar_pltfrma" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="notificarPlataforma()" x-init="init()">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.notificar_pltfrma'])
+@php
+    $frontendConfig = [
+        'routes' => [
+            'tabla' => route('tramites.notificar.tabla', [], false),
+            'notificar' => route('tramites.notificar.action', ['id' => '__ID__'], false),
+            'buscaExpediDeta' => route('tramites.busca_expedi_deta', [], false),
+            'hojaRuta' => route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false),
+        ],
+    ];
+@endphp
+<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="notificarPlataforma()" data-config="{{ json_encode($frontendConfig) }}">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.notificar_pltfrma', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -200,146 +201,5 @@
             </form>
         </div>
     </div>
-
-    <script>
-        function notificarPlataforma() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const routes = {
-                tabla: @json(route('tramites.notificar.tabla', [], false)),
-                notificar: @json(route('tramites.notificar.action', ['id' => '__ID__'], false)),
-                buscaExpediDeta: @json(route('tramites.busca_expedi_deta', [], false)),
-                hojaRuta: @json(route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false)),
-            };
-
-            return {
-                loading: false,
-                guardando: false,
-                items: [],
-                total: 0,
-                pagina: 1,
-                paginas: 1,
-                toast: { show: false, message: '', type: 'success' },
-                filtros: { modo: 'generico', criterio: '', campo: 'p_dto_trmtes.nu_expe_todo', desde: '', hasta: '' },
-                modal: { show: false, errors: [] },
-                activo: {},
-                form: { fecha: '', observaciones: '', archivo: null, archivoNombre: '' },
-
-                init() { this.fetchLista(); },
-
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => { this.toast.show = false; }, 4000);
-                },
-                verTodo() {
-                    this.filtros.criterio = '';
-                    this.filtros.desde = '';
-                    this.filtros.hasta = '';
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                abrirHojaRuta(id) {
-                    window.open(routes.hojaRuta.replace('__HID__', id), 'ventana1', 'scrollbars=auto,width=770,height=310');
-                },
-                abrirBusca(item) {
-                    window.open(routes.buscaExpediDeta + '?cdgo_tram=' + item.cdgo_dto_trmte, 'ventana2', 'scrollbars=auto,width=470,height=410');
-                },
-                abrirNotificar(item) {
-                    const now = new Date();
-                    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                    this.activo = item;
-                    this.form = {
-                        fecha: local,
-                        observaciones: 'SE LE ENTREGA EL EXPEDIENTE A LA SR(A):     CON DNI:',
-                        archivo: null,
-                        archivoNombre: '',
-                    };
-                    this.modal = { show: true, errors: [] };
-                },
-                cerrarModal() {
-                    if (this.guardando) return;
-                    this.modal.show = false;
-                },
-                onArchivo(event) {
-                    const file = event.target.files[0] || null;
-                    this.form.archivo = file;
-                    this.form.archivoNombre = file ? file.name : '';
-                },
-                async fetchLista() {
-                    this.loading = true;
-                    try {
-                        const res = await fetch(routes.tabla, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                modo: this.filtros.modo,
-                                criterio: this.filtros.criterio,
-                                campo: this.filtros.campo,
-                                desde: this.filtros.desde,
-                                hasta: this.filtros.hasta,
-                                page: this.pagina,
-                                per_page: 20,
-                            }),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.items = data.data || [];
-                            this.total = data.total || 0;
-                            this.pagina = data.current_page || 1;
-                            this.paginas = data.last_page || 1;
-                        } else {
-                            this.showToast(data.message || 'No se pudo cargar la bandeja.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cargar expedientes.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                async guardarNotificacion() {
-                    const obs = (this.form.observaciones || '').trim();
-                    if (obs === '') {
-                        this.modal.errors = ['Debe especificar las observaciones'];
-                        return;
-                    }
-                    if (!confirm('Esta apunto de notificar este expediente desea continuar?')) {
-                        return;
-                    }
-                    if (this.guardando) return;
-                    this.guardando = true;
-                    this.modal.errors = [];
-                    const fd = new FormData();
-                    fd.append('fecha', this.form.fecha);
-                    fd.append('observaciones', this.form.observaciones);
-                    if (this.form.archivo) fd.append('documento', this.form.archivo);
-                    try {
-                        const res = await fetch(routes.notificar.replace('__ID__', this.activo.cdgo_dto_trmte), {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                            body: fd,
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.status === 'success') {
-                            this.showToast('Los expedientes fueron notificados');
-                            this.modal.show = false;
-                            await this.fetchLista();
-                        } else if (data.errors) {
-                            this.modal.errors = Object.values(data.errors).flat();
-                        } else {
-                            this.modal.errors = [data.message || 'No se pudo notificar.'];
-                        }
-                    } catch (e) {
-                        this.modal.errors = ['Error de red al notificar.'];
-                    } finally {
-                        this.guardando = false;
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>

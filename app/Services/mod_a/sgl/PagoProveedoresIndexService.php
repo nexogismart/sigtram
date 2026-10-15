@@ -2,11 +2,12 @@
 
 namespace App\Services\mod_a\sgl;
 
-use App\Services\mod_gene\IngresarTramiteService;
+use App\Services\mod_gene\mod_tram_inter\IngresarTramiteService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 use Throwable;
 use ZipArchive;
 
@@ -32,7 +33,7 @@ class PagoProveedoresIndexService
 
     public function areaUsuario(): int
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return 0;
         }
@@ -386,7 +387,7 @@ class PagoProveedoresIndexService
     {
         $areaId = $this->areaUsuario();
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $cab = $this->cabecera($id, $areaId);
         if ($cab === null) {
             return $this->fail('No se encontró el requerimiento.');
@@ -469,7 +470,7 @@ class PagoProveedoresIndexService
     public function semilla(int $tipoId): array
     {
         $areaId = $this->areaUsuario();
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $company = $this->compania();
         if ($tipoId <= 0 || $areaId <= 0) {
             return $this->fail('Tipo de documento no válido.');
@@ -772,7 +773,7 @@ class PagoProveedoresIndexService
     {
         $areaId = $this->areaUsuario();
         $userId = (int) (Auth::user()?->cdgo_lgin ?? 0);
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         $company = $this->compania();
         $cab = $this->cabecera($id, $areaId);
         if ($cab === null) {
@@ -1278,7 +1279,7 @@ class PagoProveedoresIndexService
 
     private function cargoRequiereFirma(): bool
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return false;
         }
@@ -1390,7 +1391,7 @@ class PagoProveedoresIndexService
 
     private function compania(): int
     {
-        return (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
+        return (int) session(SessionKeys::USER_COMPANY, 0);
     }
 
     private function ok(mixed $data, string $message = ''): array

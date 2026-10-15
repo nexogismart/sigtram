@@ -4,6 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $cdgo_usrios
+ * @property string $no_crto
+ * @property string $no_crto_sstma
+ * @property string $de_dire
+ * @property string $nu_tele
+ * @property string $co_ubig
+ * @property string $de_mail
+ * @property string|null $nu_docu
+ * @property string $de_ocup_rubr
+ * @property string $in_tipo_pers
+ * @property string $nu_ruc
+ */
 class PUsrrio extends Model
 {
     public $incrementing = true;

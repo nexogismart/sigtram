@@ -1,0 +1,16 @@
+/* Integration with migrated modules: style only the added brand header.
+   Business forms, tables, Alpine components and their Vite styles remain native. */
+.sigtram-modulebar { display:flex; align-items:center; gap:24px; padding:13px clamp(18px,3vw,44px); min-height:78px; border-bottom:1px solid #d8e3ed; background:#fff; color:#143650; font-family:'Segoe UI',Arial,sans-serif; box-sizing:border-box; }
+.sigtram-modulebrand { display:flex; flex:none; align-items:center; width:142px; }
+.sigtram-modulebrand img { width:142px; height:48px; object-fit:contain; }
+.sigtram-module-context { display:grid; gap:3px; padding-left:22px; border-left:1px solid #d8e3ed; }
+.sigtram-module-context span { color:#486176; font-size:11px; }
+.sigtram-module-context strong { font-size:13px; font-weight:700; }
+.sigtram-module-tools { margin-left:auto; }
+.sigtram-return { color:#096bc4; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.sigtram-return:focus-visible,.sigtram-modulebrand:focus-visible { outline:3px solid #53a6ec; outline-offset:3px; }
+.sigtram-skip { position:fixed; z-index:2147483647; top:-100px; left:16px; padding:10px 16px; color:#fff; background:#143650; border-radius:6px; }
+.sigtram-skip:focus { top:10px; }
+.sigtram-content-start { height:0; }
+@media(max-width:600px) { .sigtram-modulebar { min-height:64px; padding:9px 14px; gap:14px; } .sigtram-modulebrand,.sigtram-modulebrand img { width:112px; } .sigtram-modulebrand img { height:40px; } .sigtram-module-context { display:none; } }
+@media print { .sigtram-modulebar,.sigtram-skip,.sigtram-content-start { display:none!important; } }

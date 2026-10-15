@@ -1,31 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\IngresoExpedienteRepositoryInterface;
+use App\Contracts\Services\mod_gm\mod_tram_exte\PdfPageCounterInterface;
+use App\Exceptions\mod_gm\PdfPageCounterUnavailableException;
+use App\Exceptions\mod_gm\PdfValidationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IngresoExpedienteRequest;
-use App\Models\Area;
-use App\Models\DocumentoTramiteTupa;
-use App\Models\PUsrrio;
-use App\Models\RequisitoTramite;
-use App\Models\ServicioArea;
 use App\Models\User;
-use App\Models\UsrioJuridico;
 use App\Services\IngresoExpedienteService;
+use App\Support\SessionKeys;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class IngresoExpedienteController extends Controller
 {
-    public function __construct(
-        private IngresoExpedienteService $service
-    ) {}
+    private readonly PdfPageCounterInterface $pdfCounter;
 
-    private function schema(): string
-    {
-        return rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+    public function __construct(
+        private readonly IngresoExpedienteService $service,
+        private readonly IngresoExpedienteRepositoryInterface $repository,
+        ?PdfPageCounterInterface $pdfCounter = null
+    ) {
+        $this->pdfCounter = $pdfCounter ?? app(PdfPageCounterInterface::class);
     }
 
     /**
@@ -35,52 +38,22 @@ class IngresoExpedienteController extends Controller
     public function index(?Request $request = null, ?string $pathVista = null, ?object $opcionMenu = null)
     {
         $pathVista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
-        $tituloOpcion = trim((string) ($opcionMenu?->dc_rle ?? 'Ingresar Expedientes'));
+        $tituloOpcion = trim((string) ($opcionMenu !== null ? ($opcionMenu->dc_rle ?? 'Ingresar Expedientes') : 'Ingresar Expedientes'));
         if ($tituloOpcion === '') {
             $tituloOpcion = 'Ingresar Expedientes';
         }
 
-        $s = $this->schema();
-        $cmpnia = auth()->user()->cdgo_cmpnia ?? 2;
+        $cmpnia = $this->resolverCompaniaActiva();
+        $datosForm = $this->repository->obtenerDatosFormularioIngreso($cmpnia);
 
-        $gerencias = Area::whereNull('cdgo_area_prim')
-            ->where('in_esta', '1')
-            ->where('cdgo_cmpnia', $cmpnia)
-            ->where('cdgo_area', '!=', 0)
-            ->orderBy('de_area', 'asc')
-            ->get(['cdgo_area', 'de_area', 'dc_area']);
-
-        $servicios = ServicioArea::where('in_esta', '1')
-            ->orderBy('de_srvcio', 'asc')
-            ->get(['cdgo_srvcio_area', 'de_srvcio']);
-
-        $tiposDocumento = DB::table($s . 'a_dcmntos_iden')
-            ->where('in_esta', '1')
-            ->orderBy('nu_orde', 'asc')
-            ->get(['cdgo_dcmntos_iden', 'dc_dcmntos_iden']);
-
-        $tiposIngreso = DB::table($s . 'a_tpo_trmtes')
-            ->where('in_esta', '1')
-            ->whereIn('dc_tpo_trmte', ['E', 'S'])
-            ->orderBy('nu_orde', 'asc')
-            ->get(['cdgo_tpo_trmte', 'de_tpo_trmte', 'dc_tpo_trmte']);
-
-        $tipoExterno = $tiposIngreso->firstWhere('dc_tpo_trmte', 'E');
-        $tipoSimple = $tiposIngreso->firstWhere('dc_tpo_trmte', 'S');
-
-        $tipoObservado = DB::table($s . 'a_tpo_trmtes')
-            ->where('in_esta', '1')
-            ->where('dc_tpo_trmte', 'O')
-            ->first(['cdgo_tpo_trmte', 'de_tpo_trmte', 'dc_tpo_trmte']);
-
-        $areaObservado = Area::where('in_esta', '1')
-            ->where('cdgo_cmpnia', $cmpnia)
-            ->where(function ($q) {
-                $q->whereRaw("UPPER(de_area) LIKE '%GESTION DOCUMENTARIA%'")
-                    ->orWhereRaw("UPPER(de_area) LIKE '%GESTIÓN DOCUMENTARIA%'");
-            })
-            ->orderBy('cdgo_area', 'asc')
-            ->first(['cdgo_area', 'de_area']);
+        $gerencias = $datosForm['gerencias'];
+        $servicios = $datosForm['servicios'];
+        $tiposDocumento = $datosForm['tiposDocumento'];
+        $tiposIngreso = $datosForm['tiposIngreso'];
+        $tipoExterno = $datosForm['tipoExterno'];
+        $tipoSimple = $datosForm['tipoSimple'];
+        $tipoObservado = $datosForm['tipoObservado'];
+        $areaObservado = $datosForm['areaObservado'];
 
         $fechaServidor = now()->format('d/m/Y H:i:s');
 
@@ -102,7 +75,8 @@ class IngresoExpedienteController extends Controller
     public function store(IngresoExpedienteRequest $request)
     {
         try {
-            $user = auth()->user();
+            /** @var User|null $user */
+            $user = Auth::user();
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -112,29 +86,77 @@ class IngresoExpedienteController extends Controller
 
             $validated = $request->validated();
             $validated['fecha_ingreso'] = now()->format('Y-m-d H:i:s');
+            // Pasar valores crudos al repository únicamente para verificación de no manipulación
             $validated['cdgo_tpo_observado'] = (int) $request->input('cdgo_tpo_observado', 0);
             $validated['cdgo_tpo_trmte'] = (int) $request->input('cdgo_tpo_trmte', 0);
             $validated['cdgo_area_observado'] = (int) $request->input('cdgo_area_observado', 0);
+            $validated['in_docu_trmte'] = (string) ($validated['in_docu_trmte'] ?? '');
 
             $archivo = $request->file('fle_adjunto');
+            if ($archivo instanceof \Illuminate\Http\UploadedFile && $archivo->isValid()) {
+                try {
+                    $realFolios = $this->pdfCounter->countPages($archivo);
+                    $validated['folios'] = $realFolios;
+                } catch (PdfValidationException $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El archivo PDF adjunto no es válido: ' . $e->getMessage(),
+                    ], 422);
+                } catch (PdfPageCounterUnavailableException $e) {
+                    Log::warning('Conteo automático con pdfinfo no disponible durante store; conservando folios ingresados.', [
+                        'folios' => $validated['folios'] ?? null,
+                    ]);
+                }
+            }
 
-            $result = $this->service->registrar($validated, $user, $request->ip(), $archivo);
+            $companiaId = $this->resolverCompaniaActiva();
+
+            $result = $this->service->registrar(
+                $validated,
+                $user,
+                $companiaId,
+                (string) $request->ip(),
+                $archivo
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Expediente registrado correctamente con el número: ' . $result['numero'],
                 'expediente_id' => $result['id'],
+                'numero_expediente' => $result['numero'],
+                'folios' => (int) ($validated['folios'] ?? 0),
                 'voucher_url' => route('tramites.voucher', ['id' => $result['id']], false),
+                'show_url' => route('tramites.busca_expedi', ['cdgo_tram' => $result['id']], false),
+                'inbox_url' => route('tramites.bandeja', [], false),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Auth\Access\AuthorizationException | \App\Exceptions\mod_gene\OperacionTramiteNoAutorizadaException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            $errorId = Str::uuid()->toString();
             Log::error('Error registrando expediente: ' . $e->getMessage(), [
+                'error_id' => $errorId,
                 'trace' => $e->getTraceAsString(),
                 'input' => $request->except(['fle_adjunto']),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Hubo un error al registrar el expediente: ' . $e->getMessage(),
+                'message' => 'Hubo un error al registrar el expediente.',
+                'error_id' => $errorId,
             ], 500);
         }
     }
@@ -142,7 +164,7 @@ class IngresoExpedienteController extends Controller
     public function buscarUsuario(Request $request)
     {
         $tipo = $request->query('tipo');
-        $documento = preg_replace('/[^0-9]/', '', $request->query('documento') ?? '');
+        $documento = preg_replace('/[^0-9]/', '', (string) ($request->query('documento') ?? ''));
 
         if ($tipo !== 'juridica' && $tipo !== 'natural') {
             return response()->json(['success' => false, 'message' => 'Tipo de persona inválido.'], 400);
@@ -155,12 +177,11 @@ class IngresoExpedienteController extends Controller
             ], 400);
         }
 
+        $cmpnia = $this->resolverCompaniaActiva();
+
         try {
             if ($tipo === 'juridica') {
-                $usr = PUsrrio::where('nu_ruc', $documento)
-                    ->where('in_tipo_pers', '1')
-                    ->with('juridico')
-                    ->first();
+                $usr = $this->repository->buscarUsuarioJuridico($documento, $cmpnia);
 
                 if (!$usr) {
                     return response()->json([
@@ -171,21 +192,11 @@ class IngresoExpedienteController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'data' => [
-                        'id' => $usr->cdgo_usrios,
-                        'razon_social' => $usr->juridico->rz_soci ?? $usr->no_crto,
-                        'ruc' => $usr->nu_ruc,
-                        'tel_jur' => $usr->nu_tele,
-                        'cor_jur' => $usr->de_mail,
-                        'dir_jur' => $usr->de_dire,
-                    ],
+                    'data' => $usr,
                 ]);
             }
 
-            $usr = PUsrrio::where('nu_docu', $documento)
-                ->where('in_tipo_pers', '0')
-                ->with('natural')
-                ->first();
+            $usr = $this->repository->buscarUsuarioNatural($documento, $cmpnia);
 
             if (!$usr) {
                 return response()->json([
@@ -196,21 +207,20 @@ class IngresoExpedienteController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $usr->cdgo_usrios,
-                    'nombres' => $usr->natural->no_usrio ?? $usr->no_crto_sstma,
-                    'ape_paterno' => $usr->natural->ap_pate ?? '',
-                    'ape_materno' => $usr->natural->ap_mate ?? '',
-                    'telefono' => $usr->nu_tele,
-                    'correo' => $usr->de_mail,
-                    'direccion' => $usr->de_dire,
-                    'tipo_doc' => $usr->natural->cdgo_dcmntos_iden ?? '',
-                ],
+                'data' => $usr,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $errorId = Str::uuid()->toString();
+            Log::error('Error al buscar el solicitante: ' . $e->getMessage(), [
+                'error_id' => $errorId,
+                'documento' => $documento,
+                'tipo' => $tipo,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al buscar el solicitante: ' . $e->getMessage(),
+                'message' => 'Error al buscar el solicitante.',
+                'error_id' => $errorId,
             ], 500);
         }
     }
@@ -222,39 +232,16 @@ class IngresoExpedienteController extends Controller
             return response()->json(['success' => false, 'message' => 'Ingrese al menos 3 caracteres.']);
         }
 
-        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], mb_strtoupper($razon, 'UTF-8'));
+        $cmpnia = $this->resolverCompaniaActiva();
+        $usr = $this->repository->buscarUsuarioJuridicoPorRazon($razon, $cmpnia);
 
-        $row = UsrioJuridico::query()
-            ->whereRaw('UPPER(rz_soci) LIKE ?', [$escaped . '%'])
-            ->orderBy('rz_soci')
-            ->first();
-
-        if (!$row) {
-            $row = UsrioJuridico::query()
-                ->whereRaw('UPPER(rz_soci) LIKE ?', ['%' . $escaped . '%'])
-                ->orderBy('rz_soci')
-                ->first();
-        }
-
-        if (!$row) {
-            return response()->json(['success' => false, 'message' => 'Razón social no encontrada.']);
-        }
-
-        $usr = PUsrrio::find($row->cdgo_usrios);
         if (!$usr) {
             return response()->json(['success' => false, 'message' => 'Razón social no encontrada.']);
         }
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $usr->cdgo_usrios,
-                'razon_social' => $row->rz_soci ?: $usr->no_crto,
-                'ruc' => $usr->nu_ruc,
-                'tel_jur' => $usr->nu_tele,
-                'cor_jur' => $usr->de_mail,
-                'dir_jur' => $usr->de_dire,
-            ],
+            'data' => $usr,
         ]);
     }
 
@@ -265,237 +252,144 @@ class IngresoExpedienteController extends Controller
             return response()->json([]);
         }
 
-        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], mb_strtoupper($term, 'UTF-8'));
-
-        $items = UsrioJuridico::query()
-            ->whereRaw('UPPER(rz_soci) LIKE ?', ['%' . $escaped . '%'])
-            ->orderBy('rz_soci')
-            ->limit(20)
-            ->get(['cdgo_usrios', 'rz_soci']);
+        $cmpnia = $this->resolverCompaniaActiva();
+        $items = $this->repository->sugerirUsuariosJuridicos($term, $cmpnia, 20);
 
         return response()->json($items);
     }
 
     public function listarSubgerencias($gerenciaId)
     {
-        $cmpnia = auth()->user()->cdgo_cmpnia ?? 2;
-
-        $subgerencias = Area::where('cdgo_area_prim', $gerenciaId)
-            ->where('in_esta', '1')
-            ->where('cdgo_cmpnia', $cmpnia)
-            ->orderBy('de_area', 'asc')
-            ->get(['cdgo_area as id', 'de_area as nombre']);
+        $cmpnia = $this->resolverCompaniaActiva();
+        $subgerencias = $this->repository->listarSubgerencias((int) $gerenciaId, $cmpnia);
 
         return response()->json($subgerencias);
     }
 
     public function listarTramites($servicioId)
     {
-        $s = $this->schema();
-
-        $tramites = DB::table($s . 'a_docmntos_trmtes as d')
-            ->join($s . 'a_tupa as tupa', 'd.cdgo_tupa', '=', 'tupa.cdgo_tupa')
-            ->where('d.cdgo_srvcio_area', $servicioId)
-            ->where('d.in_esta', '1')
-            ->where('tupa.in_esta', '1')
-            ->orderBy('d.de_docmnto_trmte', 'asc')
-            ->get([
-                'd.cdgo_docmnto_trmte as id',
-                'd.de_docmnto_trmte as nombre',
-                'd.in_sile_admi',
-                'd.nu_tiem_sile',
-            ]);
+        $cmpnia = $this->resolverCompaniaActiva();
+        $tramites = $this->repository->listarTramitesPorServicio((int) $servicioId, $cmpnia);
 
         return response()->json($tramites);
     }
 
     public function listarRequisitos($tramiteId)
     {
-        $requisitos = RequisitoTramite::where('cdgo_docmnto_trmte', $tramiteId)
-            ->where('in_esta', '1')
-            ->orderBy('nu_orde', 'asc')
-            ->get([
-                'cdgo_rqto_trmte as id',
-                'de_rqto_trmte as descripcion',
-                'in_ctgria',
-                'prcio_trmte',
-                'nu_orde',
-            ]);
-
-        $silencio = DocumentoTramiteTupa::where('cdgo_docmnto_trmte', $tramiteId)
-            ->first(['cdgo_docmnto_trmte', 'in_sile_admi', 'nu_tiem_sile']);
+        $cmpnia = $this->resolverCompaniaActiva();
+        $data = $this->repository->listarRequisitosPorTramite((int) $tramiteId, $cmpnia);
 
         return response()->json([
-            'requisitos' => $requisitos,
-            'silencio' => $silencio,
+            'requisitos' => $data['requisitos'],
+            'silencio' => $data['silencio'],
         ]);
     }
 
     public function buscarTramitesTupa(Request $request)
     {
-        $term = strip_tags(trim($request->query('term', '')));
+        $term = strip_tags(trim((string) $request->query('term', '')));
         if (strlen($term) < 3) {
             return response()->json([]);
         }
 
-        $s = $this->schema();
-        $escapedTerm = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $term);
-
-        $tramites = DB::table($s . 'a_docmntos_trmtes as d')
-            ->join($s . 'a_tupa as tupa', 'd.cdgo_tupa', '=', 'tupa.cdgo_tupa')
-            ->whereRaw('LOWER(d.de_docmnto_trmte) LIKE ?', ['%' . mb_strtolower($escapedTerm, 'UTF-8') . '%'])
-            ->where('d.in_esta', '1')
-            ->where('tupa.in_esta', '1')
-            ->orderBy('d.de_docmnto_trmte', 'asc')
-            ->limit(20)
-            ->get([
-                'd.cdgo_docmnto_trmte as id',
-                'd.de_docmnto_trmte as nombre',
-                'd.in_sile_admi',
-                'd.nu_tiem_sile',
-            ]);
+        $cmpnia = $this->resolverCompaniaActiva();
+        $tramites = $this->repository->buscarTramitesTupa($term, $cmpnia, 20);
 
         return response()->json($tramites);
     }
 
     public function lista(Request $request)
     {
-        $s = $this->schema();
-        $cmpnia = auth()->user()->cdgo_cmpnia ?? 2;
+        $cmpnia = $this->resolverCompaniaActiva();
         $pagina = max(1, (int) $request->query('pagina', 1));
         $tamPag = 20;
 
-        $allowed = [
-            'p_dto_trmtes.nu_expe_todo',
-            'p_usrios_1.nu_docu',
-            'p_usrios_1.no_crto',
-            'a_areas.de_area',
-            'a_estdos_trmtes.dc_estdo_trmte',
-            'p_lgin.de_lgin',
-            'p_dto_trmtes.de_obse_todo',
+        $filtros = [
+            'modo' => (string) $request->query('modo', 'generico'),
+            'criterio' => trim((string) $request->query('criterio', '')),
+            'campo' => (string) $request->query('campo', 'p_dto_trmtes.nu_expe_todo'),
+            'fecha' => trim((string) $request->query('fecha', '')),
+            'desde' => trim((string) $request->query('desde', '')),
+            'hasta' => trim((string) $request->query('hasta', '')),
         ];
 
-        $tiposLista = DB::table($s . 'a_tpo_trmtes')
-            ->whereIn('dc_tpo_trmte', ['E', 'S', 'O'])
-            ->pluck('cdgo_tpo_trmte')
-            ->all();
+        $resultado = $this->repository->listarExpedientes($filtros, $cmpnia, $pagina, $tamPag);
 
-        if (empty($tiposLista)) {
-            $tiposLista = [17, 22, 40, 42, 55, 65];
-        }
-
-        $query = DB::table($s . 'p_dto_trmtes as p_dto_trmtes')
-            ->join($s . 'r_trmtes_dcmntos as r_trmtes_dcmntos', 'r_trmtes_dcmntos.cdgo_dto_trmte', '=', 'p_dto_trmtes.cdgo_dto_trmte')
-            ->join($s . 'a_tpo_trmtes as a_tpo_trmtes', 'p_dto_trmtes.cdgo_tpo_trmte', '=', 'a_tpo_trmtes.cdgo_tpo_trmte')
-            ->join($s . 'a_areas as a_areas', 'p_dto_trmtes.cdgo_area', '=', 'a_areas.cdgo_area')
-            ->join($s . 'a_estdos_trmtes as a_estdos_trmtes', 'r_trmtes_dcmntos.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->join($s . 'p_lgin as p_lgin', 'p_dto_trmtes.co_usua_ingr', '=', 'p_lgin.cdgo_lgin')
-            ->join($s . 'p_usrios as p_usrios', 'p_lgin.cdgo_usrios', '=', 'p_usrios.cdgo_usrios')
-            ->join($s . 'p_usrios as p_usrios_1', 'p_dto_trmtes.cdgo_usrios', '=', 'p_usrios_1.cdgo_usrios')
-            ->where('r_trmtes_dcmntos.in_esta', '1')
-            ->whereIn('p_dto_trmtes.cdgo_tpo_trmte', $tiposLista)
-            ->where('p_dto_trmtes.cdgo_cmpnia', $cmpnia);
-
-        $modo = (string) $request->query('modo', 'generico');
-        $criterio = trim((string) $request->query('criterio', ''));
-        $campo = (string) $request->query('campo', 'p_dto_trmtes.nu_expe_todo');
-        $fecha = trim((string) $request->query('fecha', ''));
-        $desde = trim((string) $request->query('desde', ''));
-        $hasta = trim((string) $request->query('hasta', ''));
-
-        if ($modo === 'fechas' && $desde !== '' && $hasta !== '') {
-            try {
-                $f1 = Carbon::createFromFormat('Y-m-d', $desde)->startOfDay();
-                $f2 = Carbon::createFromFormat('Y-m-d', $hasta)->endOfDay();
-                $query->whereBetween('p_dto_trmtes.fe_ingr_trmte', [$f1, $f2]);
-            } catch (\Exception $e) {
-                // fecha inválida: ignorar filtro
-            }
-        } else {
-            if ($criterio !== '' && in_array($campo, $allowed, true)) {
-                if ($campo === 'p_lgin.de_lgin') {
-                    $query->whereRaw("LOWER({$campo}) LIKE LOWER(?)", ['%' . $criterio . '%']);
-                } else {
-                    $query->whereRaw("UPPER({$campo}::text) LIKE UPPER(?)", ['%' . $criterio . '%']);
-                }
-            }
-            if ($fecha !== '') {
-                try {
-                    $f = Carbon::createFromFormat('Y-m-d', $fecha);
-                    $query->whereBetween('p_dto_trmtes.fe_ingr_trmte', [
-                        $f->copy()->startOfDay(),
-                        $f->copy()->endOfDay(),
-                    ]);
-                } catch (\Exception $e) {
-                    // ignore
-                }
-            }
-            if ($criterio === '' && $fecha === '') {
-                $query->where('p_dto_trmtes.fe_ingr_trmte', '>=', now()->subDays(60)->startOfDay());
-            }
-        }
-
-        $total = (clone $query)->select('p_dto_trmtes.cdgo_dto_trmte')->distinct()->count('p_dto_trmtes.cdgo_dto_trmte');
-        $paginas = max(1, (int) ceil($total / $tamPag));
-        $pagina = min($pagina, $paginas);
-
-        $rows = $query
-            ->select([
-                'p_dto_trmtes.cdgo_dto_trmte',
-                'p_dto_trmtes.nu_expe_todo',
-                'p_dto_trmtes.nu_foli_trmte',
-                'p_dto_trmtes.in_sile_admi',
-                'p_dto_trmtes.fe_ingr_trmte',
-                'p_dto_trmtes.de_obse_todo',
-                'a_areas.dc_area',
-                'a_areas.de_area',
-                'a_estdos_trmtes.dc_estdo_trmte',
-                'a_estdos_trmtes.cdgo_estdo_trmte',
-                'p_usrios.no_crto as usuario_ingreso',
-                'p_lgin.de_lgin',
-                'p_usrios_1.no_crto as solicitante',
-            ])
-            ->orderByDesc('p_dto_trmtes.cdgo_dto_trmte')
-            ->offset(($pagina - 1) * $tamPag)
-            ->limit($tamPag)
-            ->get()
-            ->map(function ($row) {
-                $row->nu_expe_fmt = $this->formatExpediente((string) $row->nu_expe_todo);
-                $row->fecha_dm = $row->fe_ingr_trmte
-                    ? Carbon::parse($row->fe_ingr_trmte)->format('d/m')
-                    : '';
-                $row->silencio = ((string) $row->in_sile_admi === '1') ? 'Sí' : 'No';
-                return $row;
-            });
+        $rows = $resultado['items']->map(function ($row) {
+            $row->nu_expe_fmt = $this->formatExpediente((string) $row->nu_expe_todo);
+            $row->fecha_dm = $row->fe_ingr_trmte
+                ? Carbon::parse($row->fe_ingr_trmte)->format('d/m')
+                : '';
+            $row->silencio = ((string) $row->in_sile_admi === '1') ? 'Sí' : 'No';
+            return $row;
+        });
 
         return response()->json([
             'success' => true,
-            'total' => $total,
-            'pagina' => $pagina,
-            'paginas' => $paginas,
+            'total' => $resultado['total'],
+            'pagina' => $resultado['pagina'],
+            'paginas' => $resultado['paginas'],
             'items' => $rows,
         ]);
     }
 
     public function contarFolios(Request $request)
     {
-        $folios = 0;
         $file = $request->file('fle_adjunto');
-        if ($file && $file->isValid() && strtolower($file->getClientOriginalExtension()) === 'pdf') {
-            $folios = $this->contarPaginasPdf($file->getRealPath());
+        if (!$file instanceof \Illuminate\Http\UploadedFile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Archivo PDF requerido para el conteo de folios.',
+                'folios' => 0,
+            ], 422);
         }
 
-        return response()->json(['success' => true, 'folios' => $folios]);
+        try {
+            $folios = $this->pdfCounter->countPages($file);
+
+            return response()->json([
+                'success' => true,
+                'folios' => $folios,
+                'source' => 'pdfinfo',
+            ]);
+        } catch (PdfValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'folios' => 0,
+            ], 422);
+        } catch (PdfPageCounterUnavailableException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo determinar automáticamente el número de páginas. Verifique el PDF o comuníquese con soporte',
+                'folios' => 0,
+            ], 503);
+        }
     }
 
     public function voucher($id)
     {
-        $expediente = \App\Models\DtoTramite::with(['usrio.natural', 'usrio.juridico', 'area', 'documentoTupa.servicio'])
-            ->findOrFail($id);
+        $cmpnia = $this->resolverCompaniaActiva();
 
-        $attendant = User::find($expediente->co_usua_ingr);
+        $data = $this->repository->obtenerVoucherExpediente((int) $id, $cmpnia);
+        if (!$data) {
+            abort(404, 'Expediente no encontrado.');
+        }
 
-        return view('mod_gm.mod_tram_exte.voucher', compact('expediente', 'attendant'));
+        return view('mod_gm.mod_tram_exte.voucher', $data);
+    }
+
+    /**
+     * Resuelve de forma estricta la compañía activa del usuario o sesión.
+     */
+    private function resolverCompaniaActiva(): int
+    {
+        $cmpnia = (int) session(SessionKeys::USER_COMPANY, 0);
+        if ($cmpnia <= 0) {
+            abort(403, 'No tiene una compañía activa válida en la sesión para registrar trámites.');
+        }
+
+        return $cmpnia;
     }
 
     private function formatExpediente(string $nu): string
@@ -505,22 +399,8 @@ class IngresoExpedienteController extends Controller
             return $nu;
         }
 
-        $mid = ($parts[1] ?? '') . '-' . substr((string) ($parts[2] ?? ''), 2, 10);
+        $mid = $parts[1] . '-' . substr($parts[2], 2, 10);
 
-        return ($parts[0] ?? '') . '-' . str_pad($mid, 9, '0', STR_PAD_LEFT);
-    }
-
-    private function contarPaginasPdf(string $path): int
-    {
-        $content = @file_get_contents($path);
-        if ($content === false || $content === '') {
-            return 0;
-        }
-
-        if (preg_match_all('/\/Type\s*\/Page(?!s)/', $content, $matches)) {
-            return count($matches[0]);
-        }
-
-        return 0;
+        return $parts[0] . '-' . str_pad($mid, 9, '0', STR_PAD_LEFT);
     }
 }

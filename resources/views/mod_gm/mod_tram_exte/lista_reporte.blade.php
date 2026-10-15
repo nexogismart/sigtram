@@ -5,31 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Reportes de Expedientes Ingresados' }} — SIGTRAM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1rem; background: rgb(15 23 42 / 0.7); backdrop-filter: blur(8px);
-        }
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; inset: 0; background: #fff; padding: 12px; }
-        }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.lista_reporte'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/reportes-expedientes.css', 'resources/js/app.js'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.lista_reporte', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.lista_reporte" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="listaReporte()" x-init="init()">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.lista_reporte'])
+@php
+    $frontendConfig = [
+        'routes' => [
+            'buscar' => route('mod_gm.lista_reporte.buscar', [], false),
+            'imprimir' => route('mod_gm.lista_reporte.imprimir', [], false),
+            'buscaExpedi' => route('tramites.busca_expedi', [], false),
+            'hojaRuta' => route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false),
+        ],
+    ];
+@endphp
+<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="listaReporte()" data-config="{{ json_encode($frontendConfig) }}">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.lista_reporte', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -313,136 +309,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function listaReporte() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const routes = {
-                buscar: @json(route('mod_gm.lista_reporte.buscar', [], false)),
-                imprimir: @json(route('mod_gm.lista_reporte.imprimir', [], false)),
-                buscaExpedi: @json(route('tramites.busca_expedi', [], false)),
-                hojaRuta: @json(route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false)),
-            };
-
-            return {
-                loading: false,
-                items: [],
-                total: 0,
-                pagina: 1,
-                paginas: 1,
-                toast: { show: false, message: '', type: 'success' },
-                filtros: {
-                    modo: 'generico',
-                    palabra: '',
-                    campo: 'p_dto_trmtes.nu_expe_todo',
-                    fecha: '',
-                    desde: '',
-                    hasta: '',
-                    palabra1: '',
-                    campo1: 'a_areas.de_area',
-                    palabra2: '',
-                    campo2: 'a_estdos_trmtes.dc_estdo_trmte',
-                    excluir: false,
-                    simple: false,
-                },
-                modalOjo: { show: false, url: '' },
-                modalRuta: { show: false, url: '' },
-                modalPrint: { show: false, rows: [], usuario: '', fecha: '' },
-
-                init() { this.fetchLista(); },
-
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => { this.toast.show = false; }, 3500);
-                },
-                payload() {
-                    return { ...this.filtros, page: this.pagina };
-                },
-                verTodo() {
-                    this.filtros.palabra = '';
-                    this.filtros.fecha = '';
-                    this.filtros.desde = '';
-                    this.filtros.hasta = '';
-                    this.filtros.palabra1 = '';
-                    this.filtros.palabra2 = '';
-                    this.filtros.excluir = false;
-                    this.filtros.simple = false;
-                    this.filtros.modo = 'generico';
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                paginasVisibles() {
-                    const tam = 12;
-                    const seccion = Math.floor((this.pagina - 1) / tam);
-                    const inicio = seccion * tam + 1;
-                    const final = Math.min(inicio + tam - 1, this.paginas);
-                    const arr = [];
-                    for (let i = inicio; i <= final; i++) arr.push(i);
-                    return arr;
-                },
-                abrirOjo(item) {
-                    let url = routes.buscaExpedi + '?cdgo_tram=' + item.id;
-                    if (item.anex === 1) url += '&anex=1';
-                    this.modalOjo.url = url;
-                    this.modalOjo.show = true;
-                },
-                abrirHojaRuta(id) {
-                    this.modalRuta.url = routes.hojaRuta.replace('__HID__', id);
-                    this.modalRuta.show = true;
-                },
-                async fetchLista() {
-                    this.loading = true;
-                    try {
-                        const res = await fetch(routes.buscar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(this.payload()),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.items = data.data || [];
-                            this.total = data.total || 0;
-                            this.pagina = data.current_page || 1;
-                            this.paginas = data.last_page || 1;
-                        } else {
-                            this.showToast(data.message || 'No se pudo cargar el reporte.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cargar expedientes.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                async abrirImprimir() {
-                    try {
-                        const res = await fetch(routes.imprimir, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(this.payload()),
-                        });
-                        const data = await res.json();
-                        this.modalPrint = {
-                            show: true,
-                            rows: data.data || [],
-                            usuario: data.usuario || '',
-                            fecha: data.fecha || '',
-                        };
-                    } catch (e) {
-                        this.showToast('No se pudo generar la impresión.', 'error');
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>

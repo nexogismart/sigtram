@@ -16,12 +16,22 @@ use Illuminate\Support\Collection;
 interface SecurityCoreInterface
 {
     /**
-     * Obtiene los cargos asignados a un usuario desde la base de datos.
+     * Obtiene las compañías activas autorizadas para un usuario desde r_cmpnias_lgin.
      *
      * @param int $loginId ID de login del usuario.
+     * @return Collection Colección de compañías activas autorizadas.
+     */
+    public function obtenerCompaniasUsuario(int $loginId): Collection;
+
+    /**
+     * Obtiene los cargos asignados a un usuario desde la base de datos,
+     * opcionalmente filtrados por la compañía activa autorizada.
+     *
+     * @param int $loginId ID de login del usuario.
+     * @param int|null $companiaId ID de la compañía activa autorizada (opcional).
      * @return Collection Colección de cargos activos.
      */
-    public function obtenerCargosUsuario(int $loginId): Collection;
+    public function obtenerCargosUsuario(int $loginId, ?int $companiaId = null): Collection;
 
     /**
      * Verifica si un usuario con un cargo determinado tiene permiso para acceder a una ruta o módulo.

@@ -6,6 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 use Throwable;
 
 /**
@@ -25,7 +26,7 @@ class VerRequerimientoLocadorService
 
     public function areaUsuario(): int
     {
-        $cargoId = (int) session('sigtram_cargo_id', 0);
+        $cargoId = (int) session(SessionKeys::CARGO_ID, 0);
         if ($cargoId <= 0) {
             return 0;
         }

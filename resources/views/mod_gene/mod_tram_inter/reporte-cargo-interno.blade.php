@@ -6,40 +6,28 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reporte por Cargo — SIGTRAM</title>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        .cell-click {
-            cursor: pointer;
-            transition: background-color .15s, color .15s;
-        }
-        .cell-click:hover {
-            background-color: #f1f5f9;
-            color: #0f172a;
-            border-radius: .375rem;
-        }
-        .cell-click.active {
-            background-color: #334155;
-            color: #fff;
-            border-radius: .375rem;
-            font-weight: 800;
-        }
-        .detalle-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: .75rem;
-            padding: .75rem;
-            margin-top: .25rem;
-        }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno'])
-</head>
-<body data-sigtram-screen="mod_gene.mod_tram_inter.reporte-cargo-interno" class="sigtram-module bg-[#f8fafc] text-gray-900 min-h-screen">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-interno/reporte-cargo-interno.css', 'resources/js/app.js'])
 
-<main class="p-4 lg:p-6 max-w-[1400px] mx-auto w-full">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+</head>
+<body class="bg-[#f8fafc] text-gray-900 min-h-screen">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gene.mod_tram_inter.reporte-cargo-interno', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
+
+@php
+    $frontendConfig = [
+        'csrfToken' => csrf_token(),
+        'urlDetalle' => route('mod_tram_inter.reporte_cargo_interno.detalle'),
+        'fechaIni' => $desdeStr,
+        'fechaFin' => $hastaStr,
+    ];
+@endphp
+
+<main id="reporte-cargo-interno-app" x-data="reporteCargoInternoApp" data-config="{{ json_encode($frontendConfig) }}" class="p-4 lg:p-6 max-w-[1400px] mx-auto w-full">
 
     <div class="mb-4 text-right">
         <h1 class="text-lg font-extrabold text-slate-800 uppercase tracking-wide">
@@ -104,25 +92,25 @@
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="cell-click inline-block min-w-[2rem] px-2 py-1"
-                                  data-cargo="{{ $row['id'] }}" data-tipo="1" data-idx="{{ $idx }}">
+                                  @click="toggleDetalle('{{ $row['id'] }}', '1', '{{ $idx }}', $event)">
                                 {{ $row['entrada'] }}
                             </span>
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="cell-click inline-block min-w-[2rem] px-2 py-1"
-                                  data-cargo="{{ $row['id'] }}" data-tipo="2" data-idx="{{ $idx }}">
+                                  @click="toggleDetalle('{{ $row['id'] }}', '2', '{{ $idx }}', $event)">
                                 {{ $row['recibido'] }}
                             </span>
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="cell-click inline-block min-w-[2rem] px-2 py-1"
-                                  data-cargo="{{ $row['id'] }}" data-tipo="3" data-idx="{{ $idx }}">
+                                  @click="toggleDetalle('{{ $row['id'] }}', '3', '{{ $idx }}', $event)">
                                 {{ $row['salida'] }}
                             </span>
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="cell-click inline-block min-w-[2rem] px-2 py-1"
-                                  data-cargo="{{ $row['id'] }}" data-tipo="4" data-idx="{{ $idx }}">
+                                  @click="toggleDetalle('{{ $row['id'] }}', '4', '{{ $idx }}', $event)">
                                 {{ $row['finalizado'] }}
                             </span>
                         </td>
@@ -164,67 +152,5 @@
         </div>
     </div>
 </main>
-
-<script>
-(function () {
-    const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const URL_DETALLE = @json(route('mod_tram_inter.reporte_cargo_interno.detalle'));
-    const FECHA_INI = @json($desdeStr);
-    const FECHA_FIN = @json($hastaStr);
-    let lastKey = null;
-
-    document.querySelectorAll('.cell-click').forEach(el => {
-        el.addEventListener('click', function () {
-            const cargo = this.dataset.cargo;
-            const tipo = this.dataset.tipo;
-            const idx = this.dataset.idx;
-            const box = document.getElementById('conte_resultados' + idx);
-            const key = cargo + '-' + tipo + '-' + idx;
-
-            document.querySelectorAll('.cell-click').forEach(c => c.classList.remove('active'));
-
-            // Toggle: mismo click cierra el detalle (como el antiguo con sesión entro)
-            if (lastKey === key && !box.classList.contains('hidden')) {
-                box.classList.add('hidden');
-                box.innerHTML = '';
-                lastKey = null;
-                return;
-            }
-
-            lastKey = key;
-            this.classList.add('active');
-
-            // Ocultar otros detalles abiertos
-            document.querySelectorAll('[id^="conte_resultados"]').forEach(d => {
-                if (d !== box) {
-                    d.classList.add('hidden');
-                    d.innerHTML = '';
-                }
-            });
-
-            box.classList.remove('hidden');
-            box.innerHTML = '<div class="text-center py-4 text-slate-600 text-xs font-bold uppercase tracking-widest"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</div>';
-
-            $.ajax({
-                url: URL_DETALLE,
-                method: 'POST',
-                data: {
-                    _token: CSRF,
-                    cargo_id: cargo,
-                    tipo_bandeja: tipo,
-                    fecha_inicio: FECHA_INI,
-                    fecha_fin: FECHA_FIN
-                },
-                success: function (res) {
-                    box.innerHTML = res.html || '<div class="text-center text-gray-400 py-3">Sin datos</div>';
-                },
-                error: function () {
-                    box.innerHTML = '<div class="text-center text-red-500 py-3 font-bold text-xs">Error al cargar el detalle</div>';
-                }
-            });
-        });
-    });
-})();
-</script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $titulo }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+    @vite(['resources/js/app.js'])
     <style>
         body {
             margin: 0;
@@ -37,14 +38,20 @@
             cursor: pointer;
         }
     </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.stub_pendiente" class="sigtram-module">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente'])
+<body>
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.stub_pendiente', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 <div class="box">
     <h1>{{ $titulo }}</h1>
     <p>{{ $mensaje }}</p>
-    <button type="button" class="Button" onclick="window.close()">Cerrar</button>
+    <button type="button" class="Button" data-action="close">Cerrar</button>
 </div>
 </body>
 </html>

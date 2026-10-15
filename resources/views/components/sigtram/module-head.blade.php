@@ -9,6 +9,10 @@
     }
 @endphp
 <link rel="icon" type="image/png" href="{{ asset('images/nexosigtram-documental-emblema.png') }}">
+@if($sigtramNative ?? false)
+<link rel="stylesheet" href="{{ asset('css/sigtram-native-brand.css') }}?v={{ filemtime(public_path('css/sigtram-native-brand.css')) }}">
+@else
 <link rel="stylesheet" href="{{ asset('css/sigtram-modules.css') }}?v={{ filemtime(public_path('css/sigtram-modules.css')) }}">
 <link rel="stylesheet" href="{{ asset('css/sigtram-typography.css') }}?v={{ filemtime(public_path('css/sigtram-typography.css')) }}">
 <script src="{{ asset('js/sigtram-modules.js') }}?v={{ filemtime(public_path('js/sigtram-modules.js')) }}" defer></script>
+@endif

@@ -5,179 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sigtram | Adjuntar</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --ink: #0f172a;
-            --ink-2: #334155;
-            --muted: #64748b;
-            --faint: #94a3b8;
-            --line: #e6ecf2;
-            --bg: #f6f8fb;
-            --card: #ffffff;
-            --accent: #334155;
-            --accent-soft: #f1f5f9;
-            --radius: 10px;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: "Figtree", "Segoe UI", Tahoma, sans-serif;
-            background: var(--bg);
-            color: var(--ink-2);
-            font-size: 13px;
-        }
-        .wrap { max-width: 1200px; margin: 0 auto; padding: 1rem 1.25rem 2.5rem; }
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/segi-adjuntar.css', 'resources/js/app.js'])
 
-        /* Filtros como el antiguo: una línea Palabra / Buscar por / Buscar, otra Fecha */
-        .search-box {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: .85rem 1rem;
-            margin-bottom: .85rem;
-            text-align: center;
-        }
-        .search-box .row { margin: .35rem 0; }
-        .search-box label {
-            font-weight: 700; color: var(--ink-2); margin-right: .25rem;
-        }
-        .search-box input[type=text],
-        .search-box select {
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            padding: .35rem .5rem;
-            font: inherit;
-            font-weight: 600;
-            color: var(--ink);
-            outline: none;
-            vertical-align: middle;
-        }
-        .search-box input[type=text]:focus,
-        .search-box select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(51,65,85,.12);
-        }
-        .search-box input#criterio { width: 11rem; }
-        .search-box input#fecha { width: 5.5rem; }
-        .search-box select { min-width: 11rem; }
-        .btn {
-            display: inline-flex; align-items: center; gap: .3rem;
-            border: 1px solid var(--ink);
-            background: var(--ink);
-            color: #fff;
-            font: inherit; font-weight: 700;
-            padding: .38rem .85rem;
-            border-radius: 6px;
-            cursor: pointer;
-            vertical-align: middle;
-        }
-        .btn:hover { background: #1e293b; }
-
-        .flash {
-            margin-bottom: .75rem; padding: .55rem .8rem; border-radius: 8px;
-            background: #fff; border: 1px solid var(--line); font-weight: 700; text-align: center;
-        }
-
-        .pager {
-            text-align: right;
-            padding: .35rem .15rem .55rem;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .pager a { color: var(--accent); text-decoration: none; margin: 0 .15rem; }
-        .pager a:hover { text-decoration: underline; }
-        .pager b { margin: 0 .15rem; color: var(--ink); }
-
-        /* Tabla estilo CSSTableGenerator / antiguo */
-        .tbl-wrap {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            overflow: hidden;
-        }
-        table.rep {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-        table.rep thead th {
-            background: #0f172a;
-            color: #e2e8f0;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .03em;
-            padding: .55rem .45rem;
-            text-align: left;
-        }
-        table.rep thead th.c { text-align: center; }
-        table.rep tbody td {
-            padding: .4rem .45rem;
-            border-bottom: 1px solid var(--line);
-            vertical-align: middle;
-            word-wrap: break-word;
-        }
-        table.rep tbody tr.fila_1 { background: #fff; }
-        table.rep tbody tr.fila_2 { background: #f8fafc; }
-        table.rep tbody tr:hover { background: #f1f5f9; }
-        table.rep .c { text-align: center; }
-        table.rep .exp { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 12px; }
-        table.rep input[type=file] {
-            width: 100%;
-            font-size: 11px;
-        }
-        table.rep a.icon {
-            color: var(--muted);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px; height: 22px;
-            text-decoration: none;
-        }
-        table.rep a.icon:hover { color: var(--ink); }
-        table.rep .miss { color: #94a3b8; }
-        table.rep .ok { color: var(--ink-2); }
-        table.rep tr.item td {
-            text-align: center;
-            padding: .85rem .45rem;
-            background: #fff;
-            border-bottom: none;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 1.5rem;
-            font-size: 12px;
-            color: var(--muted);
-            font-weight: 600;
-        }
-        .ver-todo {
-            text-align: center;
-            margin-top: .75rem;
-        }
-        .ver-todo a {
-            font-weight: 800;
-            color: var(--ink);
-            text-decoration: none;
-        }
-        .ver-todo a:hover { text-decoration: underline; }
-
-        .col-exp { width: 8%; }
-        .col-nom { width: 25%; }
-        .col-fec { width: 9%; }
-        .col-area { width: 8%; }
-        .col-obs { width: 28%; }
-        .col-ojo { width: 2%; }
-        .col-file { width: 18%; }
-        .col-ok { width: 2%; }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar'])
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_adjuntar" class="sigtram-module">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar'])
+<body class="segi-adjuntar-body">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_adjuntar', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 <div class="wrap">
 
     @if (!empty($ok))
@@ -273,7 +111,7 @@
                             <td title="{{ $row->de_obse_trmte }}">{{ $row->obse_corto }}</td>
                             <td class="c">
                                 <a class="icon" href="{{ route('tramites.busca_expedi', ['cdgo_tram' => $row->cdgo_dto_trmte, 'anex' => 1]) }}"
-                                   onclick="window.open(this.href, this.target, 'scrollbars=auto,width=470,height=510'); return false;"
+                                   data-action="popup" data-width="470" data-height="510"
                                    target="_blank" title="Ver">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -286,7 +124,6 @@
                                     <span class="miss" title="Sin adjunto"><i class="fas fa-times"></i></span>
                                 @else
                                     <a class="icon ok" href="{{ route('tramites.adjuntar.archivo', ['nombre' => $row->de_urls_imag]) }}"
-                                       onclick="window.open(this.href, this.target); return false;"
                                        target="_blank" title="Ver archivo">
                                         <i class="fas fa-check"></i>
                                     </a>

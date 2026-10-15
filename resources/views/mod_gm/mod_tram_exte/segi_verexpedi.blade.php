@@ -5,28 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Seguimiento del expediente' }} — SIGTRAM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1rem; background: rgb(15 23 42 / 0.7); backdrop-filter: blur(8px);
-        }
-        .fila-1 { background: #fff; }
-        .fila-2 { background: #f3f4f6; }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/reportes-expedientes.css', 'resources/js/app.js'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.segi_verexpedi" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="segiVerExpedi()" x-init="init()">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi'])
+@php
+    $frontendConfig = [
+        'routes' => [
+            'buscar' => route('mod_gm.segi_verexpedi.buscar', [], false),
+            'historico' => route('mod_gm.segi_verexpedi.historico', [], false),
+            'cambiar' => route('mod_gm.segi_verexpedi.cambiar_estado', [], false),
+            'buscaExpediDeta' => route('tramites.busca_expedi_deta', [], false),
+            'descargar' => route('mod_gm.segi_expedi.descargar', ['id' => '__HID__'], false),
+        ],
+        'estados' => $estados ?? [],
+    ];
+@endphp
+<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="segiVerExpedi()" data-config="{{ json_encode($frontendConfig) }}">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.segi_verexpedi', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -219,191 +220,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function segiVerExpedi() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const routes = {
-                buscar: @json(route('mod_gm.segi_verexpedi.buscar', [], false)),
-                historico: @json(route('mod_gm.segi_verexpedi.historico', [], false)),
-                cambiar: @json(route('mod_gm.segi_verexpedi.cambiar_estado', [], false)),
-                buscaExpediDeta: @json(route('tramites.busca_expedi_deta', [], false)),
-                descargar: @json(route('mod_gm.segi_expedi.descargar', ['id' => '__HID__'], false)),
-            };
-
-            return {
-                routes,
-                loading: false,
-                items: [],
-                total: 0,
-                pagina: 1,
-                paginas: 1,
-                marcados: [],
-                seleccionado: null,
-                estados: @json($estados ?? []),
-                historico: { expediente: '', rows: [] },
-                toast: { show: false, message: '', type: 'success' },
-                filtros: {
-                    palabra: '',
-                    campo: 'p_dto_trmtes.nu_expe_todo',
-                },
-                modalOjo: { show: false, url: '' },
-                modalEstado: { show: false, item: null, esta: '', observacion: 'Se cambio el estado en el area ' },
-                selectPendiente: null,
-
-                get todosMarcados() {
-                    return this.items.length > 0 && this.marcados.length === this.items.length;
-                },
-
-                init() { this.fetchLista(); },
-
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => { this.toast.show = false; }, 3500);
-                },
-                buscarConValidacion() {
-                    if (!this.filtros.palabra.trim()) {
-                        this.showToast('Debe especificar un criterio de busqueda', 'error');
-                        return;
-                    }
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                verTodo() {
-                    this.filtros.palabra = '';
-                    this.pagina = 1;
-                    this.historico = { expediente: '', rows: [] };
-                    this.seleccionado = null;
-                    this.fetchLista();
-                },
-                marcarTodos() { this.marcados = this.items.map(i => i.id); },
-                desmarcarTodos() { this.marcados = []; },
-                paginasVisibles() {
-                    const tam = 6;
-                    const seccion = Math.floor((this.pagina - 1) / tam);
-                    const inicio = seccion * tam + 1;
-                    const final = Math.min(inicio + tam - 1, this.paginas);
-                    const arr = [];
-                    for (let i = inicio; i <= final; i++) arr.push(i);
-                    return arr;
-                },
-                abrirOjo(item) {
-                    this.modalOjo.url = routes.buscaExpediDeta + '?cdgo_tram=' + item.id;
-                    this.modalOjo.show = true;
-                },
-                async abrirHistorico(item) {
-                    this.seleccionado = item.id;
-                    try {
-                        const res = await fetch(routes.historico, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ id: item.id }),
-                        });
-                        const data = await res.json();
-                        this.historico = {
-                            expediente: data.expediente || item.expediente,
-                            rows: data.data || [],
-                        };
-                    } catch (e) {
-                        this.showToast('No se pudo cargar el histórico.', 'error');
-                    }
-                },
-                pedirCambioEstado(item, nuevo, selectEl) {
-                    this.selectPendiente = selectEl;
-                    if (String(item.estado_id) === '7') {
-                        this.showToast('El expediente ya no puede cambiar de estado', 'error');
-                        selectEl.value = item.estado_id;
-                        return;
-                    }
-                    if (String(nuevo) === String(item.estado_id)) {
-                        return;
-                    }
-                    this.modalEstado = {
-                        show: true,
-                        item,
-                        esta: String(nuevo),
-                        observacion: 'Se cambio el estado en el area ',
-                    };
-                },
-                cancelarEstado() {
-                    if (this.selectPendiente && this.modalEstado.item) {
-                        this.selectPendiente.value = this.modalEstado.item.estado_id;
-                    }
-                    this.modalEstado.show = false;
-                    this.selectPendiente = null;
-                },
-                async confirmarEstado() {
-                    const m = this.modalEstado;
-                    if (!m.item) return;
-                    try {
-                        const res = await fetch(routes.cambiar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                id: m.item.id,
-                                esta: m.esta,
-                                doc: m.item.movimiento_id,
-                                est_act: m.item.estado_id,
-                                observacion: m.observacion,
-                            }),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.showToast(data.message || 'Estado actualizado.');
-                            this.modalEstado.show = false;
-                            this.selectPendiente = null;
-                            await this.fetchLista();
-                            this.abrirHistorico(m.item);
-                        } else {
-                            this.showToast(data.message || 'No se pudo cambiar el estado.', 'error');
-                            this.cancelarEstado();
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cambiar el estado.', 'error');
-                        this.cancelarEstado();
-                    }
-                },
-                async fetchLista() {
-                    this.loading = true;
-                    this.marcados = [];
-                    try {
-                        const res = await fetch(routes.buscar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ ...this.filtros, page: this.pagina }),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.items = data.data || [];
-                            this.total = data.total || 0;
-                            this.pagina = data.current_page || 1;
-                            this.paginas = data.last_page || 1;
-                        } else {
-                            this.showToast(data.message || 'No se pudo cargar el listado.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cargar expedientes.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>

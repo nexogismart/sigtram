@@ -166,6 +166,9 @@
                                 <button @click="openEditModal({{ \Illuminate\Support\Js::from([
                                         'cdgo_lgin' => $usu->cdgo_lgin,
                                         'nu_docu' => $usu->nu_docu,
+                                        'ap_pate' => $usu->ap_pate ?? '',
+                                        'ap_mate' => $usu->ap_mate ?? '',
+                                        'no_usrio' => $usu->no_usrio ?? ($usu->no_crto ?? ''),
                                         'de_lgin' => $usu->de_lgin,
                                         'cdgo_prfle' => $usu->cdgo_prfle,
                                         'de_mail' => $usu->de_mail,
@@ -641,43 +644,34 @@
                     this.tempCargosList = [];
                     this.selectedCargos = [];
                     this.cargoPrincipalId = '';
+
+                    // Inicializar inmediatamente formData con los datos exactos del usuario seleccionado
+                    this.formData = {
+                        cdgo_lgin: user.cdgo_lgin,
+                        nu_docu: user.nu_docu || '',
+                        ap_pate: user.ap_pate || '',
+                        ap_mate: user.ap_mate || '',
+                        no_usrio: user.no_usrio || '',
+                        de_dire: user.de_dire || '',
+                        nu_tele: user.nu_tele || '',
+                        de_mail: user.de_mail || '',
+                        de_lgin: user.de_lgin || '',
+                        cdgo_prfle: user.cdgo_prfle || '',
+                        cdgo_cmpnia: '2',
+                        de_pass: '',
+                        de_pass_confirmation: '',
+                        in_esta: String(user.in_esta) === '0' ? '0' : '1'
+                    };
+
                     this.openModal = true;
-                    this.formData.cdgo_lgin = user.cdgo_lgin;
-                    this.formData.de_lgin = user.de_lgin;
-                    this.formData.de_pass = '';
-                    this.formData.de_pass_confirmation = '';
-                    this.formData.in_esta = String(user.in_esta) === '0' ? '0' : '1';
                     this.$nextTick(() => this.syncEstadoAcceso());
                     setTimeout(() => {
                         this.formData.de_pass = '';
                         this.formData.de_pass_confirmation = '';
                     }, 250);
-                    
-                    // 1. Cargar datos del servidor vía AJAX primero para autocompletar la persona natural
-                    fetch(`/mod_seguridad/seguridad-usuario/buscar-dni/${user.nu_docu}`)
-                        .then(res => res.json().catch(() => ({ success: false })))
-                        .then(res => {
-                            this.formData = {
-                                cdgo_lgin: user.cdgo_lgin,
-                                nu_docu: user.nu_docu,
-                                ap_pate: res.success ? res.user.ap_pate : '',
-                                ap_mate: res.success ? res.user.ap_mate : '',
-                                no_usrio: res.success ? res.user.no_usrio : '',
-                                de_dire: user.de_dire || '',
-                                nu_tele: user.nu_tele || '',
-                                de_mail: user.de_mail || '',
-                                de_lgin: user.de_lgin,
-                                cdgo_prfle: user.cdgo_prfle,
-                                cdgo_cmpnia: '2', // default
-                                de_pass: '',
-                                de_pass_confirmation: '',
-                                in_esta: String(user.in_esta) === '0' ? '0' : '1'
-                            };
-                            this.$nextTick(() => this.syncEstadoAcceso());
-                            
-                            // 2. Cargar cargos del usuario editado
-                            return fetch(`/mod_seguridad/seguridad-accesos/cargos-usuario/${user.cdgo_lgin}`);
-                        })
+
+                    // Cargar cargos del usuario editado
+                    fetch(`/mod_seguridad/seguridad-accesos/cargos-usuario/${user.cdgo_lgin}`)
                         .then(res => {
                             if (!res.ok) throw new Error('Error al cargar cargos de usuario.');
                             return res.json();

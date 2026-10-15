@@ -4,33 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cita Virtual — {{ $numeroExpediente }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --ink:#0f172a; --line:#d8dee6; --bg:#f6f8fb; }
-        * { box-sizing: border-box; }
-        body { margin:0; padding:12px; font-family:"Figtree","Segoe UI",Tahoma,sans-serif; font-size:12px; color:#334155; background:var(--bg); }
-        .wrap { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
-        .titulo { text-align:center; font-weight:700; font-size:15px; color:var(--ink); margin-bottom:12px; }
-        table { width:100%; border-collapse:collapse; }
-        td { padding:4px; vertical-align:middle; }
-        .item { font-weight:700; color:#1e293b; text-align:right; white-space:nowrap; }
-        .itemtex { text-align:left; }
-        input[type=date], input[type=time], textarea {
-            border:1px solid var(--line); border-radius:4px; padding:4px 6px; font:inherit;
-        }
-        textarea { width:100%; min-height:60px; }
-        .btns { text-align:center; padding-top:14px; }
-        .Button {
-            border:1px solid var(--ink); background:var(--ink); color:#fff; font:inherit; font-weight:700;
-            padding:5px 12px; border-radius:5px; cursor:pointer; margin:0 4px;
-        }
-        .Button.secondary { background:#fff; color:var(--ink); }
-        .error { color:#dc2626; font-size:11px; }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/modales-tramite.css', 'resources/js/app.js'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.gene_expedi_cita" class="sigtram-module">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita'])
+<body class="modal-body">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.gene_expedi_cita', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 <div class="wrap">
 <form action="{{ $storeUrl }}" method="post" name="form1">
     @csrf
@@ -111,7 +95,7 @@
 
     <div class="btns">
         <button type="submit" class="Button">Generar Cita</button>
-        <button type="button" class="Button secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="Button secondary" data-action="close">Cerrar</button>
     </div>
 </form>
 </div>

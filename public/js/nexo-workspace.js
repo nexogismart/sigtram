@@ -648,6 +648,46 @@
         persist("recent", recent);
         renderHome();
     }
+    function findAssignedModule(url) {
+        const target = safeUrl(url);
+        if (!target) return null;
+        const parsed = new URL(target);
+        if (parsed.origin !== location.origin) return null;
+        return modules.find(entry => {
+            const assigned = new URL(entry.url);
+            return !entry.popup && assigned.origin === parsed.origin && assigned.pathname === parsed.pathname;
+        }) || null;
+    }
+    function activateAssignedModule(entry, targetUrl = entry.url) {
+        $("#dashboardHome").hidden = true;
+        $("#modulePanel").hidden = false;
+        $("#contentFrame").src = targetUrl;
+        $("#contentFrame").title = entry.label;
+        $("#moduleTitle").textContent =
+            `${entry.group} / ${entry.label}${entry.badge ? " · " + entry.badge : ""}`;
+        $("#currentPage").textContent = entry.label;
+        $("#openModuleTab").href = targetUrl;
+        $(".dock-item[data-home]").classList.remove("active");
+        $(".dock-item[data-home]").removeAttribute("aria-current");
+        document.title = `${entry.label}${entry.badge ? " · " + entry.badge : ""} · ${entry.group} · SIGTRAM`;
+        window.scrollTo({ top: 0 });
+        $("#moduleTitle").tabIndex = -1;
+        $("#moduleTitle").focus({ preventScroll: true });
+    }
+    // Compatibility for the backend's iframe navigation. Only assigned menu destinations qualify.
+    window.activarModuloPorUrl = url => {
+        const entry = findAssignedModule(url);
+        if (!entry) return false;
+        recordAccess(entry);
+        if (explorer.open) explorer.close();
+        activateAssignedModule(entry, safeUrl(url));
+        return true;
+    };
+    window.loadContentInPanel = url => {
+        const opened = window.activarModuloPorUrl(url);
+        if (!opened) notify("Este acceso no está disponible en tu menú asignado.");
+        return opened;
+    };
     document.addEventListener("click", (event) => {
         const favorite = event.target.closest("[data-favorite-key]");
         if (favorite) {
@@ -734,20 +774,7 @@
         }
         event.preventDefault();
         if (explorer.open) explorer.close();
-        $("#dashboardHome").hidden = true;
-        $("#modulePanel").hidden = false;
-        $("#contentFrame").src = entry.url;
-        $("#contentFrame").title = entry.label;
-        $("#moduleTitle").textContent =
-            `${entry.group} / ${entry.label}${entry.badge ? " · " + entry.badge : ""}`;
-        $("#currentPage").textContent = entry.label;
-        $("#openModuleTab").href = entry.url;
-        $(".dock-item[data-home]").classList.remove("active");
-        $(".dock-item[data-home]").removeAttribute("aria-current");
-        document.title = `${entry.label}${entry.badge ? " · " + entry.badge : ""} · ${entry.group} · SIGTRAM`;
-        window.scrollTo({ top: 0 });
-        $("#moduleTitle").tabIndex = -1;
-        $("#moduleTitle").focus({ preventScroll: true });
+        activateAssignedModule(entry);
     });
     $("#closeExplorer").addEventListener("click", () => explorer.close());
     explorer.addEventListener("click", (event) => {

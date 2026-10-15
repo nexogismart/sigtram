@@ -6,24 +6,46 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Ingresar Expedientes' }} — SIGTRAM</title>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .nav-active { background-color: #1e293b; color: #fff; }
-        .nav-idle { color: #4b5563; }
-        .nav-idle:hover { background-color: #f8fafc; }
-        .field-error { border-color: #f87171 !important; background-color: #fef2f2 !important; }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.index'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+@php
+    $frontendConfig = [
+        'routes' => [
+            'store' => route('tramites.ingresar.store', [], false),
+            'buscarUsuario' => route('tramites.ingresar.buscar_usuario', [], false),
+            'buscarJuridico' => route('tramites.ingresar.buscar_juridico', [], false),
+            'sugerirJuridicos' => route('tramites.ingresar.sugerir_juridicos', [], false),
+            'subgerencias' => route('tramites.ingresar.subgerencias', ['gerencia' => '__GID__'], false),
+            'tramites' => route('tramites.ingresar.tramites', ['servicio' => '__SID__'], false),
+            'requisitos' => route('tramites.ingresar.requisitos', ['tramite' => '__TID__'], false),
+            'buscarTupa' => route('tramites.ingresar.buscar_tramites_tupa', [], false),
+            'lista' => route('tramites.ingresar.lista', [], false),
+            'contarFolios' => route('tramites.ingresar.contar_folios', [], false),
+            'buscaExpedi' => route('tramites.busca_expedi', [], false),
+            'hojaRuta' => route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false),
+            'bandeja' => route('tramites.bandeja', [], false),
+        ],
+        'tiposDocumento' => $tiposDocumento,
+        'catalogoValido' => (bool) ($tipoExterno && $tipoSimple && $tipoObservado),
+        'tipoExterno' => $tipoExterno ? (string) $tipoExterno->cdgo_tpo_trmte : null,
+        'tipoSimple' => $tipoSimple ? (string) $tipoSimple->cdgo_tpo_trmte : null,
+        'tipoObservado' => $tipoObservado ? (string) $tipoObservado->cdgo_tpo_trmte : null,
+        'areaObservado' => (int) ($areaObservado->cdgo_area ?? 0),
+        'etiquetaExterno' => $tipoExterno->de_tpo_trmte ?? 'Externo',
+        'etiquetaSimple' => $tipoSimple->de_tpo_trmte ?? 'Simple',
+        'tipoDocDefault' => (string) (optional($tiposDocumento->first())->cdgo_dcmntos_iden ?: '1'),
+        'csrfToken' => csrf_token(),
+    ];
+@endphp
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.index', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.index" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="ingresoExpediente()" x-init="init()">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.index'])
+<body id="ingreso-expediente-app" data-config='@json($frontendConfig)' class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="ingresoExpediente()" x-init="init()">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.index', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -141,9 +163,69 @@
             <section class="min-w-0">
                 <form @submit.prevent="submitForm" enctype="multipart/form-data" class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                     <div class="bg-slate-800 text-white px-5 py-3 flex items-center justify-between gap-3">
-                        <h2 class="text-sm sm:text-base font-bold uppercase tracking-wide">{{ $tituloOpcion ?? 'Ingresar expedientes' }}</h2>
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-file-signature text-amber-400 text-base"></i>
+                            <h2 class="text-sm sm:text-base font-bold uppercase tracking-wide">{{ $tituloOpcion ?? 'Ingresar expedientes' }}</h2>
+                        </div>
                         <span class="text-[10px] font-black bg-white/15 px-2.5 py-1 rounded-full">{{ $fechaServidor }}</span>
                     </div>
+
+                    {{-- Estado y acciones post-registro --}}
+                    <div x-show="ultimoExpediente" x-cloak class="p-4 bg-emerald-50 border-b border-emerald-200">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-600 text-white text-xs">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                    <h3 class="text-sm font-black text-emerald-900 uppercase">Expediente registrado exitosamente</h3>
+                                </div>
+                                <p class="text-xs text-emerald-700 font-semibold mt-1">
+                                    Número: <strong class="text-emerald-950 font-black text-sm" x-text="ultimoExpediente.numero"></strong> |
+                                    Folios: <span x-text="ultimoExpediente.folios"></span>
+                                </p>
+                                <template x-if="voucherBloqueado">
+                                    <p class="text-xs text-amber-800 font-bold mt-1.5 flex items-center gap-1.5">
+                                        <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                                        <span>El comprobante no pudo abrirse automáticamente</span>
+                                    </p>
+                                </template>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" @click="abrirComprobante(ultimoExpediente.voucher_url)"
+                                        class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                                    <i class="fas fa-print"></i>
+                                    <span>Imprimir comprobante</span>
+                                </button>
+                                <button type="button" @click="abrirExpediente(ultimoExpediente.show_url)"
+                                        class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                                    <i class="fas fa-folder-open"></i>
+                                    <span>Ver expediente</span>
+                                </button>
+                                <button type="button" @click="volverBandeja()"
+                                        class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                                    <i class="fas fa-inbox"></i>
+                                    <span>Ir a bandeja externa</span>
+                                </button>
+                                <button type="button" @click="registrarOtro()"
+                                        class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Registrar otro</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @if(!$tipoExterno || !$tipoSimple || !$tipoObservado)
+                        <div class="m-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 flex items-start gap-3">
+                            <i class="fas fa-exclamation-triangle text-amber-600 text-base mt-0.5"></i>
+                            <div>
+                                <h4 class="text-xs font-black uppercase tracking-wider text-amber-800">Catálogo de trámites incompleto</h4>
+                                <p class="text-xs text-amber-700 mt-1">
+                                    No se encontraron activos los tipos de trámite requeridos (E, S u O) en el catálogo general. El ingreso de expedientes se encuentra inhabilitado hasta configurar el catálogo.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="p-4 sm:p-6 space-y-5">
 
@@ -405,7 +487,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                                 <div class="md:col-span-2">
                                     <label class="block text-[10px] font-bold text-gray-500 mb-1">Adjuntar</label>
-                                    <input type="file" @change="onArchivo($event)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                    <input type="file" id="fle_adjunto" @change="onArchivo($event)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                            class="w-full text-xs font-semibold file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-white file:text-[10px] file:font-black file:uppercase">
                                 </div>
                                 <div>
@@ -431,8 +513,8 @@
                             <div class="flex flex-col md:flex-row gap-3">
                                 <textarea x-model="form.observaciones" rows="4" maxlength="1000"
                                           class="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-slate-500 outline-none uppercase"></textarea>
-                                <button type="submit" :disabled="loading"
-                                        class="self-center px-8 py-3 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-md">
+                                <button type="submit" :disabled="loading || !catalogoValido"
+                                        class="self-center px-8 py-3 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-md">
                                     <span x-show="!loading"><i class="fas fa-save mr-1"></i> Guardar</span>
                                     <span x-show="loading" x-cloak><i class="fas fa-spinner fa-spin mr-1"></i> Registrando...</span>
                                 </button>
@@ -443,415 +525,6 @@
             </section>
         </div>
     </div>
-
-    <script>
-        function ingresoExpediente() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const routes = {
-                store: @json(route('tramites.ingresar.store', [], false)),
-                buscarUsuario: @json(route('tramites.ingresar.buscar_usuario', [], false)),
-                buscarJuridico: @json(route('tramites.ingresar.buscar_juridico', [], false)),
-                sugerirJuridicos: @json(route('tramites.ingresar.sugerir_juridicos', [], false)),
-                subgerencias: @json(route('tramites.ingresar.subgerencias', ['gerencia' => '__GID__'], false)),
-                tramites: @json(route('tramites.ingresar.tramites', ['servicio' => '__SID__'], false)),
-                requisitos: @json(route('tramites.ingresar.requisitos', ['tramite' => '__TID__'], false)),
-                buscarTupa: @json(route('tramites.ingresar.buscar_tramites_tupa', [], false)),
-                lista: @json(route('tramites.ingresar.lista', [], false)),
-                contarFolios: @json(route('tramites.ingresar.contar_folios', [], false)),
-                buscaExpedi: @json(route('tramites.busca_expedi', [], false)),
-                hojaRuta: @json(route('mod_gm.segi_expedi.hoja_ruta', ['id' => '__HID__'], false)),
-            };
-
-            return {
-                loading: false,
-                loadingBusqueda: false,
-                loadingSubgerencias: false,
-                loadingTramites: false,
-                loadingRequisitos: false,
-                loadingBusquedaTupa: false,
-                listaSubgerencias: [],
-                listaTramites: [],
-                listaRequisitos: [],
-                busquedaDirectaTerm: '',
-                resultadosTupa: [],
-                mostrarResultados: false,
-                sugerenciasJuri: [],
-                codigoGerencia: '',
-                archivo: null,
-                silencio: {},
-                errors: {},
-                toast: { message: '', type: 'success', show: false },
-                tiposDocumento: @json($tiposDocumento),
-                tipoExterno: String(@json((int) ($tipoExterno->cdgo_tpo_trmte ?? 22))),
-                tipoSimple: String(@json((int) ($tipoSimple->cdgo_tpo_trmte ?? 17))),
-                tipoObservado: String(@json((int) ($tipoObservado->cdgo_tpo_trmte ?? 40))),
-                areaObservado: @json((int) ($areaObservado->cdgo_area ?? 0)),
-                etiquetaExterno: @json($tipoExterno->de_tpo_trmte ?? 'Externo'),
-                etiquetaSimple: @json($tipoSimple->de_tpo_trmte ?? 'Simple'),
-                lista: {
-                    modo: 'generico',
-                    criterio: '',
-                    campo: 'p_dto_trmtes.nu_expe_todo',
-                    fecha: '',
-                    desde: '',
-                    hasta: '',
-                    pagina: 1,
-                    paginas: 1,
-                    total: 0,
-                    items: [],
-                    loading: false,
-                },
-                form: {
-                    tipo_tramite: 'externo',
-                    cdgo_tpo_trmte: String(@json((int) ($tipoExterno->cdgo_tpo_trmte ?? 22))),
-                    cdgo_tpo_observado: String(@json((int) ($tipoObservado->cdgo_tpo_trmte ?? 40))),
-                    cdgo_area_observado: @json((int) ($areaObservado->cdgo_area ?? 0)),
-                    tipo_persona: 'natural',
-                    tipo_doc: @json((string) (optional($tiposDocumento->first())->cdgo_dcmntos_iden ?: '1')),
-                    num_doc: '',
-                    nombres: '',
-                    ape_paterno: '',
-                    ape_materno: '',
-                    telefono: '',
-                    correo: '',
-                    direccion: '',
-                    ruc: '',
-                    razon_social: '',
-                    tel_jur: '',
-                    cor_jur: '',
-                    dir_jur: '',
-                    destino_modo: 'servicios',
-                    gerencia: '',
-                    subgerencia: '',
-                    servicio: '',
-                    tipo_tram_tupa: '',
-                    folios: 0,
-                    observaciones: '',
-                    observado: false,
-                    requisitos_marcados: [],
-                    exinatu: '',
-                    exijuri: '',
-                },
-
-                init() {
-                    this.fetchLista();
-                    this.$watch('form.tipo_doc', () => {
-                        this.form.num_doc = '';
-                        this.errors.num_doc = null;
-                    });
-                    this.$watch('form.tipo_persona', () => { this.errors = {}; });
-                },
-
-                esExterno() {
-                    return String(this.form.cdgo_tpo_trmte) === String(this.tipoExterno);
-                },
-                esSinDocumento() {
-                    const t = (this.tiposDocumento || []).find(d => String(d.cdgo_dcmntos_iden) === String(this.form.tipo_doc));
-                    const txt = String(t?.dc_dcmntos_iden || '').toUpperCase();
-                    return String(this.form.tipo_doc) === '5' || txt.includes('SIN DOC');
-                },
-                maxDoc() {
-                    const t = (this.tiposDocumento || []).find(d => String(d.cdgo_dcmntos_iden) === String(this.form.tipo_doc));
-                    const txt = String(t?.dc_dcmntos_iden || '').toUpperCase();
-                    if (txt.includes('DNI')) return 8;
-                    if (txt.includes('CARNET') || txt.includes('CE') || txt.includes('EXTRANJ')) return 9;
-                    return 20;
-                },
-                onTipoIngresoChange() {
-                    this.form.tipo_tramite = this.esExterno() ? 'externo' : 'simple';
-                    this.form.destino_modo = this.esExterno() ? 'servicios' : 'areas';
-                },
-                showToast(message, type = 'success') {
-                    this.toast = { message, type, show: true };
-                    setTimeout(() => { this.toast.show = false; }, 4000);
-                },
-                seleccionarGerenciaPorCodigo() {
-                    if (!this.codigoGerencia) return;
-                    this.form.gerencia = String(this.codigoGerencia);
-                    this.cargarSubgerencias();
-                },
-                abrirHojaRuta(id) {
-                    window.open(routes.hojaRuta.replace('__HID__', id), 'ventana', 'scrollbars=auto,width=800,height=600');
-                },
-                abrirBusca(item) {
-                    const anex = (String(item.cdgo_estdo_trmte) === '3' || String(item.cdgo_estdo_trmte) === '26') ? '' : '&anex=1';
-                    window.open(routes.buscaExpedi + '?cdgo_tram=' + item.cdgo_dto_trmte + anex, 'ventana', 'scrollbars=auto,width=520,height=620');
-                },
-
-                async fetchLista() {
-                    this.lista.loading = true;
-                    const params = new URLSearchParams({
-                        modo: this.lista.modo,
-                        criterio: this.lista.criterio,
-                        campo: this.lista.campo,
-                        fecha: this.lista.fecha,
-                        desde: this.lista.desde,
-                        hasta: this.lista.hasta,
-                        pagina: this.lista.pagina,
-                    });
-                    try {
-                        const res = await fetch(routes.lista + '?' + params.toString(), { headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } });
-                        const data = await res.json();
-                        this.lista.items = data.items || [];
-                        this.lista.total = data.total || 0;
-                        this.lista.pagina = data.pagina || 1;
-                        this.lista.paginas = data.paginas || 1;
-                    } catch (e) {
-                        this.showToast('No se pudo cargar la lista de expedientes.', 'error');
-                    } finally {
-                        this.lista.loading = false;
-                    }
-                },
-
-                async cargarSubgerencias() {
-                    this.form.subgerencia = '';
-                    this.listaSubgerencias = [];
-                    if (!this.form.gerencia) return;
-                    this.loadingSubgerencias = true;
-                    try {
-                        const res = await fetch(routes.subgerencias.replace('__GID__', this.form.gerencia));
-                        this.listaSubgerencias = await res.json();
-                    } finally {
-                        this.loadingSubgerencias = false;
-                    }
-                },
-
-                async cargarTramites() {
-                    this.form.tipo_tram_tupa = '';
-                    this.listaTramites = [];
-                    this.listaRequisitos = [];
-                    this.silencio = {};
-                    if (!this.form.servicio) return;
-                    this.loadingTramites = true;
-                    try {
-                        const res = await fetch(routes.tramites.replace('__SID__', this.form.servicio));
-                        this.listaTramites = await res.json();
-                    } finally {
-                        this.loadingTramites = false;
-                    }
-                },
-
-                async cargarRequisitos() {
-                    this.listaRequisitos = [];
-                    this.form.requisitos_marcados = [];
-                    this.silencio = {};
-                    if (!this.form.tipo_tram_tupa) return;
-                    this.loadingRequisitos = true;
-                    try {
-                        const res = await fetch(routes.requisitos.replace('__TID__', this.form.tipo_tram_tupa));
-                        const data = await res.json();
-                        this.listaRequisitos = Array.isArray(data) ? data : (data.requisitos || []);
-                        this.silencio = data.silencio || {};
-                    } finally {
-                        this.loadingRequisitos = false;
-                    }
-                },
-
-                async buscarTramitesTupa() {
-                    if (this.busquedaDirectaTerm.length < 3) {
-                        this.resultadosTupa = [];
-                        this.mostrarResultados = false;
-                        return;
-                    }
-                    this.loadingBusquedaTupa = true;
-                    this.mostrarResultados = true;
-                    try {
-                        const res = await fetch(routes.buscarTupa + '?term=' + encodeURIComponent(this.busquedaDirectaTerm));
-                        this.resultadosTupa = await res.json();
-                    } finally {
-                        this.loadingBusquedaTupa = false;
-                    }
-                },
-
-                seleccionarTupa(item) {
-                    this.busquedaDirectaTerm = item.nombre;
-                    this.form.tipo_tram_tupa = item.id;
-                    this.silencio = { in_sile_admi: item.in_sile_admi, nu_tiem_sile: item.nu_tiem_sile };
-                    this.mostrarResultados = false;
-                    this.cargarRequisitos();
-                },
-
-                async sugerirJuridicos() {
-                    if ((this.form.razon_social || '').length < 3) {
-                        this.sugerenciasJuri = [];
-                        return;
-                    }
-                    const res = await fetch(routes.sugerirJuridicos + '?term=' + encodeURIComponent(this.form.razon_social));
-                    this.sugerenciasJuri = await res.json();
-                },
-
-                async buscarJuridico() {
-                    if ((this.form.razon_social || '').trim().length < 3) return;
-                    this.loadingBusqueda = true;
-                    try {
-                        const res = await fetch(routes.buscarJuridico + '?razon=' + encodeURIComponent(this.form.razon_social));
-                        const result = await res.json();
-                        if (result.success && result.data) {
-                            this.aplicarJuridico(result.data);
-                            this.showToast('Datos del remitente cargados.', 'success');
-                        }
-                    } finally {
-                        this.loadingBusqueda = false;
-                    }
-                },
-
-                aplicarJuridico(data) {
-                    this.form.exijuri = data.id || '';
-                    this.form.razon_social = data.razon_social || this.form.razon_social;
-                    this.form.ruc = data.ruc || this.form.ruc;
-                    this.form.tel_jur = data.tel_jur || '';
-                    this.form.cor_jur = data.cor_jur || '';
-                    this.form.dir_jur = data.dir_jur || '';
-                },
-
-                async buscarPersona(tipo) {
-                    const documento = tipo === 'juridica' ? this.form.ruc : this.form.num_doc;
-                    if (!documento || (tipo === 'natural' && this.esSinDocumento())) return;
-                    this.loadingBusqueda = true;
-                    try {
-                        const res = await fetch(routes.buscarUsuario + '?tipo=' + tipo + '&documento=' + encodeURIComponent(documento));
-                        const result = await res.json();
-                        if (res.ok && result.success) {
-                            const data = result.data;
-                            if (tipo === 'juridica') {
-                                this.aplicarJuridico(data);
-                            } else {
-                                this.form.exinatu = data.id || '';
-                                this.form.nombres = data.nombres || '';
-                                this.form.ape_paterno = data.ape_paterno || '';
-                                this.form.ape_materno = data.ape_materno || '';
-                                this.form.telefono = data.telefono || '';
-                                this.form.correo = data.correo || '';
-                                this.form.direccion = data.direccion || '';
-                                if (data.tipo_doc) this.form.tipo_doc = String(data.tipo_doc);
-                            }
-                            this.errors = {};
-                            this.showToast('Datos del remitente cargados correctamente.', 'success');
-                        } else {
-                            this.showToast(result.message || 'Persona no encontrada en la base de datos.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al buscar el solicitante.', 'error');
-                    } finally {
-                        this.loadingBusqueda = false;
-                    }
-                },
-
-                async onArchivo(event) {
-                    this.archivo = event.target.files[0] || null;
-                    if (!this.archivo) return;
-                    if (this.archivo.size > 20 * 1024 * 1024) {
-                        this.showToast('El archivo adjunto supera el límite de 20MB.', 'error');
-                        event.target.value = '';
-                        this.archivo = null;
-                        return;
-                    }
-                    const fd = new FormData();
-                    fd.append('fle_adjunto', this.archivo);
-                    try {
-                        const res = await fetch(routes.contarFolios, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                            body: fd,
-                        });
-                        const data = await res.json();
-                        if (data.success && data.folios > 0) {
-                            this.form.folios = data.folios;
-                        }
-                    } catch (e) {}
-                },
-
-                validarCliente() {
-                    this.errors = {};
-                    const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'\-]+$/;
-                    const telOk = /^9\d{8}$/;
-                    const dirOk = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\#\/°]+$/;
-
-                    if (this.form.tipo_persona === 'natural') {
-                        if (!this.esSinDocumento() && !this.form.num_doc) this.errors.num_doc = 'El número de documento es obligatorio.';
-                        if (!this.esSinDocumento() && String(this.form.tipo_doc) === '1' && this.form.num_doc.length !== 8) {
-                            this.errors.num_doc = 'El DNI debe tener exactamente 8 dígitos.';
-                        }
-                        if (!this.form.nombres) this.errors.nombres = 'El nombre es obligatorio.';
-                        else if (!soloLetras.test(this.form.nombres)) this.errors.nombres = 'Solo se permiten letras, tildes, espacios, guiones y apóstrofes.';
-                        if (!this.form.ape_paterno) this.errors.ape_paterno = 'El apellido paterno es obligatorio.';
-                        else if (!soloLetras.test(this.form.ape_paterno)) this.errors.ape_paterno = 'Solo se permiten letras, tildes, espacios, guiones y apóstrofes.';
-                        if (!this.form.ape_materno) this.errors.ape_materno = 'El apellido materno es obligatorio.';
-                        else if (!soloLetras.test(this.form.ape_materno)) this.errors.ape_materno = 'Solo se permiten letras, tildes, espacios, guiones y apóstrofes.';
-                        if (this.form.telefono && !telOk.test(this.form.telefono)) this.errors.telefono = 'Ingrese un teléfono de 9 dígitos que inicie con 9.';
-                        if (!this.form.direccion) this.errors.direccion = 'La dirección es obligatoria.';
-                        else if (this.form.direccion.trim().length < 5) this.errors.direccion = 'La dirección debe tener al menos 5 caracteres.';
-                        else if (!dirOk.test(this.form.direccion)) this.errors.direccion = 'Solo se permiten letras, números, espacios y caracteres comunes (.,#/-°).';
-                    } else {
-                        if (!this.form.razon_social) this.errors.razon_social = 'La razón social es obligatoria.';
-                        if (!this.form.ruc) this.errors.ruc = 'El RUC es obligatorio.';
-                        else if (!/^(10|15|17|20)\d{9}$/.test(this.form.ruc)) this.errors.ruc = 'El RUC debe tener 11 dígitos y comenzar con 10, 15, 17 o 20.';
-                        if (this.form.tel_jur && !telOk.test(this.form.tel_jur)) this.errors.tel_jur = 'Ingrese un teléfono de 9 dígitos que inicie con 9.';
-                        if (!this.form.dir_jur) this.errors.dir_jur = 'El domicilio fiscal es obligatorio.';
-                        else if (this.form.dir_jur.trim().length < 5) this.errors.dir_jur = 'El domicilio fiscal debe tener al menos 5 caracteres.';
-                    }
-                    if (!this.form.folios || parseInt(this.form.folios, 10) < 1) {
-                        this.errors.folios = 'Debe especificar la cantidad de folios.';
-                    }
-                    if (this.form.destino_modo === 'areas' && !this.form.gerencia) {
-                        this.showToast('Debe seleccionar una gerencia de destino.', 'error');
-                        return false;
-                    }
-                    if (this.form.destino_modo === 'servicios' && !this.form.tipo_tram_tupa) {
-                        this.showToast('Debe seleccionar el tipo de trámite.', 'error');
-                        return false;
-                    }
-                    if (Object.keys(this.errors).length) {
-                        this.showToast(Object.values(this.errors)[0], 'error');
-                        return false;
-                    }
-                    return true;
-                },
-
-                async submitForm() {
-                    this.form.tipo_tramite = this.esExterno() ? 'externo' : 'simple';
-                    if (!this.validarCliente()) return;
-                    this.loading = true;
-                    try {
-                        const fd = new FormData();
-                        Object.keys(this.form).forEach((k) => {
-                            if (k === 'requisitos_marcados') {
-                                this.form.requisitos_marcados.forEach((id) => fd.append('requisitos_marcados[]', id));
-                            } else if (k === 'observado') {
-                                fd.append('observado', this.form.observado ? '1' : '0');
-                            } else {
-                                fd.append(k, this.form[k] ?? '');
-                            }
-                        });
-                        if (this.archivo) fd.append('fle_adjunto', this.archivo);
-
-                        const res = await fetch(routes.store, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                            body: fd,
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.showToast(data.message || 'Expediente registrado.', 'success');
-                            if (data.voucher_url) {
-                                window.open(data.voucher_url, '_blank', 'scrollbars=yes,width=400,height=550');
-                            }
-                            setTimeout(() => window.location.reload(), 1200);
-                        } else if (data.errors) {
-                            Object.keys(data.errors).forEach((field) => { this.errors[field] = data.errors[field][0]; });
-                            const first = Object.values(this.errors)[0] || 'Revise los campos marcados.';
-                            this.showToast(first, 'error');
-                        } else {
-                            this.showToast(data.message || 'Error al registrar el expediente.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error de red al intentar registrar el expediente.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>
+

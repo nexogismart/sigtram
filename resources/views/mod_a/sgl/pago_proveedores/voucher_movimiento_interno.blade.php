@@ -60,8 +60,8 @@
     <div class="row" style="grid-template-columns: 110px 1fr;">
         <div class="lbl">Adjuntado:&nbsp;</div>
         <div class="val">
-            @if ($data['adjunto'] !== '')
-                <a href="{{ route('mod_tram_inter.descargar', ['nom_archivo' => $data['adjunto']]) }}" target="_blank">Click Ver Adjunto</a>
+            @if (!empty($data['adjunto']) && !empty($data['id']))
+                <a href="{{ route('mod_tram_inter.descargar', ['movimiento_id' => $data['id']]) }}" target="_blank">Click Ver Adjunto</a>
             @else
                 No Tiene Adjunto
             @endif

@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $cdgo_crgo_trmte
+ * @property int $cdgo_docmnto_trmte
+ * @property int $cdgo_crgo
+ * @property int $nu_orde
+ * @property string $in_esta
+ */
 class CargoTramite extends Model
 {
     public $incrementing = true;

@@ -2,19 +2,26 @@
 
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\NotificarTramiteRequest;
 use App\Services\NotificarPlataformaService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Support\SessionKeys;
 
 class NotificarPlataformaController extends Controller
 {
+    private NotificarPlataformaService $service;
+    private TramiteExternoRepositoryInterface $tramiteRepo;
+
     public function __construct(
-        private NotificarPlataformaService $service
-    ) {}
+        NotificarPlataformaService $service,
+        TramiteExternoRepositoryInterface $tramiteRepo
+    ) {
+        $this->service = $service;
+        $this->tramiteRepo = $tramiteRepo;
+    }
 
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
     {
@@ -50,55 +57,9 @@ class NotificarPlataformaController extends Controller
             return response()->json(['status' => 'error', 'message' => 'No autorizado'], 401);
         }
 
-        $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.').'.';
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        $query = DB::table($schema.'r_trmtes_dcmntos as r')
-            ->join($schema.'p_dto_trmtes as p', 'r.cdgo_dto_trmte', '=', 'p.cdgo_dto_trmte')
-            ->leftJoin($schema.'p_usrios as u', 'p.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->leftJoin($schema.'a_tpo_trmtes as t', 'p.cdgo_tpo_trmte', '=', 't.cdgo_tpo_trmte')
-            ->leftJoin($schema.'p_crgos as c', 'r.cdgo_crgo_en', '=', 'c.cdgo_crgo')
-            ->leftJoin($schema.'a_areas as a', 'c.cdgo_area', '=', 'a.cdgo_area')
-            ->leftJoin($schema.'a_estdos_trmtes as e', 'r.cdgo_estdo_trmte', '=', 'e.cdgo_estdo_trmte')
-            ->where('r.in_esta', '1')
-            ->whereIn('r.cdgo_estdo_trmte', [3, 26])
-            ->where('p.cdgo_cmpnia', $cmpnia);
-
-        $modo = (string) $request->input('modo', 'generico');
-        $criterio = trim((string) $request->input('criterio', ''));
-        $campo = (string) $request->input('campo', 'p.nu_expe_todo');
-        $desde = trim((string) $request->input('desde', ''));
-        $hasta = trim((string) $request->input('hasta', ''));
-
-        $campos = [
-            'p_dto_trmtes.nu_expe_todo' => 'p.nu_expe_todo',
-            'p.nu_expe_todo' => 'p.nu_expe_todo',
-            'p_usrios.no_crto' => 'u.no_crto',
-            'u.no_crto' => 'u.no_crto',
-            'a_tpo_trmtes.de_tpo_trmte' => 't.de_tpo_trmte',
-            't.de_tpo_trmte' => 't.de_tpo_trmte',
-        ];
-
-        if ($modo === 'fechas') {
-            if ($desde !== '') {
-                try {
-                    $f = Carbon::createFromFormat('Y-m-d', $desde)->startOfDay();
-                    $query->where('p.fe_ingr_trmte', '>=', $f);
-                } catch (\Exception $e) {
-                    // ignore
-                }
-            }
-            if ($hasta !== '') {
-                try {
-                    $f = Carbon::createFromFormat('Y-m-d', $hasta)->endOfDay();
-                    $query->where('p.fe_ingr_trmte', '<=', $f);
-                } catch (\Exception $e) {
-                    // ignore
-                }
-            }
-        } elseif ($criterio !== '' && isset($campos[$campo])) {
-            $col = $campos[$campo];
-            $query->whereRaw("UPPER({$col}::text) LIKE UPPER(?)", [$criterio.'%']);
+        $cmpnia = (int) session(SessionKeys::USER_COMPANY, 0);
+        if ($cmpnia <= 0) {
+            return response()->json(['status' => 'error', 'message' => 'No tiene una compañía activa válida en la sesión.'], 403);
         }
 
         $perPage = (int) $request->input('per_page', 20);
@@ -107,26 +68,9 @@ class NotificarPlataformaController extends Controller
         }
         $page = max(1, (int) $request->input('page', 1));
 
-        $expedientes = $query
-            ->select(
-                'r.cdgo_trmte_dcmnto',
-                'p.cdgo_dto_trmte',
-                'p.nu_expe_todo',
-                'p.in_sile_admi',
-                'p.nu_foli_trmte',
-                'p.fe_ingr_trmte',
-                'u.no_crto',
-                't.de_tpo_trmte',
-                'a.dc_area',
-                'a.de_area',
-                'e.dc_estdo_trmte',
-                'e.cdgo_estdo_trmte',
-                'r.de_urls_imag'
-            )
-            ->orderByDesc('p.cdgo_dto_trmte')
-            ->paginate($perPage, ['*'], 'page', $page);
+        $res = $this->tramiteRepo->obtenerTablaNotificarPlataforma($request->all(), $page, $perPage, $cmpnia);
 
-        $items = collect($expedientes->items())->map(function ($row) {
+        $items = collect($res['items'])->map(function ($row) {
             $row->nu_expe_fmt = $this->formatExpediente((string) ($row->nu_expe_todo ?? ''));
             $row->silencio = ((string) $row->in_sile_admi === '1') ? 'Sí' : 'No';
             $row->tipo_corto = mb_substr((string) ($row->de_tpo_trmte ?? ''), 0, 8);
@@ -137,9 +81,9 @@ class NotificarPlataformaController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $items,
-            'total' => $expedientes->total(),
-            'current_page' => $expedientes->currentPage(),
-            'last_page' => $expedientes->lastPage(),
+            'total' => $res['total'],
+            'current_page' => $res['current_page'],
+            'last_page' => $res['last_page'],
         ]);
     }
 

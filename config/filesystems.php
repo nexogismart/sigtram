@@ -24,7 +24,7 @@ return [
     | Presentacion/mod_gene/mod_tram_inter/adjunto dentro de storage.
     |
     */
-    'legacy_sigtram_root' => env('LEGACY_SIGTRAM_ROOT', base_path('../sigtram_antiguo')),
+    'legacy_sigtram_root' => env('LEGACY_SIGTRAM_ROOT', base_path('../sigtram')),
 
     /*
     |--------------------------------------------------------------------------

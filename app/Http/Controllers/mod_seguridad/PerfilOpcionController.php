@@ -102,9 +102,14 @@ class PerfilOpcionController extends Controller
             return response()->json(['success' => true, 'message' => 'El permiso ya se encuentra registrado.']);
         }
 
+        $cmpnia = (int) session(SessionKeys::USER_COMPANY, 0);
+        if ($cmpnia <= 0) {
+            return response()->json(['success' => false, 'message' => 'No tiene una compañía activa válida en la sesión.'], 403);
+        }
+
         DB::table($schema . 'r_prmsos')->insert([
             'cdgo_prfle' => $perfilId,
-            'cdgo_cmpnia' => 2, // default municipal tenant
+            'cdgo_cmpnia' => $cmpnia,
             'cdgo_rle' => $opcionId,
             'cdgo_crgo' => null,
             'nro_ordn' => 1

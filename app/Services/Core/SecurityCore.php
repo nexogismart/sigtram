@@ -25,29 +25,63 @@ class SecurityCore implements SecurityCoreInterface
     protected PermisosRepositoryInterface $permisosRepo;
 
     /**
+     * @var ModuleRouteNormalizer
+     */
+    protected ModuleRouteNormalizer $normalizer;
+
+    /**
      * SecurityCore constructor.
      *
      * @param PermisosRepositoryInterface $permisosRepo
+     * @param ModuleRouteNormalizer|null $normalizer
      */
-    public function __construct(PermisosRepositoryInterface $permisosRepo)
-    {
+    public function __construct(
+        PermisosRepositoryInterface $permisosRepo,
+        ?ModuleRouteNormalizer $normalizer = null
+    ) {
         $this->permisosRepo = $permisosRepo;
+        $this->normalizer = $normalizer ?? new ModuleRouteNormalizer();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function obtenerCargosUsuario(int $loginId): Collection
+    public function obtenerCompaniasUsuario(int $loginId): Collection
     {
         $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
 
-        return DB::table($schema . 'r_crgos_lgin as r')
-            ->join($schema . 'p_crgos as c', 'c.cdgo_crgo', '=', 'r.cdgo_crgo')
-            ->leftJoin($schema . 'a_areas as a', 'a.cdgo_area', '=', 'c.cdgo_area')
-            ->where('r.cdgo_lgin', $loginId)
-            ->select('c.cdgo_crgo', 'c.de_crgo', 'a.de_area', 'a.dc_area', 'c.cdgo_area')
-            ->orderBy('c.cdgo_crgo')
+        return DB::table($schema . 'r_cmpnias_lgin as rc')
+            ->join($schema . 'a_cmpnias as c', 'c.cdgo_cmpnia', '=', 'rc.cdgo_cmpnia')
+            ->where('rc.cdgo_lgin', $loginId)
+            ->where('rc.in_esta', 1)
+            ->where('c.in_esta', '1')
+            ->select('c.cdgo_cmpnia', 'c.de_cmpnia', 'c.dc_cmpnia')
+            ->orderBy('c.cdgo_cmpnia', 'asc')
             ->get();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function obtenerCargosUsuario(int $loginId, ?int $companiaId = null): Collection
+    {
+        $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+
+        $query = DB::table($schema . 'r_crgos_lgin as r')
+            ->join($schema . 'p_crgos as c', 'c.cdgo_crgo', '=', 'r.cdgo_crgo')
+            ->join($schema . 'a_areas as a', 'a.cdgo_area', '=', 'c.cdgo_area')
+            ->where('r.cdgo_lgin', $loginId)
+            ->where('r.in_esta', '1')
+            ->where('c.in_esta', '1')
+            ->where('a.in_esta', '1')
+            ->select('c.cdgo_crgo', 'c.de_crgo', 'a.de_area', 'a.dc_area', 'c.cdgo_area', 'a.cdgo_cmpnia')
+            ->orderBy('c.cdgo_crgo');
+
+        if ($companiaId !== null && $companiaId > 0) {
+            $query->where('a.cdgo_cmpnia', $companiaId);
+        }
+
+        return $query->get();
     }
 
     /**
@@ -71,7 +105,7 @@ class SecurityCore implements SecurityCoreInterface
         }
 
         if ($cargoId === null) {
-            $cargoId = (int) session('sigtram_cargo_id', 0);
+            $cargoId = (int) session(\App\Support\SessionKeys::CARGO_ID, 0);
         }
 
         $schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
@@ -227,11 +261,7 @@ class SecurityCore implements SecurityCoreInterface
      */
     private function limpiarRutaModulo(string $ruta): string
     {
-        $ruta = trim($ruta);
-        $ruta = preg_replace('/\.blade\.php$/i', '', $ruta) ?? $ruta;
-        $ruta = preg_replace('/\.php$/i', '', $ruta) ?? $ruta;
-
-        return '/' . ltrim($ruta, '/');
+        return $this->normalizer->toUrlPath($ruta);
     }
 
     /**
@@ -241,17 +271,6 @@ class SecurityCore implements SecurityCoreInterface
      */
     private function variantesRutaModulo(string $rutaLimpia): array
     {
-        $base = $this->limpiarRutaModulo($rutaLimpia);
-
-        $sinSlash = ltrim($base, '/');
-
-        return array_values(array_unique([
-            $base,
-            $base . '.blade.php',
-            $base . '.php',
-            $sinSlash,
-            $sinSlash . '.blade.php',
-            $sinSlash . '.php',
-        ]));
+        return $this->normalizer->routeVariants($rutaLimpia);
     }
 }

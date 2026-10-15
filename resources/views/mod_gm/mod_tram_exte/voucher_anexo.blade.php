@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vaucher Anexo - {{ $numeroExpediente }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @vite(['resources/js/app.js'])
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -69,7 +70,6 @@
 </head>
 <body>
 <div class="voucher-card">
-@include('components.sigtram.print-brand')
     <div class="header">
         <p class="company-name">{{ $nomComp }}</p>
         <p class="title">Sistema Trámite Documentario</p>
@@ -130,8 +130,8 @@
 
     <div class="actions">
         <a class="btn secondary" href="{{ $voucherPrincipalUrl }}">Vaucher Principal</a>
-        <button type="button" class="btn" onclick="window.print()">Imprimir</button>
-        <button type="button" class="btn secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="btn" data-action="print">Imprimir</button>
+        <button type="button" class="btn secondary" data-action="close">Cerrar</button>
     </div>
 </div>
 </body>

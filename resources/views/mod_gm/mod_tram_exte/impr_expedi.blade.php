@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <title>Imprimir expediente</title>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             margin: 0;
@@ -30,8 +29,7 @@
         }
     </style>
 </head>
-<body onload="window.print();">
-@include('components.sigtram.print-brand')
+<body>
 @php
     $tieneSilencio = (string) ($tramite->in_sile_admi ?? '') === '1';
     $cdgoTpo = (string) ($tramite->cdgo_tpo_trmte ?? '');

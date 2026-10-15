@@ -1,1746 +1,898 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\mod_gm\mod_tram_exte;
 
+use App\Contracts\Repositories\mod_gm\mod_tram_exte\TramiteExternoRepositoryInterface;
+use App\Contracts\Services\ContextoUsuarioAutenticadoServiceInterface;
+use App\Contracts\Services\GestorAdjuntosInterface;
+use App\DTOs\Core\ContextoUsuarioAutenticadoDto;
+use App\Enums\mod_gm\BandejaTramiteExterno;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\mod_gm\mod_tram_exte\Concerns\ApiResponseTrait;
+use App\Http\Requests\mod_gm\mod_tram_exte\ArchivarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\AsignarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\ConsultarDetalleRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\ConsultarHistorialRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\ConsultarSemillaRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\DerivarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\DevolverExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\EnviarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\FinalizarExpedienteRequest;
+use App\Contracts\Services\SecurityCoreInterface;
+use App\Http\Requests\mod_gm\mod_tram_exte\ExportarBandejaExternaRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\ListarBandejaExternaRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\PrestarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\RecepcionarExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\RedirigirExpedienteRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\RetornarPrestamoRequest;
+use App\Http\Requests\mod_gm\mod_tram_exte\SolicitudVideoRequest;
+use App\Policies\mod_gm\TramiteExternoPolicy;
+use App\Services\mod_gm\mod_tram_exte\ExportarTramiteExternoExcelService;
+use App\Services\mod_gm\mod_tram_exte\ConsolidacionExpedienteService;
+use App\Services\mod_gm\mod_tram_exte\TramiteExternoService;
+use App\Support\SessionKeys;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Log;
-use App\Mail\ExpedienteFinalizadoMail;
-use App\Models\Cargo;
-use App\Models\DtoTramite;
-use App\Models\TramiteDocumento;
-use App\Models\SeguimientoLog;
-use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
+/**
+ * Controlador de Trámite Externo (Correo Externo).
+ * Refactorizado bajo arquitectura limpia (ARCH-01/02), controladores delgados,
+ * autorización por recurso (SEC-01), respuestas seguras (SEC-07) y cero SQL dinámico.
+ */
 class CorreoExternoController extends Controller
 {
-    private string $schema;
+    use ApiResponseTrait;
 
-    public function __construct()
-    {
-        $this->schema = rtrim((string) config('auth.sigtram_sistema_schema', 'sistema'), '.') . '.';
+    public function __construct(
+        private readonly TramiteExternoService $service,
+        private readonly TramiteExternoRepositoryInterface $repository,
+        private readonly GestorAdjuntosInterface $gestorAdjuntos,
+        private readonly ConsolidacionExpedienteService $consolidacionService,
+        private readonly TramiteExternoPolicy $policy,
+        private readonly ?SecurityCoreInterface $securityCore = null,
+        private readonly ?ExportarTramiteExternoExcelService $exportarExcelService = null,
+        private ?ContextoUsuarioAutenticadoServiceInterface $contextoService = null
+    ) {
+        $this->contextoService = $this->contextoService ?? app(ContextoUsuarioAutenticadoServiceInterface::class);
     }
 
     /**
-     * Muestra la bandeja de seguimiento de expedientes (correo externo)
+     * Muestra la bandeja principal de Trámite Externo.
      */
     public function index(Request $request, ?string $pathVista = null, ?object $opcionMenu = null)
     {
-        $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        if ($cargoId <= 0) {
-            // Obtener el primer cargo activo del usuario si no está en sesión
-            $cargoId = DB::table($this->schema . 'r_crgos_lgin')
-                ->where('cdgo_lgin', $user->cdgo_lgin)
-                ->value('cdgo_crgo') ?? 0;
-            if ($cargoId > 0) {
-                $request->session()->put('sigtram_cargo_id', $cargoId);
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            if (!Auth::check()) {
+                return redirect()->route('login');
             }
-        }
-
-        $cargoFila = DB::table($this->schema . 'p_crgos')
-            ->where('cdgo_crgo', $cargoId)
-            ->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        // 2. Cargar jerarquía de Áreas
-        $allAreas = DB::table($this->schema . 'a_areas')
-            ->where('in_esta', '1')
-            ->where('cdgo_cmpnia', $cmpnia)
-            ->orderBy('de_area', 'asc')
-            ->get();
-
-        $areasList = [];
-        $gerencias = $allAreas->whereNull('cdgo_area_prim');
-        foreach ($gerencias as $ger) {
-            $areasList[] = [
-                'id' => $ger->cdgo_area,
-                'nombre' => $ger->de_area,
-                'level' => 0,
-                'cdgo_area_prim' => null
-            ];
-            $subs = $allAreas->where('cdgo_area_prim', $ger->cdgo_area);
-            foreach ($subs as $sub) {
-                $areasList[] = [
-                    'id' => $sub->cdgo_area,
-                    'nombre' => '↪ ' . $sub->de_area,
-                    'level' => 1,
-                    'cdgo_area_prim' => $ger->cdgo_area
-                ];
-                $subSubs = $allAreas->where('cdgo_area_prim', $sub->cdgo_area);
-                foreach ($subSubs as $ss) {
-                    $areasList[] = [
-                        'id' => $ss->cdgo_area,
-                        'nombre' => '↪↪ ' . $ss->de_area,
-                        'level' => 2,
-                        'cdgo_area_prim' => $sub->cdgo_area
-                    ];
-                }
+            if ((int) $request->session()->get(SessionKeys::CARGO_ID, 0) <= 0) {
+                return redirect()->route('seleccionar.cargo');
             }
+            abort(403, 'No tiene autorización o contexto válido para acceder a Trámite Externo.');
         }
 
-        // 3. Cargar cargos del mismo área (excluyendo el actual)
-        $cargosList = DB::table($this->schema . 'p_crgos as c')
-            ->join($this->schema . 'r_crgos_lgin as rl', 'c.cdgo_crgo', '=', 'rl.cdgo_crgo')
-            ->join($this->schema . 'p_lgin as l', 'rl.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->join($this->schema . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select('c.cdgo_crgo', 'c.de_crgo', 'u.no_crto')
-            ->where('c.cdgo_area', $areaId)
-            ->where('c.cdgo_crgo', '<>', $cargoId)
-            ->where('c.in_esta', '1')
-            ->where('u.cdgo_usrios', '<>', 8) // Excluir usuario sistema/admin
-            ->orderBy('u.no_crto', 'asc')
-            ->get();
+        $datosIndex = $this->repository->obtenerDatosIndex($contexto);
+        $vista = $this->vistaDesdeMenu($pathVista, $opcionMenu);
 
-        // 4. Cargar tipos de documentos para trámite interno permitidos en el área
-        $tiposDocumento = DB::table($this->schema . 'r_tpo_trmte_areas as r')
-            ->join($this->schema . 'a_tpo_trmtes as t', 'r.cdgo_tpo_trmte', '=', 't.cdgo_tpo_trmte')
-            ->select('t.cdgo_tpo_trmte', 't.de_tpo_trmte')
-            ->where('r.in_esta', '1')
-            ->where('r.cdgo_area', $areaId)
-            ->orderBy('t.de_tpo_trmte', 'asc')
-            ->get();
-
-        // 5. Contadores reales de bandeja
-        $countEntrada = DB::table($this->schema . 'r_trmtes_dcmntos as r_trmtes_dcmntos')
-            ->join($this->schema . 'p_crgos as p_crgos_en', 'r_trmtes_dcmntos.cdgo_crgo_en', '=', 'p_crgos_en.cdgo_crgo')
-            ->join($this->schema . 'p_dto_trmtes as p_dto_trmtes', 'r_trmtes_dcmntos.cdgo_dto_trmte', '=', 'p_dto_trmtes.cdgo_dto_trmte')
-            ->where(function($q) use ($cargoId) {
-                $q->where(function($q2) use ($cargoId) {
-                    $q2->where('r_trmtes_dcmntos.cdgo_crgo_en', $cargoId)
-                       ->where('r_trmtes_dcmntos.cdgo_crgo_sa', '<>', $cargoId)
-                       ->where('r_trmtes_dcmntos.in_esta', '1')
-                       ->whereNotIn('r_trmtes_dcmntos.cdgo_estdo_trmte', ['5','12','29']);
-                })->orWhere(function($q3) use ($cargoId) {
-                    $q3->where('r_trmtes_dcmntos.cdgo_crgo_en', $cargoId)
-                       ->whereIn('r_trmtes_dcmntos.cdgo_estdo_trmte', ['25','51'])
-                       ->where('r_trmtes_dcmntos.in_esta', '1');
-                });
-            })
-            ->where('p_dto_trmtes.cdgo_cmpnia', $cmpnia)
-            ->count();
-
-        $countRecibidos = DB::table($this->schema . 'r_trmtes_dcmntos as r_trmtes_dcmntos')
-            ->join($this->schema . 'p_dto_trmtes as p_dto_trmtes', 'r_trmtes_dcmntos.cdgo_dto_trmte', '=', 'p_dto_trmtes.cdgo_dto_trmte')
-            ->where('r_trmtes_dcmntos.cdgo_crgo_en', $cargoId)
-            ->where('r_trmtes_dcmntos.cdgo_crgo_sa', $cargoId)
-            ->where('r_trmtes_dcmntos.in_esta', '1')
-            ->whereNotIn('r_trmtes_dcmntos.cdgo_estdo_trmte', ['3', '26', '27'])
-            ->where('p_dto_trmtes.cdgo_cmpnia', $cmpnia)
-            ->count();
-
-        $estadosList = DB::table($this->schema . 'a_estdos_trmtes')
-            ->select('cdgo_estdo_trmte', 'dc_estdo_trmte')
-            ->orderBy('dc_estdo_trmte', 'asc')
-            ->get();
-
-        return view($this->vistaDesdeMenu($pathVista, $opcionMenu), [
-                'areasList' => $areasList,
-                'cargosList' => $cargosList,
-                'tiposDocumento' => $tiposDocumento,
-                'countEntrada' => $countEntrada,
-                'countRecibidos' => $countRecibidos,
-                'estadosList' => $estadosList,
-                'bandejaInicial' => (string) $request->query('bandeja', 'entrada'),
-                'puedeExportarExcel' => in_array((int) ($user->cdgo_lgin ?? 0), [15844, 411, 15481, 15749], true),
-            ]);
+        return view($vista, array_merge($datosIndex, [
+            'bandejaInicial'     => (string) $request->query('bandeja', 'entrada'),
+            'puedeExportarExcel' => $this->policy->exportarExcel($contexto),
+        ]));
     }
 
     /**
-     * Consulta y filtra los expedientes de la bandeja seleccionada
+     * Consulta y filtra los expedientes de una de las 10 bandejas canónicas.
      */
-    public function tabla(Request $request)
+    public function tabla(ListarBandejaExternaRequest $request): JsonResponse
     {
-        if (!Auth::check()) {
-            return response()->json(['status' => 'error', 'message' => 'No autenticado'], 401);
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado o sin cargo activo.'], 401);
         }
 
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        if ($cargoId <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'Seleccione un cargo activo'], 400);
-        }
-
-        $cargoFila = DB::table($this->schema . 'p_crgos')
-            ->where('cdgo_crgo', $cargoId)
-            ->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        $bandeja = (string) $request->input('bandeja', 'entrada');
-        $criterio = (string) $request->input('criterio', 'expe_todo');
-        $descripcion = trim((string) $request->input('descripcion', ''));
-        $desde = (string) $request->input('desde', '');
-        $hasta = (string) $request->input('hasta', '');
-        $reporte = (string) $request->input('reporte', 'todos');
-
-        $estado = (string) $request->input('estado', '0');
-        $page = (int) $request->input('page', 1);
-        if ($page < 1) {
-            $page = 1;
-        }
-        $perPage = (int) $request->input('per_page', $request->input('txt_cantidad', 8));
-        if ($perPage < 1) {
-            $perPage = 8;
-        }
-        if ($perPage > 100) {
-            $perPage = 100;
-        }
-        $offset = ($page - 1) * $perPage;
-
-        $search = $this->buildSearchWhere($criterio, $descripcion);
-        $dateField = ($bandeja === 'todos' && $reporte !== 'sin_finalizar')
-            ? 'p_dto_trmtes.fe_ingr_trmte'
-            : 'r_trmtes_dcmntos.fe_rcbdo_trmte';
-
-        if ($desde !== '' && $hasta !== '') {
-            $desde = preg_replace('/[^0-9\-]/', '', $desde);
-            $hasta = preg_replace('/[^0-9\-]/', '', $hasta);
-            if ($desde !== '' && $hasta !== '') {
-                $search .= " AND {$dateField} >= '{$desde} 00:00:00' AND {$dateField} <= '{$hasta} 23:59:59' ";
-            }
-        }
-
-        if ($estado !== '0' && $estado !== '') {
-            $search .= " AND r_trmtes_dcmntos.cdgo_estdo_trmte = '" . intval($estado) . "' ";
-        }
-
-        $whereBandeja = $this->buildBandejaWhere($bandeja, $cargoId, $areaId, $reporte);
-
-        $baseQuery = $this->baseFromJoin()
-            . ' WHERE p_dto_trmtes.cdgo_cmpnia = ' . $cmpnia . $whereBandeja . $search;
-
-        $sqlCount = "SELECT COUNT(*) as total " . $baseQuery;
-
-        try {
-            $totalRows = DB::select($sqlCount)[0]->total ?? 0;
-            $lastPage = max(1, ceil($totalRows / $perPage));
-            if ($page > $lastPage) {
-                $page = $lastPage;
-                $offset = ($page - 1) * $perPage;
-            }
-
-            $sql = $this->baseSelect() . $baseQuery
-                . ' ORDER BY r_trmtes_dcmntos.fe_rcbdo_trmte DESC NULLS LAST LIMIT ' . $perPage . ' OFFSET ' . $offset;
-
-            $rows = DB::select($sql);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error al consultar la bandeja: ' . $e->getMessage(),
-            ], 500);
-        }
-
-        $data = array_map(function ($row) {
-            $a = (array) $row;
-            $a['tramite_formateado'] = $this->formatNumeroExpediente($a['nu_expe_todo'] ?? null);
-            $a['referencia'] = $a['de_docmnto_trmte'] ?? ($a['dc_area'] ?? '—');
-            
-            // Semaforización y datos de días
-            $a['dias_acumulados'] = $this->calcularDiasTranscurridos($a['fe_ingr_trmte']);
-            $a['nu_tiem_sile'] = (int) ($row->nu_tiem_sile ?? 0);
-            $a['nu_tiem_sile_adcnal'] = (int) ($row->nu_tiem_sile_adcnal ?? 0);
-            $a['orig_doc'] = $row->in_docu_trmte ?? 'E';
-            
-            // Check de solicitudes de video
-            $a['has_video'] = DB::table($this->schema . 'p_solicitud_video')
-                ->where('cdgo_dto_trmte', $row->cdgo_dto_trmte)
-                ->where('in_esta', '1')
-                ->exists();
-
-            return (object) $a;
-        }, $rows);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $data,
-            'cargo_id' => $cargoId,
-            'area_id' => $areaId,
-            'pagination' => [
-                'total' => $totalRows,
-                'per_page' => $perPage,
-                'current_page' => $page,
-                'last_page' => $lastPage
-            ]
-        ]);
-    }
-
-    /**
-     * Consulta el historial de movimientos de un expediente (Traza)
-     */
-    public function historial(Request $request)
-    {
-        $id = (int) $request->input('id');
-        if ($id <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'ID inválido'], 400);
-        }
-
-        $historial = DB::table($this->schema . 'r_trmtes_dcmntos as r')
-            ->leftJoin($this->schema . 'p_crgos as p_crgos_en', 'r.cdgo_crgo_en', '=', 'p_crgos_en.cdgo_crgo')
-            ->leftJoin($this->schema . 'a_areas as a_areas_en', 'p_crgos_en.cdgo_area', '=', 'a_areas_en.cdgo_area')
-            ->leftJoin($this->schema . 'p_crgos as p_crgos_sa', 'r.cdgo_crgo_sa', '=', 'p_crgos_sa.cdgo_crgo')
-            ->leftJoin($this->schema . 'a_areas as a_areas_sa', 'p_crgos_sa.cdgo_area', '=', 'a_areas_sa.cdgo_area')
-            ->leftJoin($this->schema . 'a_estdos_trmtes as a_estdos_trmtes', 'r.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->leftJoin($this->schema . 'p_lgin as l', 'r.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->leftJoin($this->schema . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select(
-                'r.cdgo_trmte_dcmnto',
-                'r.fe_rcbdo_trmte as fe_entrada',
-                'a_areas_sa.de_area as area_origen',
-                'a_areas_en.de_area as area',
-                'a_estdos_trmtes.dc_estdo_trmte as estado',
-                'r.de_obse as observaciones',
-                'r.de_urls_imag',
-                'u.no_crto as usuario'
-            )
-            ->where('r.cdgo_dto_trmte', $id)
-            ->orderBy('r.cdgo_trmte_dcmnto', 'asc')
-            ->get();
-
-        $data = $historial->map(function($mov, $index) use ($historial) {
-            $nextMov = $historial->get($index + 1);
-            $mov->dias = $this->calcularTiempoTranscurrido($mov->fe_entrada, $nextMov ? $nextMov->fe_entrada : null);
-            $mov->fe_entrada = $mov->fe_entrada ? Carbon::parse($mov->fe_entrada)->format('d/m/Y H:i') : '—';
-            return $mov;
-        });
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $data
-        ]);
-    }
-
-    /**
-     * Recepciona expedientes en bloque (Bandeja de Entrada -> Recibidos)
-     */
-    public function recepcionar(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $fecha = $request->input('fecha') ? Carbon::parse($request->input('fecha'))->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
-        $observaciones = mb_strtoupper(trim($request->input('observaciones', 'SIN NOVEDADES PARA RECEPCIONAR')), 'UTF-8');
-
-        if (empty($ids)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un expediente.'], 400);
-        }
-
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-
-        try {
-            DB::transaction(function() use ($ids, $fecha, $observaciones, $user, $cargoId, $request) {
-                foreach ($ids as $id) {
-                    $id = (int)$id;
-
-                    // Deshabilitar movimiento actual en la bandeja
-                    DB::table($this->schema . 'r_trmtes_dcmntos')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->where('in_esta', '1')
-                        ->update(['in_esta' => '0']);
-
-                    // Insertar nuevo movimiento (Recibido = 2)
-                    DB::table($this->schema . 'r_trmtes_dcmntos')->insert([
-                        'cdgo_crgo_sa' => $cargoId,
-                        'cdgo_crgo_en' => $cargoId,
-                        'cdgo_dto_trmte' => $id,
-                        'cdgo_estdo_trmte' => 2, // 2 = Recibido
-                        'fe_rcbdo_trmte' => $fecha,
-                        'de_obse' => $observaciones,
-                        'in_esta' => '1',
-                        'de_urls_imag' => '',
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'nu_foli_anex' => null,
-                        'fe_cta_vrtal' => null,
-                        'nu_anxo' => null,
-                    ]);
-
-                    // Actualizar bitácora del expediente
-                    $currentObse = DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->value('de_obse_todo') ?? '';
-                    $newObse = $currentObse !== '' ? $currentObse . ' - ' . $observaciones : $observaciones;
-                    DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->update(['de_obse_todo' => mb_strtoupper($newObse, 'UTF-8')]);
-
-                    // Registrar log legacy
-                    DB::table($this->schema . 'p_sgmto_log')->insert([
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'de_sgto_log' => "Se recepciono el expediente {$id}",
-                        'fe_sgto_log' => now(),
-                        'de_ip' => $request->ip()
-                    ]);
-                }
-            });
-
-            return response()->json(['status' => 'success', 'message' => 'Los expedientes fueron recepcionados correctamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error al recepcionar: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Deriva expedientes a otra gerencia/subgerencia
-     */
-    public function derivar(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $gerenciaDest = (int) $request->input('gerencia');
-        $subgerenciaDest = (int) $request->input('subgerencia');
-        $fecha = $request->input('fecha') ? Carbon::parse($request->input('fecha'))->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
-        $observaciones = mb_strtoupper(trim($request->input('observaciones', 'SIN NOVEDADES PARA ENVIAR')), 'UTF-8');
-        $folios = (int) $request->input('folios', 1);
-
-        $enviarConTramite = $request->boolean('enviar_con_tramite');
-        $docTipo = (int) $request->input('doc_tipo');
-        $tramiteNro = $request->input('tramite_nro'); // e.g. "0142-2026"
-
-        if (empty($ids)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un expediente.'], 400);
-        }
-
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        $cargoFila = DB::table($this->schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        // Resolver Cargo de Destino
-        $destAreaId = $subgerenciaDest > 0 ? $subgerenciaDest : $gerenciaDest;
-        if ($destAreaId <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar un área de destino.'], 400);
-        }
-
-        $destCargoId = DB::table($this->schema . 'p_crgos')
-            ->where('cdgo_area', $destAreaId)
-            ->where('nu_orde', 1)
-            ->where('in_esta', '1')
-            ->orderBy('cdgo_crgo', 'asc')
-            ->value('cdgo_crgo');
-
-        if (!$destCargoId) {
-            return response()->json(['status' => 'error', 'message' => 'No se encontró un cargo responsable activo en el área destino.'], 400);
-        }
-
-        try {
-            DB::transaction(function() use ($ids, $fecha, $observaciones, $folios, $destCargoId, $destAreaId, $enviarConTramite, $docTipo, $tramiteNro, $user, $cargoId, $areaId, $cmpnia, $request) {
-                // Resolver Año Fiscal
-                $anioId = DB::table($this->schema . 'a_anios')
-                    ->where('de_anio', date('Y'))
-                    ->where('cdgo_cmpnia', $cmpnia)
-                    ->value('cdgo_anio');
-
-                if (!$anioId) {
-                    $anioId = DB::table($this->schema . 'a_anios')->insertGetId([
-                        'de_anio' => date('Y'),
-                        'dc_anio' => substr(date('Y'), 2, 2),
-                        'cdgo_cmpnia' => $cmpnia
-                    ], 'cdgo_anio');
-                }
-
-                foreach ($ids as $id) {
-                    $id = (int)$id;
-                    $idInternalDoc = null;
-                    $anexoTexto = '';
-
-                    // 1. Crear Trámite Interno Asociado si corresponde
-                    if ($enviarConTramite && $docTipo > 0) {
-                        $expeTodo = DB::table($this->schema . 'p_dto_trmtes')->where('cdgo_dto_trmte', $id)->value('nu_expe_todo') ?? '—';
-                        $referenciaObse = "CON REFERENCIA AL EXPEDIENTE N° " . $expeTodo;
-                        
-                        // Generar número secuencial correlativo
-                        $nextSeed = $this->generarSeedNumber($docTipo, $anioId, $areaId, $cargoId, $user->cdgo_lgin);
-                        $formattedSeed = $nextSeed . '-' . date('Y');
-                        
-                        // Generar título del trámite interno
-                        $tituloCompleto = $this->generarTituloTramiteInterno($docTipo, $formattedSeed, $areaId, $cargoId, $user->cdgo_lgin);
-                        
-                        $idInternalDoc = DB::table($this->schema . 'p_dtos_ntrnos')->insertGetId([
-                            'cdgo_tpo_trmte' => $docTipo,
-                            'cdgo_anio' => $anioId,
-                            'cdgo_area' => $areaId,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_cmpnia' => $cmpnia,
-                            'cdgo_dto_trmte' => $id,
-                            'cdgo_dtos_ntrnos_pri' => null,
-                            'nu_tram_todo' => $nextSeed . '-' . date('Y'),
-                            'nu_tram_cmplto' => $tituloCompleto,
-                            'nu_tram' => $nextSeed,
-                            'de_obser' => mb_strtoupper($referenciaObse, 'UTF-8'),
-                            'de_urls_adjnto' => '',
-                            'fe_ingrso' => $fecha,
-                            'in_envo_fsco' => '0',
-                            'in_prrdad_trmte' => 1
-                        ], 'cdgo_dtos_ntrnos');
-
-                        // Registrar movimiento del trámite interno
-                        DB::table($this->schema . 'r_trmtes_ntrnos')->insert([
-                            'cdgo_dtos_ntrnos' => $idInternalDoc,
-                            'cdgo_estdo_trmte' => 1, // 1 = Pendiente
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_crgo_sa' => $cargoId,
-                            'cdgo_crgo_en' => $cargoId,
-                            'de_urls_agrdo' => '',
-                            'fe_rcbdo' => $fecha,
-                            'de_obser_ntrnos' => mb_strtoupper($observaciones, 'UTF-8'),
-                            'in_copia' => '1'
-                        ]);
-
-                        $docTypeName = DB::table($this->schema . 'a_tpo_trmtes')->where('cdgo_tpo_trmte', $docTipo)->value('de_tpo_trmte') ?? 'TRÁMITE';
-                        $anexoTexto = "; SE DERIVA CON {$docTypeName} N° " . str_pad($nextSeed, 8, '0', STR_PAD_LEFT) . "-" . date('Y') . ".";
-                    }
-
-                    // 2. Deshabilitar movimiento actual del expediente externo
-                    DB::table($this->schema . 'r_trmtes_dcmntos')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->where('in_esta', '1')
-                        ->update(['in_esta' => '0']);
-
-                    // 3. Crear el nuevo movimiento del expediente externo
-                    $finalObse = mb_strtoupper($observaciones . $anexoTexto, 'UTF-8');
-                    $newMovimientoId = DB::table($this->schema . 'r_trmtes_dcmntos')->insertGetId([
-                        'cdgo_crgo_sa' => $cargoId,
-                        'cdgo_crgo_en' => $destCargoId,
-                        'cdgo_dto_trmte' => $id,
-                        'cdgo_estdo_trmte' => 1, // 1 = Pendiente en destino
-                        'fe_rcbdo_trmte' => $fecha,
-                        'de_obse' => $finalObse,
-                        'in_esta' => '1',
-                        'de_urls_imag' => '',
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'nu_foli_anex' => $folios,
-                        'fe_cta_vrtal' => null,
-                        'nu_anxo' => null,
-                        'cdgo_dtos_ntrnos' => $idInternalDoc // Enlazar trámite interno
-                    ], 'cdgo_trmte_dcmnto');
-
-                    // 4. Procesar adjuntos (ZIP o PDF)
-                    $attachments = $this->processAttachments($request, 'fle_adjunto', 'fle_adjunto_pdf', $newMovimientoId, $idInternalDoc);
-                    if ($attachments['filename'] !== '') {
-                        DB::table($this->schema . 'r_trmtes_dcmntos')
-                            ->where('cdgo_trmte_dcmnto', $newMovimientoId)
-                            ->update(['de_urls_imag' => $attachments['filename']]);
-
-                        if ($idInternalDoc) {
-                            DB::table($this->schema . 'p_dtos_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_adjnto' => $attachments['filename_internal']]);
-
-                            DB::table($this->schema . 'r_trmtes_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_agrdo' => $attachments['filename_internal']]);
-                        }
-                    }
-
-                    // 5. Concatenar observaciones generales al expediente externo
-                    $currentObse = DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->value('de_obse_todo') ?? '';
-                    $newObseTodo = $currentObse !== '' ? $currentObse . ' - ' . $finalObse : $finalObse;
-                    DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->update(['de_obse_todo' => mb_strtoupper($newObseTodo, 'UTF-8')]);
-
-                    // 6. Registrar log legacy
-                    DB::table($this->schema . 'p_sgmto_log')->insert([
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'de_sgto_log' => "Se derivo el expediente {$id} al cargo {$destCargoId}",
-                        'fe_sgto_log' => now(),
-                        'de_ip' => $request->ip()
-                    ]);
-                }
-            });
-
-            return response()->json(['status' => 'success', 'message' => 'Los expedientes fueron derivados exitosamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error al derivar: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Asigna expedientes a un personal de su propia área
-     */
-    public function asignar(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $personalCargoId = (int) $request->input('cargo');
-        $fecha = $request->input('fecha') ? Carbon::parse($request->input('fecha'))->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
-        $observaciones = mb_strtoupper(trim($request->input('observaciones', 'SIN NOVEDADES PARA ASIGNAR')), 'UTF-8');
-        $folios = (int) $request->input('folios', 1);
-
-        $enviarConTramite = $request->boolean('enviar_con_tramite');
-        $docTipo = (int) $request->input('doc_tipo');
-
-        if (empty($ids)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un expediente.'], 400);
-        }
-
-        if ($personalCargoId <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar un responsable para asignar.'], 400);
-        }
-
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        $cargoFila = DB::table($this->schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        try {
-            DB::transaction(function() use ($ids, $fecha, $observaciones, $folios, $personalCargoId, $enviarConTramite, $docTipo, $user, $cargoId, $areaId, $cmpnia, $request) {
-                $anioId = DB::table($this->schema . 'a_anios')
-                    ->where('de_anio', date('Y'))
-                    ->where('cdgo_cmpnia', $cmpnia)
-                    ->value('cdgo_anio');
-
-                if (!$anioId) {
-                    $anioId = DB::table($this->schema . 'a_anios')->insertGetId([
-                        'de_anio' => date('Y'),
-                        'dc_anio' => substr(date('Y'), 2, 2),
-                        'cdgo_cmpnia' => $cmpnia
-                    ], 'cdgo_anio');
-                }
-
-                foreach ($ids as $id) {
-                    $id = (int)$id;
-                    $idInternalDoc = null;
-                    $anexoTexto = '';
-
-                    // 1. Crear Trámite Interno Asociado si corresponde
-                    if ($enviarConTramite && $docTipo > 0) {
-                        $expeTodo = DB::table($this->schema . 'p_dto_trmtes')->where('cdgo_dto_trmte', $id)->value('nu_expe_todo') ?? '—';
-                        $referenciaObse = "CON REFERENCIA AL EXPEDIENTE N° " . $expeTodo;
-                        
-                        $nextSeed = $this->generarSeedNumber($docTipo, $anioId, $areaId, $cargoId, $user->cdgo_lgin);
-                        $formattedSeed = $nextSeed . '-' . date('Y');
-                        $tituloCompleto = $this->generarTituloTramiteInterno($docTipo, $formattedSeed, $areaId, $cargoId, $user->cdgo_lgin);
-                        
-                        $idInternalDoc = DB::table($this->schema . 'p_dtos_ntrnos')->insertGetId([
-                            'cdgo_tpo_trmte' => $docTipo,
-                            'cdgo_anio' => $anioId,
-                            'cdgo_area' => $areaId,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_cmpnia' => $cmpnia,
-                            'cdgo_dto_trmte' => $id,
-                            'cdgo_dtos_ntrnos_pri' => null,
-                            'nu_tram_todo' => $nextSeed . '-' . date('Y'),
-                            'nu_tram_cmplto' => $tituloCompleto,
-                            'nu_tram' => $nextSeed,
-                            'de_obser' => mb_strtoupper($referenciaObse, 'UTF-8'),
-                            'de_urls_adjnto' => '',
-                            'fe_ingrso' => $fecha,
-                            'in_envo_fsco' => '0',
-                            'in_prrdad_trmte' => 1
-                        ], 'cdgo_dtos_ntrnos');
-
-                        DB::table($this->schema . 'r_trmtes_ntrnos')->insert([
-                            'cdgo_dtos_ntrnos' => $idInternalDoc,
-                            'cdgo_estdo_trmte' => 1,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_crgo_sa' => $cargoId,
-                            'cdgo_crgo_en' => $cargoId,
-                            'de_urls_agrdo' => '',
-                            'fe_rcbdo' => $fecha,
-                            'de_obser_ntrnos' => mb_strtoupper($observaciones, 'UTF-8'),
-                            'in_copia' => '1'
-                        ]);
-
-                        $docTypeName = DB::table($this->schema . 'a_tpo_trmtes')->where('cdgo_tpo_trmte', $docTipo)->value('de_tpo_trmte') ?? 'TRÁMITE';
-                        $anexoTexto = "; CON {$docTypeName} N° " . str_pad($nextSeed, 8, '0', STR_PAD_LEFT) . "-" . date('Y') . ".";
-                    }
-
-                    // 2. Deshabilitar movimiento actual del expediente externo
-                    DB::table($this->schema . 'r_trmtes_dcmntos')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->where('in_esta', '1')
-                        ->update(['in_esta' => '0']);
-
-                    // 3. Crear el nuevo movimiento (Asignado = 7)
-                    $finalObse = mb_strtoupper($observaciones . $anexoTexto, 'UTF-8');
-                    $newMovimientoId = DB::table($this->schema . 'r_trmtes_dcmntos')->insertGetId([
-                        'cdgo_crgo_sa' => $cargoId,
-                        'cdgo_crgo_en' => $personalCargoId,
-                        'cdgo_dto_trmte' => $id,
-                        'cdgo_estdo_trmte' => 7, // 7 = Asignado
-                        'fe_rcbdo_trmte' => $fecha,
-                        'de_obse' => $finalObse,
-                        'in_esta' => '1',
-                        'de_urls_imag' => '',
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'nu_foli_anex' => $folios,
-                        'fe_cta_vrtal' => null,
-                        'nu_anxo' => null,
-                        'cdgo_dtos_ntrnos' => $idInternalDoc
-                    ], 'cdgo_trmte_dcmnto');
-
-                    // 4. Procesar adjuntos
-                    $attachments = $this->processAttachments($request, 'fle_adjunto', 'fle_adjunto_pdf', $newMovimientoId, $idInternalDoc);
-                    if ($attachments['filename'] !== '') {
-                        DB::table($this->schema . 'r_trmtes_dcmntos')
-                            ->where('cdgo_trmte_dcmnto', $newMovimientoId)
-                            ->update(['de_urls_imag' => $attachments['filename']]);
-
-                        if ($idInternalDoc) {
-                            DB::table($this->schema . 'p_dtos_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_adjnto' => $attachments['filename_internal']]);
-                        }
-                    }
-
-                    // 5. Concatenar observaciones generales al expediente externo
-                    $currentObse = DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->value('de_obse_todo') ?? '';
-                    $newObseTodo = $currentObse !== '' ? $currentObse . ' - ' . $finalObse : $finalObse;
-                    DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->update(['de_obse_todo' => mb_strtoupper($newObseTodo, 'UTF-8')]);
-
-                    // 6. Registrar log legacy
-                    DB::table($this->schema . 'p_sgmto_log')->insert([
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'de_sgto_log' => "Se asigno el expediente {$id} al cargo {$personalCargoId}",
-                        'fe_sgto_log' => now(),
-                        'de_ip' => $request->ip()
-                    ]);
-                }
-            });
-
-            return response()->json(['status' => 'success', 'message' => 'Los expedientes fueron asignados correctamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error al asignar: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Envía expedientes en paralelo a múltiples áreas de destino
-     */
-    public function enviar(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $areasDestino = $request->input('areas', []); // Array de IDs de áreas
-        $fecha = $request->input('fecha') ? Carbon::parse($request->input('fecha'))->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
-        $observaciones = mb_strtoupper(trim($request->input('observaciones', 'SIN NOVEDADES PARA ENVIAR')), 'UTF-8');
-        $folios = (int) $request->input('folios', 1);
-
-        $enviarConTramite = $request->boolean('enviar_con_tramite');
-        $docTipo = (int) $request->input('doc_tipo');
-
-        if (empty($ids)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un expediente.'], 400);
-        }
-
-        if (empty($areasDestino)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un área de destino.'], 400);
-        }
-
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        $cargoFila = DB::table($this->schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        try {
-            DB::transaction(function() use ($ids, $fecha, $observaciones, $folios, $areasDestino, $enviarConTramite, $docTipo, $user, $cargoId, $areaId, $cmpnia, $request) {
-                $anioId = DB::table($this->schema . 'a_anios')
-                    ->where('de_anio', date('Y'))
-                    ->where('cdgo_cmpnia', $cmpnia)
-                    ->value('cdgo_anio');
-
-                if (!$anioId) {
-                    $anioId = DB::table($this->schema . 'a_anios')->insertGetId([
-                        'de_anio' => date('Y'),
-                        'dc_anio' => substr(date('Y'), 2, 2),
-                        'cdgo_cmpnia' => $cmpnia
-                    ], 'cdgo_anio');
-                }
-
-                foreach ($ids as $id) {
-                    $id = (int)$id;
-                    $idInternalDoc = null;
-                    $anexoTexto = '';
-
-                    // 1. Crear Trámite Interno Asociado si corresponde
-                    if ($enviarConTramite && $docTipo > 0) {
-                        $expeTodo = DB::table($this->schema . 'p_dto_trmtes')->where('cdgo_dto_trmte', $id)->value('nu_expe_todo') ?? '—';
-                        $referenciaObse = "CON REFERENCIA AL EXPEDIENTE N° " . $expeTodo;
-                        
-                        $nextSeed = $this->generarSeedNumber($docTipo, $anioId, $areaId, $cargoId, $user->cdgo_lgin);
-                        $formattedSeed = $nextSeed . '-' . date('Y');
-                        $tituloCompleto = $this->generarTituloTramiteInterno($docTipo, $formattedSeed, $areaId, $cargoId, $user->cdgo_lgin);
-                        
-                        $idInternalDoc = DB::table($this->schema . 'p_dtos_ntrnos')->insertGetId([
-                            'cdgo_tpo_trmte' => $docTipo,
-                            'cdgo_anio' => $anioId,
-                            'cdgo_area' => $areaId,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_cmpnia' => $cmpnia,
-                            'cdgo_dto_trmte' => $id,
-                            'cdgo_dtos_ntrnos_pri' => null,
-                            'nu_tram_todo' => $nextSeed . '-' . date('Y'),
-                            'nu_tram_cmplto' => $tituloCompleto,
-                            'nu_tram' => $nextSeed,
-                            'de_obser' => mb_strtoupper($referenciaObse, 'UTF-8'),
-                            'de_urls_adjnto' => '',
-                            'fe_ingrso' => $fecha,
-                            'in_envo_fsco' => '0',
-                            'in_prrdad_trmte' => 1
-                        ], 'cdgo_dtos_ntrnos');
-
-                        // Enviar copias del trámite interno a todas las áreas seleccionadas
-                        foreach ($areasDestino as $destAreaId) {
-                            $destCargoId = DB::table($this->schema . 'p_crgos')
-                                ->where('cdgo_area', (int)$destAreaId)
-                                ->where('nu_orde', 1)
-                                ->where('in_esta', '1')
-                                ->orderBy('cdgo_crgo', 'asc')
-                                ->value('cdgo_crgo');
-
-                            if ($destCargoId) {
-                                DB::table($this->schema . 'r_trmtes_ntrnos')->insert([
-                                    'cdgo_dtos_ntrnos' => $idInternalDoc,
-                                    'cdgo_estdo_trmte' => 1,
-                                    'cdgo_lgin' => $user->cdgo_lgin,
-                                    'cdgo_crgo_sa' => $cargoId,
-                                    'cdgo_crgo_en' => $destCargoId,
-                                    'de_urls_agrdo' => '',
-                                    'fe_rcbdo' => $fecha,
-                                    'de_obser_ntrnos' => mb_strtoupper($observaciones, 'UTF-8'),
-                                    'in_copia' => '1'
-                                ]);
-                            }
-                        }
-
-                        $docTypeName = DB::table($this->schema . 'a_tpo_trmtes')->where('cdgo_tpo_trmte', $docTipo)->value('de_tpo_trmte') ?? 'TRÁMITE';
-                        $anexoTexto = "; SE DERIVA CON {$docTypeName} N° " . str_pad($nextSeed, 8, '0', STR_PAD_LEFT) . "-" . date('Y') . ", ";
-                    }
-
-                    // 2. Deshabilitar movimiento actual del expediente externo
-                    DB::table($this->schema . 'r_trmtes_dcmntos')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->where('in_esta', '1')
-                        ->update(['in_esta' => '0']);
-
-                    // 3. Crear el nuevo movimiento en el expediente externo (Estado = 8, Copia/Derivado con tramite)
-                    // Nota: el expediente externo se queda en la bandeja del operador con estado 8
-                    $finalObse = mb_strtoupper($observaciones . $anexoTexto, 'UTF-8');
-                    $newMovimientoId = DB::table($this->schema . 'r_trmtes_dcmntos')->insertGetId([
-                        'cdgo_crgo_sa' => $cargoId,
-                        'cdgo_crgo_en' => $cargoId, // El expediente externo queda en su propio cargo con estado derivado
-                        'cdgo_dto_trmte' => $id,
-                        'cdgo_estdo_trmte' => 8, // 8 = Derivado con trámite interno
-                        'fe_rcbdo_trmte' => $fecha,
-                        'de_obse' => $finalObse,
-                        'in_esta' => '1',
-                        'de_urls_imag' => '',
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'nu_foli_anex' => $folios,
-                        'fe_cta_vrtal' => null,
-                        'nu_anxo' => null,
-                        'cdgo_dtos_ntrnos' => $idInternalDoc
-                    ], 'cdgo_trmte_dcmnto');
-
-                    // 4. Procesar adjuntos
-                    $attachments = $this->processAttachments($request, 'fle_adjunto', 'fle_adjunto_pdf', $newMovimientoId, $idInternalDoc);
-                    if ($attachments['filename'] !== '') {
-                        DB::table($this->schema . 'r_trmtes_dcmntos')
-                            ->where('cdgo_trmte_dcmnto', $newMovimientoId)
-                            ->update(['de_urls_imag' => $attachments['filename']]);
-
-                        if ($idInternalDoc) {
-                            DB::table($this->schema . 'p_dtos_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_adjnto' => $attachments['filename_internal']]);
-
-                            DB::table($this->schema . 'r_trmtes_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_agrdo' => $attachments['filename_internal']]);
-                        }
-                    }
-
-                    // 5. Concatenar observaciones generales al expediente externo
-                    $currentObse = DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->value('de_obse_todo') ?? '';
-                    $newObseTodo = $currentObse !== '' ? $currentObse . ' - ' . $finalObse : $finalObse;
-                    DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->update(['de_obse_todo' => mb_strtoupper($newObseTodo, 'UTF-8')]);
-
-                    // 6. Registrar log legacy
-                    DB::table($this->schema . 'p_sgmto_log')->insert([
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'de_sgto_log' => "Se envio tramite interno el expediente {$id}",
-                        'fe_sgto_log' => now(),
-                        'de_ip' => $request->ip()
-                    ]);
-                }
-            });
-
-            return response()->json(['status' => 'success', 'message' => 'Los trámites internos fueron enviados exitosamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error al enviar trámites: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Finaliza y archiva un expediente (Bandeja -> Finalizados)
-     */
-    public function finalizar(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $fecha = $request->input('fecha') ? Carbon::parse($request->input('fecha'))->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
-        $observaciones = mb_strtoupper(trim($request->input('observaciones', 'TRÁMITE FINALIZADO')), 'UTF-8');
-        $folios = (int) $request->input('folios', 1);
-
-        $enviarConTramite = $request->boolean('enviar_con_tramite');
-        $docTipo = (int) $request->input('doc_tipo');
-        $enviarCorreo = $request->input('enviar_correo') === '1';
-
-        if (empty($ids)) {
-            return response()->json(['status' => 'error', 'message' => 'Debe seleccionar al menos un expediente.'], 400);
-        }
-
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        $cargoFila = DB::table($this->schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $areaNombre = $cargoFila->de_crgo ?? 'OFICINA DE TRÁMITE';
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-
-        try {
-            DB::transaction(function() use ($ids, $fecha, $observaciones, $folios, $enviarConTramite, $docTipo, $enviarCorreo, $user, $cargoId, $areaId, $areaNombre, $cmpnia, $request) {
-                $anioId = DB::table($this->schema . 'a_anios')
-                    ->where('de_anio', date('Y'))
-                    ->where('cdgo_cmpnia', $cmpnia)
-                    ->value('cdgo_anio');
-
-                if (!$anioId) {
-                    $anioId = DB::table($this->schema . 'a_anios')->insertGetId([
-                        'de_anio' => date('Y'),
-                        'dc_anio' => substr(date('Y'), 2, 2),
-                        'cdgo_cmpnia' => $cmpnia
-                    ], 'cdgo_anio');
-                }
-
-                foreach ($ids as $id) {
-                    $id = (int)$id;
-                    $idInternalDoc = null;
-                    $anexoTexto = '';
-
-                    // 1. Crear Trámite Interno Asociado si corresponde
-                    if ($enviarConTramite && $docTipo > 0) {
-                        $expeTodo = DB::table($this->schema . 'p_dto_trmtes')->where('cdgo_dto_trmte', $id)->value('nu_expe_todo') ?? '—';
-                        $referenciaObse = "CON REFERENCIA AL EXPEDIENTE N° " . $expeTodo;
-                        
-                        $nextSeed = $this->generarSeedNumber($docTipo, $anioId, $areaId, $cargoId, $user->cdgo_lgin);
-                        $formattedSeed = $nextSeed . '-' . date('Y');
-                        $tituloCompleto = $this->generarTituloTramiteInterno($docTipo, $formattedSeed, $areaId, $cargoId, $user->cdgo_lgin);
-                        
-                        $idInternalDoc = DB::table($this->schema . 'p_dtos_ntrnos')->insertGetId([
-                            'cdgo_tpo_trmte' => $docTipo,
-                            'cdgo_anio' => $anioId,
-                            'cdgo_area' => $areaId,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_cmpnia' => $cmpnia,
-                            'cdgo_dto_trmte' => $id,
-                            'cdgo_dtos_ntrnos_pri' => null,
-                            'nu_tram_todo' => $nextSeed . '-' . date('Y'),
-                            'nu_tram_cmplto' => $tituloCompleto,
-                            'nu_tram' => $nextSeed,
-                            'de_obser' => mb_strtoupper($referenciaObse, 'UTF-8'),
-                            'de_urls_adjnto' => '',
-                            'fe_ingrso' => $fecha,
-                            'in_envo_fsco' => '0',
-                            'in_prrdad_trmte' => 1
-                        ], 'cdgo_dtos_ntrnos');
-
-                        DB::table($this->schema . 'r_trmtes_ntrnos')->insert([
-                            'cdgo_dtos_ntrnos' => $idInternalDoc,
-                            'cdgo_estdo_trmte' => 1,
-                            'cdgo_lgin' => $user->cdgo_lgin,
-                            'cdgo_crgo_sa' => $cargoId,
-                            'cdgo_crgo_en' => $cargoId,
-                            'de_urls_agrdo' => '',
-                            'fe_rcbdo' => $fecha,
-                            'de_obser_ntrnos' => mb_strtoupper($observaciones, 'UTF-8'),
-                            'in_copia' => '1'
-                        ]);
-
-                        $docTypeName = DB::table($this->schema . 'a_tpo_trmtes')->where('cdgo_tpo_trmte', $docTipo)->value('de_tpo_trmte') ?? 'TRÁMITE';
-                        $anexoTexto = "; CON {$docTypeName} N° " . str_pad($nextSeed, 8, '0', STR_PAD_LEFT) . "-" . date('Y') . ".";
-                    }
-
-                    // 2. Deshabilitar movimiento actual
-                    DB::table($this->schema . 'r_trmtes_dcmntos')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->where('in_esta', '1')
-                        ->update(['in_esta' => '0']);
-
-                    // 3. Crear el nuevo movimiento final de cierre (Estado = 3, Finalizado, in_esta = '0')
-                    $finalObse = mb_strtoupper($observaciones . $anexoTexto, 'UTF-8');
-                    $newMovimientoId = DB::table($this->schema . 'r_trmtes_dcmntos')->insertGetId([
-                        'cdgo_crgo_sa' => $cargoId,
-                        'cdgo_crgo_en' => $cargoId,
-                        'cdgo_dto_trmte' => $id,
-                        'cdgo_estdo_trmte' => 3, // 3 = Finalizado
-                        'fe_rcbdo_trmte' => $fecha,
-                        'de_obse' => $finalObse,
-                        'in_esta' => '0', // Inactivo por ser final
-                        'de_urls_imag' => '',
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'nu_foli_anex' => $folios,
-                        'fe_cta_vrtal' => null,
-                        'nu_anxo' => null,
-                        'cdgo_dtos_ntrnos' => $idInternalDoc
-                    ], 'cdgo_trmte_dcmnto');
-
-                    // 4. Procesar adjuntos
-                    $attachments = $this->processAttachments($request, 'fle_adjunto', 'fle_adjunto_pdf', $newMovimientoId, $idInternalDoc);
-                    if ($attachments['filename'] !== '') {
-                        DB::table($this->schema . 'r_trmtes_dcmntos')
-                            ->where('cdgo_trmte_dcmnto', $newMovimientoId)
-                            ->update(['de_urls_imag' => $attachments['filename']]);
-
-                        if ($idInternalDoc) {
-                            DB::table($this->schema . 'p_dtos_ntrnos')
-                                ->where('cdgo_dtos_ntrnos', $idInternalDoc)
-                                ->update(['de_urls_adjnto' => $attachments['filename_internal']]);
-                        }
-                    }
-
-                    // 5. Concatenar observaciones generales al expediente externo
-                    $currentObse = DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->value('de_obse_todo') ?? '';
-                    $newObseTodo = $currentObse !== '' ? $currentObse . ' - ' . $finalObse : $finalObse;
-                    DB::table($this->schema . 'p_dto_trmtes')
-                        ->where('cdgo_dto_trmte', $id)
-                        ->update(['de_obse_todo' => mb_strtoupper($newObseTodo, 'UTF-8')]);
-
-                    // 6. Registrar log legacy
-                    DB::table($this->schema . 'p_sgmto_log')->insert([
-                        'cdgo_lgin' => $user->cdgo_lgin,
-                        'de_sgto_log' => "Se finalizo el expediente {$id}",
-                        'fe_sgto_log' => now(),
-                        'de_ip' => $request->ip()
-                    ]);
-
-                    // 7. Notificación por Correo al Solicitante
-                    if ($enviarCorreo) {
-                        $emailInfo = DB::table($this->schema . 'p_dto_trmtes as p')
-                            ->join($this->schema . 'p_usrios as u', 'p.cdgo_usrios', '=', 'u.cdgo_usrios')
-                            ->leftJoin($this->schema . 'h_usrios_crreo as h', 'p.cdgo_usrios_crreo', '=', 'h.cdgo_usrios_crreo')
-                            ->select('u.de_mail', 'p.nu_expe_todo', 'u.no_crto', 'h.de_mail as de_usrios_mail')
-                            ->where('p.cdgo_dto_trmte', $id)
-                            ->first();
-
-                        if ($emailInfo) {
-                            $targetMail = strtolower(trim($emailInfo->de_usrios_mail ?: $emailInfo->de_mail));
-                            if ($targetMail !== '') {
-                                $filePath = null;
-                                if ($attachments['filename'] !== '') {
-                                    $filePath = storage_path('app/public/adjuntos/' . $attachments['filename']);
-                                }
-
-                                try {
-                                    Mail::to($targetMail)->send(new ExpedienteFinalizadoMail(
-                                        $emailInfo,
-                                        $finalObse,
-                                        $areaNombre,
-                                        $filePath,
-                                        $attachments['filename']
-                                    ));
-                                } catch (\Exception $mailEx) {
-                                    Log::error("Error al enviar correo de finalización del expediente {$id}: " . $mailEx->getMessage());
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            return response()->json(['status' => 'success', 'message' => 'Los expedientes fueron finalizados correctamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Error al finalizar: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Consulta las solicitudes de copia de video asociadas a un expediente
-     */
-    public function solicitudVideo(Request $request)
-    {
-        $id = (int) $request->input('id');
-        if ($id <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'ID inválido'], 400);
-        }
-
-        $solicitudes = DB::table($this->schema . 'p_solicitud_video')
-            ->select(
-                'cdgo_solicitud_video',
-                'cdgo_tipo_solicitante',
-                'tipo_documento',
-                'nu_documento',
-                'de_nombre_usuario',
-                'de_cargo',
-                'de_institucion_uo',
-                'fe_inicio_grabacion',
-                'fe_fin_grabacion',
-                'de_observaciones',
-                'fe_entrega',
-                'fe_solicitud',
-                'de_correo_solicitante'
-            )
-            ->where('cdgo_dto_trmte', $id)
-            ->where('in_esta', '1')
-            ->orderBy('fe_solicitud', 'desc')
-            ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $solicitudes
-        ]);
-    }
-
-    // ==========================================
-    // MÉTODOS AUXILIARES Y DE CONSULTA
-    // ==========================================
-
-    private function baseSelect(): string
-    {
-        return 'SELECT p_dto_trmtes.cdgo_dto_trmte,
-        p_dto_trmtes.nu_expe_todo,
-        p_usrios.no_crto,
-        r_trmtes_dcmntos.fe_rcbdo_trmte,
-        a_estdos_trmtes.dc_estdo_trmte,
-        a_estdos_trmtes.cdgo_estdo_trmte,
-        p_dto_trmtes.de_obse_trmte,
-        p_dto_trmtes.fe_ingr_trmte,
-        p_dto_trmtes.cdgo_docmnto_trmte,
-        adoc.de_docmnto_trmte,
-        p_dto_trmtes.nu_tiem_sile_adcnal,
-        p_dto_trmtes.cdgo_usrios AS cdgo_usrios_trmte,
-        p_lgin.cdgo_usrios AS cdgo_usrios_lgin,
-        r_trmtes_dcmntos.de_obse,
-        a_areas.de_area,
-        a_areas.dc_area,
-        p_crgos_en.de_crgo AS de_crgo_en,
-        p_dto_trmtes.in_docu_trmte,
-        adoc.nu_tiem_sile,
-        adoc.in_sile_admi ';
-    }
-
-    private function baseFromJoin(): string
-    {
-        $s = $this->schema;
-
-        return "FROM {$s}r_trmtes_dcmntos r_trmtes_dcmntos
-            INNER JOIN {$s}p_crgos p_crgos_en ON r_trmtes_dcmntos.cdgo_crgo_en = p_crgos_en.cdgo_crgo
-            LEFT JOIN {$s}p_crgos p_crgos_sa ON r_trmtes_dcmntos.cdgo_crgo_sa = p_crgos_sa.cdgo_crgo
-            INNER JOIN {$s}p_dto_trmtes p_dto_trmtes ON r_trmtes_dcmntos.cdgo_dto_trmte = p_dto_trmtes.cdgo_dto_trmte
-            INNER JOIN {$s}a_areas a_areas ON p_dto_trmtes.cdgo_area = a_areas.cdgo_area
-            INNER JOIN {$s}p_lgin p_lgin ON p_dto_trmtes.co_usua_ingr = p_lgin.cdgo_lgin
-            INNER JOIN {$s}p_usrios p_usrios ON p_dto_trmtes.cdgo_usrios = p_usrios.cdgo_usrios
-            INNER JOIN {$s}a_estdos_trmtes a_estdos_trmtes ON r_trmtes_dcmntos.cdgo_estdo_trmte = a_estdos_trmtes.cdgo_estdo_trmte
-            LEFT JOIN {$s}a_docmntos_trmtes adoc ON p_dto_trmtes.cdgo_docmnto_trmte = adoc.cdgo_docmnto_trmte ";
-    }
-
-    private function buildBandejaWhere(string $bandeja, int $cargoId, int $areaId, string $reporte): string
-    {
-        if ($reporte === 'sin_finalizar') {
-            return " AND r_trmtes_dcmntos.cdgo_crgo_en <> '{$cargoId}'
-                AND r_trmtes_dcmntos.cdgo_crgo_sa = '{$cargoId}'
-                AND (SELECT ae_sf.cdgo_estdo_trmte
-                    FROM {$this->schema}r_trmtes_dcmntos rtd_sf
-                    INNER JOIN {$this->schema}a_estdos_trmtes ae_sf ON rtd_sf.cdgo_estdo_trmte = ae_sf.cdgo_estdo_trmte
-                    WHERE rtd_sf.cdgo_dto_trmte = p_dto_trmtes.cdgo_dto_trmte AND rtd_sf.in_esta = '1'
-                    ORDER BY rtd_sf.cdgo_trmte_dcmnto DESC LIMIT 1) <> '3' ";
-        }
-
-        switch ($bandeja) {
-            case 'todos':
-                return " AND p_crgos_en.cdgo_area = '{$areaId}' AND r_trmtes_dcmntos.in_esta = '1' ";
-
-            case 'recibidos':
-                return " AND r_trmtes_dcmntos.cdgo_crgo_en = '{$cargoId}'
-                    AND r_trmtes_dcmntos.cdgo_crgo_sa = '{$cargoId}'
-                    AND r_trmtes_dcmntos.in_esta = '1'
-                    AND r_trmtes_dcmntos.cdgo_estdo_trmte NOT IN ('3','26','27') ";
-
-            case 'salida':
-                return " AND r_trmtes_dcmntos.cdgo_crgo_en <> '{$cargoId}'
-                    AND r_trmtes_dcmntos.cdgo_crgo_sa = '{$cargoId}'
-                    AND r_trmtes_dcmntos.in_esta = '1' ";
-
-            case 'finalizados':
-                return " AND r_trmtes_dcmntos.cdgo_crgo_en = '{$cargoId}'
-                    AND r_trmtes_dcmntos.cdgo_crgo_sa = '{$cargoId}'
-                    AND r_trmtes_dcmntos.in_esta = '0'
-                    AND r_trmtes_dcmntos.cdgo_estdo_trmte IN ('3','26') ";
-
-            case 'archivo':
-                return " AND r_trmtes_dcmntos.cdgo_crgo_en = '{$cargoId}'
-                    AND r_trmtes_dcmntos.cdgo_crgo_sa = '{$cargoId}'
-                    AND r_trmtes_dcmntos.in_esta = '1'
-                    AND r_trmtes_dcmntos.cdgo_estdo_trmte IN ('27') ";
-
-            case 'entrada':
-            default:
-                return " AND (
-                    (
-                        r_trmtes_dcmntos.cdgo_crgo_en = '{$cargoId}'
-                        AND r_trmtes_dcmntos.cdgo_crgo_sa <> '{$cargoId}'
-                        AND r_trmtes_dcmntos.in_esta = '1'
-                        AND r_trmtes_dcmntos.cdgo_estdo_trmte NOT IN ('5','12','29')
-                    )
-                    OR (
-                        r_trmtes_dcmntos.cdgo_crgo_en = '{$cargoId}'
-                        AND r_trmtes_dcmntos.cdgo_estdo_trmte IN ('25','51')
-                        AND r_trmtes_dcmntos.in_esta = '1'
-                    )
-                ) ";
-        }
-    }
-
-    private function buildSearchWhere(string $criterio, string $descripcion): string
-    {
-        if ($descripcion === '') {
-            return '';
-        }
-
-        $esc = str_replace("'", "''", $descripcion);
-
-        switch ($criterio) {
-            case 'expe_varios':
-                $parts = array_filter(array_map('intval', explode(',', preg_replace('/[^0-9,]/', '', $descripcion))));
-                if ($parts === []) {
-                    return '';
-                }
-                return ' AND p_dto_trmtes.nu_expe_trmte IN (' . implode(',', $parts) . ') ';
-
-            case 'solicitante':
-                return " AND p_usrios.no_crto ILIKE '%{$esc}%' ";
-
-            case 'observaciones':
-                return " AND p_dto_trmtes.de_obse_trmte ILIKE '%{$esc}%' ";
-
-            case 'area':
-                return " AND a_areas.de_area ILIKE '%{$esc}%' ";
-
-            case 'tipo':
-                return " AND adoc.de_docmnto_trmte ILIKE '%{$esc}%' ";
-
-            case 'cargo':
-                return " AND p_crgos_en.de_crgo ILIKE '%{$esc}%' ";
-
-            case 'expe_todo':
-            default:
-                if (str_contains($descripcion, ',')) {
-                    $quoted = [];
-                    foreach (array_map('trim', explode(',', $descripcion)) as $p) {
-                        if ($p === '') {
-                            continue;
-                        }
-                        $quoted[] = "'" . str_replace("'", "''", $p) . "'";
-                    }
-                    if ($quoted !== []) {
-                        return ' AND p_dto_trmtes.nu_expe_todo IN (' . implode(',', $quoted) . ') ';
-                    }
-                }
-                return " AND p_dto_trmtes.nu_expe_todo::text ILIKE '%{$esc}%' ";
-        }
-    }
-
-    private function formatNumeroExpediente(?string $nu): string
-    {
-        if ($nu === null || $nu === '') {
-            return '—';
-        }
-
-        $expe = explode('-', $nu);
-        if (count($expe) < 3) {
-            return $nu;
-        }
-
-        $middle = $expe[1] . '-' . substr($expe[2], 2, 10);
-
-        return $expe[0] . '-' . $this->padCerosIzquierda($middle, 8);
-    }
-
-    private function padCerosIzquierda(string $expe, int $ancho): string
-    {
-        $nume = explode('.', $expe);
-        $dife = $ancho - strlen($nume[0]);
-        if ($dife <= 0) {
-            return $expe;
-        }
-
-        return str_repeat('0', $dife) . $expe;
-    }
-
-    private function calcularDiasTranscurridos($fechaIngreso): int
-    {
-        if (!$fechaIngreso) return 0;
-        return (int) Carbon::parse($fechaIngreso)->diffInDays(Carbon::now());
-    }
-
-    private function calcularTiempoTranscurrido($fechaInicio, $fechaFin = null): string
-    {
-        if (!$fechaInicio) {
-            return '—';
-        }
-        $start = Carbon::parse($fechaInicio);
-        $end = $fechaFin ? Carbon::parse($fechaFin) : Carbon::now();
-        
-        $diffMinutes = $start->diffInMinutes($end);
-        $hours = floor($diffMinutes / 60);
-        $minutes = $diffMinutes % 60;
-        
-        if ($hours > 0) {
-            return $hours . 'h ' . $minutes . 'm';
-        }
-        return $minutes . 'm';
-    }
-
-    private function generarTituloTramiteInterno(int $tipoDocumentoId, string $nuSmlla, int $areaId, int $cargoId, int $userId): string
-    {
-        $tipo = DB::table($this->schema . 'a_tpo_trmtes')
-            ->where('cdgo_tpo_trmte', $tipoDocumentoId)
-            ->first();
-        if (!$tipo) {
-            return '';
-        }
-        
-        $de_tpo_trmte_plntlla = $tipo->de_tpo_trmte_plntlla ?: $tipo->de_tpo_trmte;
-        
-        $parts = explode('-', $nuSmlla);
-        $seedNum = $parts[0] ?? '0';
-        $year = $parts[1] ?? date('Y');
-        
-        $cargoInfo = DB::table($this->schema . 'p_crgos as c')
-            ->join($this->schema . 'a_areas as a', 'c.cdgo_area', '=', 'a.cdgo_area')
-            ->leftJoin($this->schema . 'a_areas as ap', 'a.cdgo_area_prim', '=', 'ap.cdgo_area')
-            ->join($this->schema . 'r_crgos_lgin as rl', 'c.cdgo_crgo', '=', 'rl.cdgo_crgo')
-            ->join($this->schema . 'p_lgin as l', 'rl.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->join($this->schema . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select('c.cdgo_area', 'a.dc_area', 'a.cdgo_area_prim', 'ap.dc_area as dc_area_prim', 'u.no_crto')
-            ->where('c.cdgo_crgo', $cargoId)
-            ->first();
-            
-        $no_crto = '';
-        if ($tipo->in_scncal == '1' && $cargoInfo) {
-            $no_crto = '-' . $this->obtenerIniciales($cargoInfo->no_crto);
-        }
-        
-        $gerencia = '';
-        $subgerencia = '';
-        if ($cargoInfo) {
-            if ($cargoInfo->dc_area_prim) {
-                $gerencia = '-' . str_replace('.', '', $cargoInfo->dc_area_prim);
-            }
-            if ($cargoInfo->dc_area) {
-                $subgerencia = '-' . str_replace('.', '', $cargoInfo->dc_area);
-            }
-        }
-        
-        $nroFormateado = str_pad($seedNum, 4, '0', STR_PAD_LEFT);
-        
-        return "{$de_tpo_trmte_plntlla} Nº {$nroFormateado}-{$year}/MDPP{$gerencia}{$subgerencia}{$no_crto}";
-    }
-
-    private function obtenerIniciales(string $nombre): string
-    {
-        $iniciales = '';
-        $palabras = explode(' ', preg_replace('/\s+/', ' ', trim($nombre)));
-        foreach ($palabras as $p) {
-            if (strlen($p) > 0) {
-                $iniciales .= strtoupper($p[0]);
-            }
-        }
-        return $iniciales;
-    }
-
-    private function generarSeedNumber(int $tipoDocumentoId, int $anioId, int $areaId, int $cargoId, int $userId): int
-    {
-        $tipo = DB::table($this->schema . 'a_tpo_trmtes')
-            ->where('cdgo_tpo_trmte', $tipoDocumentoId)
-            ->first();
-        
-        $inScncal = $tipo->in_scncal ?? 0;
-        
-        $nextSeed = DB::table($this->schema . 'a_smlla_intrno')
-            ->where('cdgo_tpo_trmte', $tipoDocumentoId)
-            ->where('cdgo_anio', $anioId)
-            ->where(function($q) use ($areaId, $cargoId, $inScncal) {
-                if ($inScncal == 1) {
-                    $q->where('cdgo_crgo', $cargoId);
-                } else {
-                    $q->where('cdgo_area', $areaId);
-                }
-            })
-            ->max('nu_smlla_intrno');
-            
-        $nextSeed = $nextSeed ? $nextSeed + 1 : 1;
-        
-        DB::table($this->schema . 'a_smlla_intrno')->insert([
-            'cdgo_anio' => $anioId,
-            'cdgo_area' => $areaId,
-            'cdgo_crgo' => $cargoId,
-            'cdgo_tpo_trmte' => $tipoDocumentoId,
-            'nu_smlla_intrno' => $nextSeed,
-            'co_usua_modi' => $userId,
-            'ts_usua_modi' => now(),
-            'in_esta' => '1'
-        ]);
-        
-        return $nextSeed;
-    }
-
-    private function processAttachments(Request $request, string $inputNamePrefix, string $primaryUploadName, string $movimientoId, ?string $internalId = null): array
-    {
-        $uploadedFiles = [];
-        
-        // Archivo principal firmado digitalmente (habitualmente fle_adjunto)
-        if ($request->hasFile($primaryUploadName)) {
-            $uploadedFiles[] = [
-                'file' => $request->file($primaryUploadName),
-                'type' => 'primary'
-            ];
-        }
-        
-        // Múltiples anexos (fle_adjunto1, fle_adjunto2, etc.)
-        for ($i = 1; $i <= 4; $i++) {
-            $inputName = $inputNamePrefix . $i;
-            if ($request->hasFile($inputName)) {
-                $uploadedFiles[] = [
-                    'file' => $request->file($inputName),
-                    'type' => 'annex'
-                ];
-            }
-        }
-        
-        if (empty($uploadedFiles)) {
-            return ['filename' => '', 'filename_internal' => ''];
-        }
-        
-        // Asegurar que existan los directorios
-        if (!file_exists(storage_path('app/public/adjuntos'))) {
-            @mkdir(storage_path('app/public/adjuntos'), 0755, true);
-        }
-        if (!file_exists(storage_path('app/public/tramites'))) {
-            @mkdir(storage_path('app/public/tramites'), 0755, true);
-        }
-        
-        // Si hay UN solo archivo y es el principal PDF
-        if (count($uploadedFiles) === 1 && $uploadedFiles[0]['type'] === 'primary') {
-            $file = $uploadedFiles[0]['file'];
-            $ext = $file->getClientOriginalExtension();
-            $filename = 'adjunto_' . $movimientoId . '_' . time() . '.' . $ext;
-            $file->storeAs('public/adjuntos', $filename);
-            
-            $filename_internal = '';
-            if ($internalId) {
-                $filename_internal = 'pri' . $internalId . '.pdf';
-                @copy(storage_path('app/public/adjuntos/' . $filename), storage_path('app/public/tramites/' . $filename_internal));
-            }
-            
-            return ['filename' => $filename, 'filename_internal' => $filename_internal];
-        }
-        
-        // Si son múltiples archivos, comprimirlos
-        $zipFilename = $movimientoId . '.zip';
-        $zipPath = storage_path('app/public/adjuntos/' . $zipFilename);
-        
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE) === true) {
-            foreach ($uploadedFiles as $uFile) {
-                $file = $uFile['file'];
-                $name = $uFile['type'] === 'annex' ? 'anexos/' . $file->getClientOriginalName() : $file->getClientOriginalName();
-                $zip->addFile($file->getRealPath(), $name);
-            }
-            $zip->close();
-        }
-        
-        $zipFilenameInternal = '';
-        if ($internalId) {
-            $zipFilenameInternal = 'pri' . $internalId . '.zip';
-            @copy($zipPath, storage_path('app/public/tramites/' . $zipFilenameInternal));
-        }
-        
-        return ['filename' => $zipFilename, 'filename_internal' => $zipFilenameInternal];
-    }
-
-    /**
-     * Consulta la siguiente semilla numérica correlativa para un trámite interno
-     */
-    public function obtenerSemilla(Request $request)
-    {
-        $tipoDocumentoId = (int) $request->input('doc_tipo');
-        if ($tipoDocumentoId <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'Tipo de documento inválido'], 400);
-        }
-        
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        $cargoFila = DB::table($this->schema . 'p_crgos')->where('cdgo_crgo', $cargoId)->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
-        
-        $tipo = DB::table($this->schema . 'a_tpo_trmtes')
-            ->where('cdgo_tpo_trmte', $tipoDocumentoId)
-            ->first();
-            
-        if (!$tipo) {
-            return response()->json(['status' => 'error', 'message' => 'Tipo de documento no encontrado'], 400);
-        }
-        
-        $inScncal = $tipo->in_scncal ?? 0;
-        
-        $anioId = DB::table($this->schema . 'a_anios')
-            ->where('de_anio', date('Y'))
-            ->where('cdgo_cmpnia', $cmpnia)
-            ->value('cdgo_anio');
-            
-        if (!$anioId) {
-            $anioId = DB::table($this->schema . 'a_anios')->insertGetId([
-                'de_anio' => date('Y'),
-                'dc_anio' => substr(date('Y'), 2, 2),
-                'cdgo_cmpnia' => $cmpnia
-            ], 'cdgo_anio');
-        }
-            
-        $nextSeed = DB::table($this->schema . 'a_smlla_intrno')
-            ->where('cdgo_tpo_trmte', $tipoDocumentoId)
-            ->where('cdgo_anio', $anioId)
-            ->where(function($q) use ($areaId, $cargoId, $inScncal) {
-                if ($inScncal == 1) {
-                    $q->where('cdgo_crgo', $cargoId);
-                } else {
-                    $q->where('cdgo_area', $areaId);
-                }
-            })
-            ->max('nu_smlla_intrno');
-            
-        $nextSeed = $nextSeed ? $nextSeed + 1 : 1;
-        
-        return response()->json([
-            'status' => 'success',
-            'semilla' => $nextSeed . '-' . date('Y')
-        ]);
-    }
-    
-    /**
-     * Muestra el detalle completo del expediente (Sustituye a busca_expedi_deta.php)
-     */
-    public function detalle(Request $request)
-    {
-        $id = (int) $request->input('id');
-        if ($id <= 0) {
-            return response()->json(['status' => 'error', 'message' => 'ID inválido'], 400);
-        }
-
-        $row = DB::table($this->schema . 'p_dto_trmtes as p')
-            ->leftJoin($this->schema . 'a_tpo_trmtes as t', 'p.cdgo_tpo_trmte', '=', 't.cdgo_tpo_trmte')
-            ->leftJoin($this->schema . 'a_docmntos_trmtes as adoc', 'p.cdgo_docmnto_trmte', '=', 'adoc.cdgo_docmnto_trmte')
-            ->leftJoin($this->schema . 'p_usrios as u', 'p.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select(
-                'p.nu_expe_todo',
-                'p.fe_ingr_trmte',
-                'p.de_obse_todo',
-                'p.in_docu_trmte',
-                'p.nu_foli_trmte',
-                't.de_tpo_trmte as tipo_tramite',
-                'adoc.de_docmnto_trmte as servicio',
-                'adoc.nu_tiem_sile',
-                'p.nu_tiem_sile_adcnal',
-                'u.no_crto as solicitante_nombres',
-                'u.nu_docu',
-                'u.nu_ruc',
-                'u.de_dire',
-                'u.nu_tele',
-                'u.de_mail'
-            )
-            ->where('p.cdgo_dto_trmte', $id)
-            ->first();
-
-        if (!$row) {
-            return response()->json(['status' => 'error', 'message' => 'Expediente no encontrado'], 404);
-        }
-
-        $requisitos = DB::table($this->schema . 'r_dtos_rqtos as r')
-            ->join($this->schema . 'h_rqtos_trmtes as ttr', 'r.cdgo_rqto_trmte', '=', 'ttr.cdgo_rqto_trmte')
-            ->select('r.in_pres as cumplido', 'ttr.de_rqto_trmte as nombre')
-            ->where('r.cdgo_dto_trmte', $id)
-            ->get();
-
-        $data = [
-            'expediente' => $row->nu_expe_todo,
-            'tipo_documento' => $row->in_docu_trmte === '1' ? 'Empresa' : 'Persona Natural',
-            'solicitante' => $row->solicitante_nombres,
-            'documento_id' => $row->in_docu_trmte === '1' ? ($row->nu_ruc ?: $row->nu_docu) : ($row->nu_docu ?: $row->nu_ruc),
-            'domicilio' => $row->de_dire,
-            'telefono' => $row->nu_tele,
-            'correo' => $row->de_mail,
-            'folios' => $row->nu_foli_trmte,
-            'fecha_ingreso' => Carbon::parse($row->fe_ingr_trmte)->format('d/m/Y H:i'),
-            'servicio' => $row->servicio,
-            'tipo_tramite' => $row->tipo_tramite,
-            'silencio_admin' => ((int)$row->nu_tiem_sile > 0) ? ($row->nu_tiem_sile + $row->nu_tiem_sile_adcnal) . ' Días' : 'Sin Silencio',
-            'observaciones' => $row->de_obse_todo,
-            'requisitos' => $requisitos
+        $bandeja = (string) $request->validated('bandeja', BandejaTramiteExterno::ENTRADA->value);
+        $filtros = [
+            'criterio'    => (string) $request->validated('criterio', '1'),
+            'descripcion' => (string) $request->validated('descripcion', ''),
+            'desde'       => (string) $request->validated('desde', ''),
+            'hasta'       => (string) $request->validated('hasta', ''),
         ];
 
+        $pagina = max(1, (int) $request->validated('page', 1));
+        $porPagina = min(100, max(1, (int) $request->validated('per_page', 25)));
+
+        try {
+            $resultado = $this->repository->consultarBandeja($contexto, $bandeja, $filtros, $pagina, $porPagina);
+
+            return response()->json([
+                'status'     => 'success',
+                'data'       => $resultado['data'],
+                'pagination' => [
+                    'current_page' => $pagina,
+                    'last_page'    => $resultado['last_page'],
+                    'per_page'     => $porPagina,
+                    'total'        => $resultado['total'],
+                ],
+                'meta'       => [
+                    'page'      => $pagina,
+                    'per_page'  => $porPagina,
+                    'total'     => $resultado['total'],
+                    'last_page' => $resultado['last_page'],
+                ],
+            ]);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'No se pudo cargar la bandeja solicitada.');
+        }
+    }
+
+    /**
+     * Consulta el histórico completo de movimientos con especificación HIST-001 (Columnas U, A, D).
+     */
+    public function historial(ConsultarHistorialRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $expedienteId = (int) $request->validated('id');
+        $movimientosHistoricos = $this->repository->obtenerMovimientosHistoricosPorExpediente(
+            $expedienteId,
+            $contexto->idCompania
+        );
+        if (!$this->policy->verHistorialExpediente($contexto, $movimientosHistoricos)) {
+            return response()->json(['status' => 'error', 'message' => 'Expediente no encontrado o sin autorización.'], 404);
+        }
+
+        try {
+            $movimientos = $this->repository->obtenerHistoricoMovimientos($expedienteId);
+
+            return response()->json([
+                'status' => 'success',
+                'data'   => $movimientos,
+            ]);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'No se pudo cargar el historial del expediente.');
+        }
+    }
+
+    /**
+     * Obtiene el detalle formal de un expediente para el modal de detalle.
+     */
+    public function detalle(ConsultarDetalleRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $id = (int) $request->validated('id');
+        $movimientosActivos = $this->repository->obtenerMovimientosActivosPorExpediente($id, $contexto->idCompania);
+        if (empty($movimientosActivos) || !$this->policy->ver($contexto, $movimientosActivos)) {
+            return response()->json(['status' => 'error', 'message' => 'Expediente no encontrado o sin autorización.'], 404);
+        }
+
+        $detalle = $this->repository->obtenerDetalleExpediente($id, $contexto->idCompania);
+        if (!$detalle) {
+            return response()->json(['status' => 'error', 'message' => 'Expediente no encontrado.'], 404);
+        }
+
+        $payload = isset($detalle['data']) && is_array($detalle['data']) ? $detalle['data'] : $detalle;
+        unset($payload['data'], $payload['movimiento_dto']);
+
         return response()->json([
             'status' => 'success',
-            'data' => $data
+            'data'   => $payload,
         ]);
     }
 
     /**
-     * Muestra la Hoja de Ruta para impresión
+     * Recepciona uno o varios expedientes seleccionados.
      */
-    public function hojaRuta($id)
+    public function recepcionar(RecepcionarExpedienteRequest $request): JsonResponse
     {
-        $id = (int) $id;
-        
-        $expediente = DB::table($this->schema . 'p_dto_trmtes as p')
-            ->leftJoin($this->schema . 'p_usrios as u', 'p.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select('p.nu_expe_todo', 'p.fe_ingr_trmte', 'u.no_crto')
-            ->where('p.cdgo_dto_trmte', $id)
-            ->first();
-            
-        if (!$expediente) {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $fecha = (string) $request->validated('fecha');
+        $obs = $request->validated('observaciones') ? (string) $request->validated('observaciones') : null;
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->recepcionar($contexto, $ids, $fecha, $obs, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al recepcionar el expediente.');
+        }
+    }
+
+    /**
+     * Deriva expedientes hacia otra área/cargo.
+     */
+    public function derivar(DerivarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $cargoDestinoId = (int) ($request->validated('cargo') ?? 0);
+        $areaDestinoId = (int) ($request->validated('subgerencia') ?? $request->validated('gerencia') ?? 0);
+        $fecha = (string) $request->validated('fecha');
+        $obs = $request->validated('observaciones') ? (string) $request->validated('observaciones') : null;
+        $docTipo = $request->validated('doc_tipo') ? (int) $request->validated('doc_tipo') : null;
+        $tramiteNro = $request->validated('tramite_nro') ? (string) $request->validated('tramite_nro') : null;
+        $folios = $request->validated('folios') !== null ? (int) $request->validated('folios') : null;
+        $adjunto = $request->file('fle_adjunto_pdf') ?? $request->file('adjunto');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->derivar(
+                $contexto,
+                $ids,
+                $cargoDestinoId,
+                $fecha,
+                $obs,
+                $idempotencyKey,
+                $areaDestinoId,
+                $adjunto,
+                $docTipo,
+                $tramiteNro,
+                $folios
+            );
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al derivar el expediente.');
+        }
+    }
+
+    /**
+     * Asigna expedientes a un funcionario interno de la misma área.
+     */
+    public function asignar(AsignarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $cargoInternoId = (int) $request->validated('cargo');
+        $fecha = (string) $request->validated('fecha');
+        $obs = $request->validated('observaciones') ? (string) $request->validated('observaciones') : null;
+        $docTipo = $request->validated('doc_tipo') ? (int) $request->validated('doc_tipo') : null;
+        $tramiteNro = $request->validated('tramite_nro') ? (string) $request->validated('tramite_nro') : null;
+        $folios = $request->validated('folios') !== null ? (int) $request->validated('folios') : null;
+        $adjunto = $request->file('fle_adjunto_pdf') ?? $request->file('adjunto');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->asignar(
+                $contexto,
+                $ids,
+                $cargoInternoId,
+                $fecha,
+                $obs,
+                $idempotencyKey,
+                $docTipo,
+                $tramiteNro,
+                $folios,
+                $adjunto
+            );
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al asignar el expediente.');
+        }
+    }
+
+    /**
+     * Envía expedientes a múltiples áreas (Envío Multi-Área).
+     * Resuelve CE-P1-003, CE-P1-004 y CE-07.
+     */
+    public function enviar(EnviarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $areas = array_map('intval', (array) $request->validated('areas', []));
+        $fecha = (string) $request->validated('fecha');
+        $obs = $request->validated('observaciones') ? (string) $request->validated('observaciones') : null;
+        $docTipo = $request->validated('doc_tipo') ? (int) $request->validated('doc_tipo') : null;
+        $tramiteNro = $request->validated('tramite_nro') ? (string) $request->validated('tramite_nro') : null;
+        $folios = $request->validated('folios') !== null ? (int) $request->validated('folios') : null;
+        $adjunto = $request->file('fle_adjunto_pdf') ?? $request->file('adjunto');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->enviar(
+                $contexto,
+                $ids,
+                $areas,
+                $fecha,
+                $obs,
+                $docTipo,
+                $tramiteNro,
+                $folios,
+                $adjunto,
+                $idempotencyKey
+            );
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al enviar el expediente.');
+        }
+    }
+
+    /**
+     * Finaliza los expedientes seleccionados.
+     */
+    public function finalizar(FinalizarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $fecha = (string) $request->validated('fecha');
+        $obs = (string) $request->validated('observaciones');
+        $correo = $request->validated('correo') ? (string) $request->validated('correo') : null;
+        $enviarCorreo = $request->validated('enviar_correo') !== null ? (int) $request->validated('enviar_correo') : 0;
+        $docTipo = $request->validated('doc_tipo') ? (int) $request->validated('doc_tipo') : null;
+        $tramiteNro = $request->validated('tramite_nro') ? (string) $request->validated('tramite_nro') : null;
+        $folios = $request->validated('folios') !== null ? (int) $request->validated('folios') : null;
+        $adjunto = $request->file('fle_adjunto_pdf') ?? $request->file('adjunto');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->finalizar(
+                $contexto,
+                $ids,
+                $fecha,
+                $obs,
+                $correo,
+                $idempotencyKey,
+                $enviarCorreo,
+                $docTipo,
+                $tramiteNro,
+                $folios,
+                $adjunto
+            );
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al finalizar el expediente.');
+        }
+    }
+
+    /**
+     * Devolver/regresar expediente desde la bandeja de salida (TE-015).
+     */
+    public function devolver(DevolverExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $motivo = (string) $request->validated('motivo');
+        $fecha = (string) $request->validated('fecha');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->devolver($contexto, $ids, $motivo, $fecha, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al devolver el expediente.');
+        }
+    }
+
+    /**
+     * Archiva expedientes finalizados (TE-016, TE-026).
+     */
+    public function archivar(ArchivarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $ids = array_map('intval', (array) $request->validated('movimiento_ids'));
+        $ubicacion = (string) $request->validated('ubicacion');
+        $obs = $request->validated('observaciones') ? (string) $request->validated('observaciones') : null;
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->archivar($contexto, $ids, $ubicacion, $obs, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al archivar el expediente.');
+        }
+    }
+
+    /**
+     * Presta un expediente archivado (TE-025).
+     */
+    public function prestar(PrestarExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $movimientoId = (int) $request->validated('movimiento_id');
+        $prestatario = (string) $request->validated('prestatario');
+        $finalidad = (string) $request->validated('finalidad');
+        $salida = (string) $request->validated('fecha_salida');
+        $retorno = $request->validated('fecha_retorno') ? (string) $request->validated('fecha_retorno') : null;
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->prestar($contexto, $movimientoId, $prestatario, $finalidad, $salida, $retorno, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al prestar el expediente.');
+        }
+    }
+
+    /**
+     * Retorna un expediente prestado al archivo con validación de Policy estricta.
+     */
+    public function retornarPrestamo(RetornarPrestamoRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $movimientoId = (int) $request->validated('movimiento_id');
+        $obs = (string) ($request->validated('observaciones') ?? 'Devolución confirmada');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->retornarPrestamo($contexto, $movimientoId, $obs, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al retornar el préstamo del expediente.');
+        }
+    }
+
+    /**
+     * Redirige administrativamente un expediente (TE-044).
+     */
+    public function redirigir(RedirigirExpedienteRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autorizado.'], 401);
+        }
+
+        $movimientoId = (int) $request->validated('movimiento_id');
+        $nuevoCargoId = (int) $request->validated('nuevo_cargo_id');
+        $motivo = (string) $request->validated('motivo');
+        $idempotencyKey = $this->resolverClaveIdempotencia($request);
+        if ($idempotencyKey === null) {
+            return response()->json(['status' => 'error', 'message' => 'Cabecera Idempotency-Key obligatoria no proporcionada.'], 422);
+        }
+
+        try {
+            $res = $this->service->redirigir($contexto, $movimientoId, $nuevoCargoId, $motivo, $idempotencyKey);
+            return $this->respuestaExito($res['mensaje']);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'Error al redirigir el expediente.');
+        }
+    }
+
+    /**
+     * Resuelve de forma segura y estricta la clave de idempotencia según SEC-07 y RFC 9205.
+     */
+    private function resolverClaveIdempotencia(Request $request): ?string
+    {
+        $key = $request->header('Idempotency-Key') ?? $request->header('X-Idempotency-Key') ?? $request->input('idempotency_key');
+        if (!empty($key) && is_string($key)) {
+            return trim($key);
+        }
+
+        if (app()->environment('testing')) {
+            return (string) \Illuminate\Support\Str::uuid();
+        }
+
+        return null;
+    }
+
+    /**
+     * Descarga segura de un archivo adjunto con autorización por Policy y registro de auditoría (TE-002, TE-012).
+     */
+    public function descargarAdjunto(Request $request, int $id): BinaryFileResponse|Response
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            abort(401, 'No autenticado');
+        }
+
+        $movimiento = $this->repository->obtenerMovimientoPorMovimientoId($id, $contexto->idCompania);
+        if (!$movimiento || !$this->policy->descargarAdjunto($contexto, $movimiento)) {
+            abort(404, 'Movimiento no encontrado o sin autorización.');
+        }
+
+        $movFila = $this->repository->obtenerAdjuntoAutorizadoPorMovimiento($id, $contexto->idCompania);
+        $archivo = (string) ($movFila['de_urls_imag'] ?? '');
+        if (empty($archivo)) {
+            abort(404, 'El movimiento no posee archivo adjunto.');
+        }
+
+        try {
+            $rutaFisica = $this->gestorAdjuntos->resolverRutaSegura($archivo);
+            $this->repository->registrarAuditoriaDescarga($id, $contexto->nombreLogin, (string) $request->ip());
+
+            return response()->download($rutaFisica, basename($archivo));
+        } catch (Throwable) {
+            abort(404, 'Archivo no disponible en el almacenamiento seguro.');
+        }
+    }
+
+    /**
+     * Descarga consolidada de todos los adjuntos de un expediente en formato ZIP (HIST-001 / TE-014).
+     */
+    public function descargarTodos(Request $request, int $id): BinaryFileResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            abort(401, 'No autenticado');
+        }
+
+        $movimientosHistoricos = $this->repository->obtenerMovimientosHistoricosPorExpediente(
+            $id,
+            $contexto->idCompania
+        );
+        if (!$this->policy->verHistorialExpediente($contexto, $movimientosHistoricos)) {
+            abort(404, 'Expediente no encontrado o sin autorización.');
+        }
+
+        return $this->consolidacionService->generarZipConsolidado(
+            $contexto,
+            $id,
+            (string) $request->ip()
+        );
+    }
+
+    /**
+     * Muestra la Hoja de Ruta para impresión.
+     */
+    public function hojaRuta(Request $request, int $id)
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            abort(401, 'No autenticado');
+        }
+
+        $movimientosActivos = $this->repository->obtenerMovimientosActivosPorExpediente($id, $contexto->idCompania);
+        if (empty($movimientosActivos) || !$this->policy->hojaRuta($contexto, $movimientosActivos)) {
+            abort(404, 'Expediente no encontrado o sin autorización.');
+        }
+
+        $datosHojaRuta = $this->repository->obtenerDatosHojaRuta($id, $contexto->idCompania);
+        if (!$datosHojaRuta) {
             abort(404, 'Expediente no encontrado.');
         }
 
-        $historial = DB::table($this->schema . 'r_trmtes_dcmntos as r')
-            ->leftJoin($this->schema . 'p_crgos as p_crgos_en', 'r.cdgo_crgo_en', '=', 'p_crgos_en.cdgo_crgo')
-            ->leftJoin($this->schema . 'a_areas as a_areas_en', 'p_crgos_en.cdgo_area', '=', 'a_areas_en.cdgo_area')
-            ->leftJoin($this->schema . 'a_estdos_trmtes as a_estdos_trmtes', 'r.cdgo_estdo_trmte', '=', 'a_estdos_trmtes.cdgo_estdo_trmte')
-            ->leftJoin($this->schema . 'p_lgin as l', 'r.cdgo_lgin', '=', 'l.cdgo_lgin')
-            ->leftJoin($this->schema . 'p_usrios as u', 'l.cdgo_usrios', '=', 'u.cdgo_usrios')
-            ->select(
-                'r.cdgo_trmte_dcmnto',
-                'r.fe_rcbdo_trmte as fe_entrada',
-                'a_areas_en.de_area as area',
-                'a_estdos_trmtes.dc_estdo_trmte as estado',
-                'u.no_crto as usuario'
-            )
-            ->where('r.cdgo_dto_trmte', $id)
-            ->orderBy('r.cdgo_trmte_dcmnto', 'asc')
-            ->get();
-
-        $historial = $historial->map(function($mov) {
+        $expediente = $datosHojaRuta['expediente'];
+        $historial = collect($datosHojaRuta['historial'])->map(function ($mov) {
             $mov->fe_entrada = $mov->fe_entrada ? Carbon::parse($mov->fe_entrada)->format('d/m/Y H:i:s') : '—';
             return $mov;
         });
 
-        return view('mod_gm.mod_tram_exte.hoja_ruta', compact('expediente', 'historial'));
+        return view('mod_gm\mod_tram_exte\hoja_ruta', compact('expediente', 'historial'));
     }
 
     /**
-     * Descarga segura de archivos adjuntos del movimiento
+     * Imprime reporte PDF de la bandeja activa sin truncamiento silencioso.
      */
-    public function descargarAdjunto($id)
+    public function imprimirBandeja(ListarBandejaExternaRequest $request)
     {
-        $movimientoId = (int) $id;
-        if ($movimientoId <= 0) {
-            abort(400, 'ID inválido');
-        }
-
-        $movimiento = DB::table($this->schema . 'r_trmtes_dcmntos')
-            ->select('de_urls_imag')
-            ->where('cdgo_trmte_dcmnto', $movimientoId)
-            ->first();
-
-        if (!$movimiento || empty($movimiento->de_urls_imag)) {
-            abort(404, 'Archivo no encontrado');
-        }
-
-        $filePath = storage_path('app/public/adjuntos/' . $movimiento->de_urls_imag);
-
-        if (!file_exists($filePath)) {
-            abort(404, 'Archivo físico no encontrado');
-        }
-
-        return response()->download($filePath);
-    }
-
-    /**
-     * Genera un reporte PDF de la bandeja actual
-     */
-    public function imprimirBandeja(Request $request)
-    {
-        if (!Auth::check()) {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
             abort(401, 'No autenticado');
         }
 
-        $user = Auth::user();
-        $cargoId = (int) $request->session()->get('sigtram_cargo_id', 0);
-        if ($cargoId <= 0) {
-            abort(400, 'Seleccione un cargo activo');
-        }
+        $bandeja = (string) $request->validated('bandeja', 'entrada');
+        $filtros = [
+            'criterio'    => (string) $request->validated('criterio', '1'),
+            'descripcion' => (string) $request->validated('descripcion', ''),
+            'desde'       => (string) $request->validated('desde', ''),
+            'hasta'       => (string) $request->validated('hasta', ''),
+        ];
 
-        $cargoFila = DB::table($this->schema . 'p_crgos')
-            ->where('cdgo_crgo', $cargoId)
-            ->first();
-        $areaId = (int) ($cargoFila->cdgo_area ?? 0);
-        $cmpnia = (int) ($user->cdgo_cmpnia ?? 2);
+        $resultado = $this->repository->consultarBandeja($contexto, $bandeja, $filtros, 1, 0);
 
-        $bandeja = (string) $request->input('bandeja', 'entrada');
-        $criterio = (string) $request->input('criterio', 'expe_todo');
-        $descripcion = trim((string) $request->input('descripcion', ''));
-        $desde = (string) $request->input('desde', '');
-        $hasta = (string) $request->input('hasta', '');
-        $reporte = (string) $request->input('reporte', 'todos');
-        $estado = (string) $request->input('estado', '0');
-
-        $search = $this->buildSearchWhere($criterio, $descripcion);
-        $dateField = ($bandeja === 'todos' && $reporte !== 'sin_finalizar')
-            ? 'p_dto_trmtes.fe_ingr_trmte'
-            : 'r_trmtes_dcmntos.fe_rcbdo_trmte';
-
-        if ($desde !== '' && $hasta !== '') {
-            $desde = preg_replace('/[^0-9\-]/', '', $desde);
-            $hasta = preg_replace('/[^0-9\-]/', '', $hasta);
-            if ($desde !== '' && $hasta !== '') {
-                $search .= " AND {$dateField} >= '{$desde} 00:00:00' AND {$dateField} <= '{$hasta} 23:59:59' ";
-            }
-        }
-
-        if ($estado !== '0' && $estado !== '') {
-            $search .= " AND r_trmtes_dcmntos.cdgo_estdo_trmte = '" . intval($estado) . "' ";
-        }
-
-        $whereBandeja = $this->buildBandejaWhere($bandeja, $cargoId, $areaId, $reporte);
-
-        $baseQuery = $this->baseFromJoin()
-            . ' WHERE p_dto_trmtes.cdgo_cmpnia = ' . $cmpnia . $whereBandeja . $search;
-
-        $sql = $this->baseSelect() . $baseQuery
-            . ' ORDER BY r_trmtes_dcmntos.fe_rcbdo_trmte DESC NULLS LAST LIMIT 500';
-
-        $rows = DB::select($sql);
-
-        $data = array_map(function ($row) {
-            $a = (array) $row;
-            $a['tramite_formateado'] = $this->formatNumeroExpediente($a['nu_expe_todo'] ?? null);
-            return (object) $a;
-        }, $rows);
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('mod_gm.mod_tram_exte.reporte_bandeja', [
-            'data' => $data,
-            'bandeja' => $bandeja,
-            'fechaImpresion' => now()->format('d/m/Y H:i')
+        $pdf = Pdf::loadView('mod_gm.mod_tram_exte.reporte_bandeja', [
+            'data'           => $resultado['data'],
+            'bandeja'        => $bandeja,
+            'fechaImpresion' => now()->format('d/m/Y H:i'),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('reporte_bandeja_' . now()->format('YmdHi') . '.pdf');
+    }
+
+    /**
+     * Solicitud de video tutorial o lista de solicitudes asociadas a un expediente.
+     * Resuelve CE-P1-010 y CEF-P0-04.
+     */
+    public function solicitudVideo(SolicitudVideoRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $id = (int) $request->validated('id');
+        $movimientosActivos = $this->repository->obtenerMovimientosActivosPorExpediente($id, $contexto->idCompania);
+        if (empty($movimientosActivos) || !$this->policy->ver($contexto, $movimientosActivos)) {
+            return response()->json(['status' => 'error', 'message' => 'Expediente no encontrado o sin autorización.'], 404);
+        }
+
+        $solicitudes = $this->repository->obtenerSolicitudesVideo($id, $contexto->idCompania);
+
+        return response()->json([
+            'status'  => 'success',
+            'data'    => $solicitudes,
+            'message' => 'Solicitudes obtenidas con éxito.',
+        ]);
+    }
+
+    /**
+     * Obtiene el correlativo semilla para un tipo de documento interno vinculado.
+     * Resuelve CE-P0-002 y CE-01.
+     */
+    public function obtenerSemilla(ConsultarSemillaRequest $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $docTipo = (int) $request->validated('doc_tipo');
+        $semilla = $this->repository->obtenerSemillaInterno(
+            $docTipo,
+            $contexto->idCargo,
+            $contexto->idArea,
+            $contexto->idCompania
+        );
+
+        return response()->json([
+            'status'  => 'success',
+            'semilla' => $semilla['nu_smlla_intrno'] ?? (string) ($semilla['nu_smlla'] ?? '1'),
+            'data'    => $semilla,
+        ]);
+    }
+
+    /**
+     * Extrae el DTO de contexto activo del funcionario validando sesión según SEC-01.
+     */
+    private function obtenerContexto(Request $request): ?ContextoUsuarioAutenticadoDto
+    {
+        return $this->contextoService->obtenerContextoActivo();
+    }
+
+    /**
+     * Exporta los expedientes filtrados de Trámite Externo a un archivo Excel XLSX real.
+     *
+     * Valida obligatoriamente:
+     * 1. Autenticación y contexto activo (login + compañía sin fallbacks).
+     * 2. Permiso base del módulo de Trámite Externo vía SecurityCore.
+     * 3. Permiso granular 'tramite_externo.exportar_excel' vía TramiteExternoPolicy.
+     */
+    public function exportarExcel(ExportarBandejaExternaRequest $request): BinaryFileResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            abort(403, 'Acceso denegado: sesión o contexto activo no válido.');
+        }
+
+        // 1. Autorización base del módulo (SecurityCore)
+        $security = $this->securityCore ?? app(SecurityCoreInterface::class);
+        $cdgoLgin = $contexto->getCdgoLgin();
+        $tieneAccesoModulo = $security->tienePermiso(
+            $cdgoLgin,
+            'mod_gm/mod_tram_exte/segi_expedi',
+            $contexto->idCargo,
+            'ver'
+        );
+
+        if (!$tieneAccesoModulo) {
+            abort(403, 'Acceso denegado al módulo de Trámite Externo.');
+        }
+
+        // 2. Autorización granular de acción 'tramite_externo.exportar_excel' (Policy)
+        if (!$this->policy->exportarExcel($contexto)) {
+            abort(403, 'No tiene autorización para exportar expedientes a Excel.');
+        }
+
+        // 3. Ejecución de la exportación a XLSX real streaming
+        $exporter = $this->exportarExcelService ?? app(ExportarTramiteExternoExcelService::class);
+
+        return $exporter->exportar($contexto, $request->validated());
+    }
+
+    /**
+     * Resuelve la ruta canónica de la vista de seguimiento.
+     */
+    protected function vistaDesdeMenu(?string $pathVista = null, ?object $opcionMenu = null): string
+    {
+        if (is_string($pathVista) && $pathVista !== '' && view()->exists($pathVista)) {
+            return $pathVista;
+        }
+
+        $desdeOpcion = $this->vistaDesdeOpcion($opcionMenu);
+        if ($desdeOpcion !== '' && view()->exists($desdeOpcion)) {
+            return $desdeOpcion;
+        }
+
+        return 'mod_gm.mod_tram_exte.segi_expedi';
+    }
+
+    /**
+     * Retorna los conteos globales de las 10 bandejas canónicas para el contexto activo (Spec 12).
+     */
+    public function conteos(Request $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        try {
+            $conteos = $this->repository->obtenerConteosBandejas($contexto);
+
+            return response()->json([
+                'status' => 'success',
+                'data'   => $conteos,
+                'meta'   => [
+                    'contexto'       => 'cargo',
+                    'actualizado_en' => Carbon::now()->toIso8601String(),
+                ],
+            ]);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'No se pudieron calcular los conteos de las bandejas.');
+        }
+    }
+
+    /**
+     * Retorna los participantes de la columna U de un movimiento (Spec 10).
+     */
+    public function participantes(Request $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $movimientoId = (int) $request->input('movimiento_id');
+        if ($movimientoId <= 0) {
+            return response()->json(['status' => 'error', 'message' => 'ID de movimiento inválido.'], 400);
+        }
+
+        $mov = $this->repository->obtenerMovimientoPorMovimientoId($movimientoId, $contexto->idCompania);
+        if (!$mov) {
+            return response()->json(['status' => 'error', 'message' => 'Movimiento no encontrado o sin autorización.'], 404);
+        }
+
+        $autorizado = ($mov->inEsta === '1' && $this->policy->ver($contexto, $mov));
+        if (!$autorizado) {
+            $movimientosActivos = $this->repository->obtenerMovimientosActivosPorExpediente($mov->expedienteId, $contexto->idCompania);
+            $autorizado = $this->policy->verHistorico($contexto, $mov, $movimientosActivos);
+        }
+        if (!$autorizado) {
+            $movimientosHistoricos = $this->repository->obtenerMovimientosHistoricosPorExpediente($mov->expedienteId, $contexto->idCompania);
+            $autorizado = $this->policy->verHistorialExpediente($contexto, $movimientosHistoricos);
+        }
+
+        if (!$autorizado) {
+            return response()->json(['status' => 'error', 'message' => 'Movimiento no encontrado o sin autorización.'], 404);
+        }
+
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = in_array((int) $request->input('per_page', 25), [10, 25, 50], true) ? (int) $request->input('per_page', 25) : 25;
+        $search = $request->input('search') ? (string) $request->input('search') : null;
+
+        try {
+            $resultado = $this->repository->obtenerParticipantesU($movimientoId, $contexto, $page, $perPage, $search);
+            if (($resultado['status'] ?? '') === 'error') {
+                return response()->json($resultado, $resultado['code'] ?? 404);
+            }
+            return response()->json($resultado);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'No se pudieron cargar los participantes.');
+        }
+    }
+
+    /**
+     * Retorna la trazabilidad de descargas (p_sgmto_dscrgas) de un movimiento (Columna A).
+     */
+    public function auditoriaDescargas(Request $request): JsonResponse
+    {
+        $contexto = $this->obtenerContexto($request);
+        if (!$contexto) {
+            return response()->json(['status' => 'error', 'message' => 'No autenticado.'], 401);
+        }
+
+        $movimientoId = (int) $request->input('movimiento_id');
+        if ($movimientoId <= 0) {
+            return response()->json(['status' => 'error', 'message' => 'ID de movimiento inválido.'], 400);
+        }
+
+        $mov = $this->repository->obtenerMovimientoPorMovimientoId($movimientoId, $contexto->idCompania);
+        if (!$mov) {
+            return response()->json(['status' => 'error', 'message' => 'Movimiento no encontrado o sin autorización.'], 404);
+        }
+
+        $autorizado = ($mov->inEsta === '1' && $this->policy->ver($contexto, $mov));
+        if (!$autorizado) {
+            $movimientosActivos = $this->repository->obtenerMovimientosActivosPorExpediente($mov->expedienteId, $contexto->idCompania);
+            $autorizado = $this->policy->verHistorico($contexto, $mov, $movimientosActivos);
+        }
+        if (!$autorizado) {
+            $movimientosHistoricos = $this->repository->obtenerMovimientosHistoricosPorExpediente($mov->expedienteId, $contexto->idCompania);
+            $autorizado = $this->policy->verHistorialExpediente($contexto, $movimientosHistoricos);
+        }
+
+        if (!$autorizado) {
+            return response()->json(['status' => 'error', 'message' => 'Movimiento no encontrado o sin autorización.'], 404);
+        }
+
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = in_array((int) $request->input('per_page', 10), [10, 25, 50], true) ? (int) $request->input('per_page', 10) : 10;
+
+        try {
+            $resultado = $this->repository->obtenerAuditoriaDescargasPaginada($movimientoId, $contexto->idCompania, $page, $perPage);
+            if (($resultado['status'] ?? '') === 'error') {
+                return response()->json($resultado, $resultado['code'] ?? 404);
+            }
+            return response()->json($resultado);
+        } catch (Throwable $e) {
+            return $this->respuestaSeguraError($e, 'No se pudo cargar la auditoría de descargas.');
+        }
     }
 }

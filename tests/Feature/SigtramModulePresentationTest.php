@@ -15,10 +15,12 @@ class SigtramModulePresentationTest extends TestCase
             if($row['treatment']==='pantalla'){
                 $this->assertStringContainsString("components.sigtram.module-head",$source,$row['file']);
                 $this->assertStringContainsString("components.sigtram.module-bar",$source,$row['file']);
-                $this->assertStringContainsString('sigtram-module',$source,$row['file']);
+                $this->assertStringContainsString(($row['backend_native'] ?? false) ? 'sigtramNative' : 'sigtram-module',$source,$row['file']);
             }
             if($row['treatment']==='impresion-pdf'){
-                $this->assertStringContainsString("components.sigtram.print-brand",$source,$row['file']);
+                if (!($row['backend_native'] ?? false)) {
+                    $this->assertStringContainsString("components.sigtram.print-brand",$source,$row['file']);
+                }
                 $this->assertStringNotContainsString('sigtram-modules.js',$source,$row['file']);
             }
         }
@@ -63,5 +65,15 @@ class SigtramModulePresentationTest extends TestCase
         $html=view('components.sigtram.module-bar',['screenKey'=>'nuevo.index'])->render();
         $this->assertStringContainsString('Gestión de trámites',$html);
         $this->assertStringNotContainsString('Logística',$html);
+    }
+    public function test_migrated_modules_receive_branding_without_dom_enhancement_or_inert_density_controls(): void
+    {
+        $head=view('components.sigtram.module-head',['screenKey'=>'mod_gene.mod_tram_inter.correo-interno','sigtramNative'=>true])->render();
+        $bar=view('components.sigtram.module-bar',['screenKey'=>'mod_gene.mod_tram_inter.correo-interno','sigtramNative'=>true])->render();
+        $this->assertStringContainsString('sigtram-native-brand.css',$head);
+        $this->assertStringNotContainsString('sigtram-modules.js',$head);
+        $this->assertStringNotContainsString('sigtram-modules.css',$head);
+        $this->assertStringNotContainsString('data-sigtram-density',$bar);
+        $this->assertStringContainsString('target="_top"',$bar);
     }
 }

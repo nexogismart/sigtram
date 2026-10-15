@@ -5,31 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $tituloOpcion ?? 'Redirigir' }} — SIGTRAM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { font-family: "Figtree", "Segoe UI", Tahoma, sans-serif; }
-        [x-cloak] { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        :focus-visible { outline: 2px solid #334155; outline-offset: 2px; }
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1rem; background: rgb(15 23 42 / 0.7); backdrop-filter: blur(8px);
-        }
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; inset: 0; background: #fff; padding: 12px; }
-        }
-    </style>
-    @include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir'])
+    @vite(['resources/css/app.css', 'resources/css/tramite-externo/reportes-expedientes.css', 'resources/js/app.js'])
+
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-head', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
 </head>
-<body data-sigtram-screen="mod_gm.mod_tram_exte.redirigir" class="sigtram-module bg-[#f8fafc] text-gray-800 min-h-screen" x-data="redirigirExpedientes()" x-init="init()">
-    @include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir'])
+@php
+    $frontendConfig = [
+        'routes' => [
+            'buscar' => route('mod_gm.redirigir.buscar', [], false),
+            'derivar' => route('mod_gm.redirigir.derivar', [], false),
+            'anular' => route('mod_gm.redirigir.anular', [], false),
+            'imprimir' => route('mod_gm.redirigir.imprimir', [], false),
+            'subgerencias' => route('tramites.ingresar.subgerencias', ['gerencia' => '__GID__'], false),
+            'buscaExpedi' => route('tramites.busca_expedi', [], false),
+        ],
+        'gerencias' => $gerencias,
+    ];
+@endphp
+<body class="bg-[#f8fafc] text-gray-800 min-h-screen" x-data="redirigirExpedientes()" data-config="{{ json_encode($frontendConfig) }}">
+{{-- SIGTRAM integration: presentation only --}}
+@include('components.sigtram.module-bar', ['screenKey' => 'mod_gm.mod_tram_exte.redirigir', 'sigtramNative' => true])
+{{-- /SIGTRAM integration --}}
+
 
     <div x-show="toast.show" x-transition x-cloak class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200]">
         <div class="backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3"
@@ -333,288 +332,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function redirigirExpedientes() {
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const gerenciasMeta = @json($gerencias);
-            const routes = {
-                buscar: @json(route('mod_gm.redirigir.buscar', [], false)),
-                derivar: @json(route('mod_gm.redirigir.derivar', [], false)),
-                anular: @json(route('mod_gm.redirigir.anular', [], false)),
-                imprimir: @json(route('mod_gm.redirigir.imprimir', [], false)),
-                subgerencias: @json(route('tramites.ingresar.subgerencias', ['gerencia' => '__GID__'], false)),
-                buscaExpedi: @json(route('tramites.busca_expedi', [], false)),
-            };
-
-            return {
-                loading: false,
-                guardando: false,
-                guardandoAnular: false,
-                items: [],
-                selectedIds: [],
-                total: 0,
-                pagina: 1,
-                paginas: 1,
-                toast: { show: false, message: '', type: 'success' },
-                filtros: { palabra: '', buscar_por: 'p_dto_trmtes.nu_expe_todo', fecha: '' },
-                subgerencias: [],
-                modalRedirigir: { show: false, errors: [] },
-                formRed: { gerencia: '0', subgerencia: '0', usar_sub: false, observaciones: 'Sin novedades para reenviar', fecha: '' },
-                modalAnular: { show: false, errors: [], id: null, expediente: '', motivo: '' },
-                modalOjo: { show: false, url: '' },
-                modalPrint: { show: false, areas: [], criterio: '', fecha: '' },
-
-                init() { this.fetchLista(); },
-
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => { this.toast.show = false; }, 4000);
-                },
-                payloadFiltros() {
-                    return {
-                        palabra: this.filtros.palabra,
-                        buscar_por: this.filtros.buscar_por,
-                        fecha: this.filtros.fecha,
-                    };
-                },
-                buscarConValidacion() {
-                    if (!this.filtros.palabra && !this.filtros.fecha) {
-                        this.showToast('Debe especificar un criterio de busqueda', 'error');
-                        return;
-                    }
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                verTodo() {
-                    this.filtros.palabra = '';
-                    this.filtros.fecha = '';
-                    this.pagina = 1;
-                    this.fetchLista();
-                },
-                paginasVisibles() {
-                    const tam = 15;
-                    const seccion = Math.floor((this.pagina - 1) / tam);
-                    const inicio = seccion * tam + 1;
-                    const final = Math.min(inicio + tam - 1, this.paginas);
-                    const arr = [];
-                    for (let i = inicio; i <= final; i++) arr.push(i);
-                    return arr;
-                },
-                toggleId(id) {
-                    const n = Number(id);
-                    if (this.selectedIds.includes(n)) {
-                        this.selectedIds = this.selectedIds.filter(x => x !== n);
-                    } else {
-                        this.selectedIds.push(n);
-                    }
-                },
-                marcarTodos() {
-                    this.selectedIds = this.items.map(i => Number(i.cdgo_dto_trmte));
-                },
-                async fetchLista() {
-                    this.loading = true;
-                    this.selectedIds = [];
-                    try {
-                        const res = await fetch(routes.buscar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                ...this.payloadFiltros(),
-                                page: this.pagina,
-                                per_page: 15,
-                            }),
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            this.items = data.data || [];
-                            this.total = data.total || 0;
-                            this.pagina = data.current_page || 1;
-                            this.paginas = data.last_page || 1;
-                        } else {
-                            this.showToast(data.message || 'No se pudo cargar la bandeja.', 'error');
-                        }
-                    } catch (e) {
-                        this.showToast('Error al cargar expedientes.', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                abrirOjo(item) {
-                    this.modalOjo.url = routes.buscaExpedi + '?cdgo_tram=' + item.cdgo_dto_trmte + '&anex=1';
-                    this.modalOjo.show = true;
-                },
-                abrirAnular(item) {
-                    this.modalAnular = {
-                        show: true,
-                        errors: [],
-                        id: item.cdgo_trmte_dcmnto,
-                        expediente: item.nu_expe_todo,
-                        motivo: '',
-                    };
-                },
-                cerrarAnular() {
-                    if (this.guardandoAnular) return;
-                    this.modalAnular.show = false;
-                },
-                abrirRedirigir() {
-                    if (this.selectedIds.length === 0) {
-                        this.showToast('Debe seleccionar al menos un Documento', 'error');
-                        return;
-                    }
-                    const now = new Date();
-                    const pad = n => String(n).padStart(2, '0');
-                    this.formRed = {
-                        gerencia: '0',
-                        subgerencia: '0',
-                        usar_sub: false,
-                        observaciones: 'Sin novedades para reenviar',
-                        fecha: pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()),
-                    };
-                    this.subgerencias = [];
-                    this.modalRedirigir = { show: true, errors: [] };
-                },
-                cerrarRedirigir() {
-                    if (this.guardando) return;
-                    this.modalRedirigir.show = false;
-                },
-                gerenciaInPart() {
-                    const g = gerenciasMeta.find(x => String(x.cdgo_area) === String(this.formRed.gerencia));
-                    return g ? String(g.in_part) : '0';
-                },
-                async onGerenciaChange() {
-                    this.formRed.subgerencia = '0';
-                    this.subgerencias = [];
-                    this.formRed.usar_sub = false;
-                    const gid = this.formRed.gerencia;
-                    if (!gid || gid === '0') return;
-                    try {
-                        const res = await fetch(routes.subgerencias.replace('__GID__', gid), {
-                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        });
-                        const data = await res.json();
-                        this.subgerencias = Array.isArray(data) ? data : [];
-                        if (this.subgerencias.length > 0 && this.gerenciaInPart() === '1') {
-                            this.formRed.usar_sub = true;
-                        }
-                    } catch (e) {
-                        this.subgerencias = [];
-                    }
-                },
-                async enviarRedirigir() {
-                    if (this.formRed.gerencia === '0' || !this.formRed.gerencia) {
-                        this.modalRedirigir.errors = ['Debe especificar la Gerencia'];
-                        return;
-                    }
-                    if (this.guardando) return;
-                    this.guardando = true;
-                    this.modalRedirigir.errors = [];
-                    try {
-                        const res = await fetch(routes.derivar, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                ids: this.selectedIds,
-                                cdgo_gerencia: this.formRed.gerencia,
-                                cdgo_subgerencia: this.formRed.subgerencia,
-                                usar_subgerencia: this.formRed.usar_sub ? 1 : 0,
-                                observacion: this.formRed.observaciones,
-                            }),
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.showToast(data.message || 'Los expedientes fueron reedirigidos');
-                            this.modalRedirigir.show = false;
-                            await this.fetchLista();
-                        } else if (data.errors) {
-                            this.modalRedirigir.errors = Object.values(data.errors).flat();
-                        } else {
-                            this.modalRedirigir.errors = [data.message || 'No se pudo redirigir.'];
-                        }
-                    } catch (e) {
-                        this.modalRedirigir.errors = ['Error de red al redirigir.'];
-                    } finally {
-                        this.guardando = false;
-                    }
-                },
-                async enviarAnular() {
-                    const motivo = (this.modalAnular.motivo || '').trim();
-                    if (motivo === '') {
-                        this.modalAnular.errors = ['Debe especificar el motivo'];
-                        return;
-                    }
-                    if (!confirm('Esta seguro de anular el expediente ' + this.modalAnular.expediente + '?')) {
-                        return;
-                    }
-                    if (this.guardandoAnular) return;
-                    this.guardandoAnular = true;
-                    this.modalAnular.errors = [];
-                    try {
-                        const res = await fetch(routes.anular, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                id: this.modalAnular.id,
-                                motivo: this.modalAnular.motivo,
-                                expediente: this.modalAnular.expediente,
-                            }),
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            this.showToast(data.message || 'El trámite fue anulado');
-                            this.modalAnular.show = false;
-                            await this.fetchLista();
-                        } else if (data.errors) {
-                            this.modalAnular.errors = Object.values(data.errors).flat();
-                        } else {
-                            this.modalAnular.errors = [data.message || 'No se pudo anular.'];
-                        }
-                    } catch (e) {
-                        this.modalAnular.errors = ['Error de red al anular.'];
-                    } finally {
-                        this.guardandoAnular = false;
-                    }
-                },
-                async abrirImprimir() {
-                    try {
-                        const res = await fetch(routes.imprimir, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrf,
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(this.payloadFiltros()),
-                        });
-                        const data = await res.json();
-                        this.modalPrint = {
-                            show: true,
-                            areas: data.areas || [],
-                            criterio: data.criterio || this.filtros.palabra,
-                            fecha: data.fecha || this.filtros.fecha,
-                        };
-                    } catch (e) {
-                        this.showToast('No se pudo generar la impresión.', 'error');
-                    }
-                },
-            };
-        }
-    </script>
 </body>
 </html>

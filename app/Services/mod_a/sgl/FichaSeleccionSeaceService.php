@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Support\SessionKeys;
 use Throwable;
 
 /**
@@ -474,6 +475,6 @@ class FichaSeleccionSeaceService
 
     private function compania(): int
     {
-        return (int) (session('usComp') ?: (Auth::user()->cdgo_cmpnia ?? 0));
+        return (int) session(SessionKeys::USER_COMPANY, 0);
     }
 }
